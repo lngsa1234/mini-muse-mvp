@@ -60,6 +60,30 @@ The UI "Response style" toggle picks a tier:
 Set these in `.env` to any models your account can access (for example
 `claude-haiku-4-5` and `claude-sonnet-4-5`).
 
+## Deploy to Vercel
+
+The same app runs on Vercel without changes to the front-end. Vercel serves
+the static `public/` folder and runs the proxy as an Edge Function instead of
+the Express server (`server/index.js` stays for local dev only).
+
+1. Push this repo to GitHub and import it in Vercel (framework preset:
+   **Other** — there's no build step).
+2. In **Project → Settings → Environment Variables**, add at least:
+
+   | Variable            | Required | Example                     |
+   |---------------------|----------|-----------------------------|
+   | `ANTHROPIC_API_KEY` | yes      | `sk-ant-...`                |
+   | `MODEL_QUICK`       | no       | `claude-haiku-4-5`          |
+   | `MODEL_DEFAULT`     | no       | `claude-sonnet-4-5`         |
+   | `ANTHROPIC_VERSION` | no       | `2023-06-01`                |
+
+3. Deploy. The app is served at `/`, chat is proxied through
+   `/api/messages`, and `/api/healthz` reports whether a key is set.
+
+The proxy lives in `api/messages.js` and uses the Edge runtime so streaming
+responses aren't cut off by the short default timeout on Node serverless
+functions. `PORT` is only used by the local Express server; Vercel ignores it.
+
 ## Project layout
 
 ```
@@ -67,7 +91,11 @@ public/
   index.html       the app (original prototype + one <script> tag for the shim)
   claude-shim.js    provides window.claude.use("sample"): agent loop + API proxy client
 server/
-  index.js          Express: static hosting + /api/messages proxy
+  index.js          Express: static hosting + /api/messages proxy (local dev)
+api/
+  messages.js       Vercel Edge Function: same proxy, used when deployed
+  healthz.js        Vercel Edge Function: key-configured check
+vercel.json         serves public/ as the static output
 package.json
 .env.example
 ```
