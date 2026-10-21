@@ -1,15 +1,15 @@
 /*
- * claude-shim.js
+ * agent-shim.js
  * -------------------------------------------------------------------------
- * Provides the window.claude.use(...) API that Mini Muse expects when it runs
- * inside the Claude.ai artifact sandbox, so the same app can run as a plain
- * web page served by our Node/Express backend.
+ * Provides the window.agent.use(...) API that Mini Muse expects. It replaces
+ * the original artifact-sandbox API so the same app can run as a plain web
+ * page served by our backend, with the LLM provider swappable server-side.
  *
- *   claude.use("sample") -> a sample() function (+ .json / .limits) that runs
- *                           the tool-use agent loop in the browser and proxies
- *                           raw Anthropic Messages API calls through /api/messages
- *   claude.use("db")     -> null  (app falls back to localStorage)
- *   claude.use("user")   -> null  (app falls back to localStorage)
+ *   agent.use("sample") -> a sample() function (+ .json / .limits) that runs
+ *                          the tool-use agent loop in the browser and proxies
+ *                          the raw model request through /api/messages
+ *   agent.use("db")     -> null  (app falls back to localStorage)
+ *   agent.use("user")   -> null  (app falls back to localStorage)
  *
  * The API key never reaches the browser: the backend injects it.
  */
@@ -232,7 +232,7 @@
 
   sample.limits = async () => ({ tools: true });
 
-  window.claude = {
+  window.agent = {
     use: async name => {
       if (name === "sample") return sample;
       return null; // "db" and "user": app falls back to localStorage

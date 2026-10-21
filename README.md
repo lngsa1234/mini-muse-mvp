@@ -15,7 +15,7 @@ on the server.
 
 ```
 Browser (public/index.html + app logic)
-   │  window.claude.use("sample")  ← provided by public/claude-shim.js
+   │  window.agent.use("sample")  ← provided by public/agent-shim.js
    │     • runs the tool-use agent loop in the browser
    │     • tools execute locally and mutate app state / show approvals
    ▼
@@ -27,7 +27,7 @@ POST /api/messages  (server/index.js)
 https://api.anthropic.com/v1/messages
 ```
 
-- **Agent loop** lives in the browser (`public/claude-shim.js`): it sends the
+- **Agent loop** lives in the browser (`public/agent-shim.js`): it sends the
   conversation + tool definitions to Anthropic, streams the reply, executes any
   requested tools client-side, feeds results back, and repeats until the model
   answers.
@@ -89,7 +89,7 @@ functions. `PORT` is only used by the local Express server; Vercel ignores it.
 ```
 public/
   index.html       the app (original prototype + one <script> tag for the shim)
-  claude-shim.js    provides window.claude.use("sample"): agent loop + API proxy client
+  agent-shim.js     provides window.agent.use("sample"): agent loop + API proxy client
 server/
   index.js          Express: static hosting + /api/messages proxy (local dev)
 api/

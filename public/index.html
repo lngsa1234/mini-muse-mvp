@@ -304,7 +304,7 @@ input.field:focus,textarea.field:focus{outline:none;border-color:var(--accent)}
             <button class="btn primary" id="send" type="submit">Send</button>
             <button class="btn" id="stop" type="button" hidden>Stop</button>
           </div>
-          <p class="note" id="note">Connecting to Claude…</p>
+          <p class="note" id="note">Connecting…</p>
         </form>
       </div>
 
@@ -349,7 +349,7 @@ input.field:focus,textarea.field:focus{outline:none;border-color:var(--accent)}
       <div class="view v-connectors">
         <div class="page">
           <div><h2>Connectors</h2><p class="lede">Connect a service to give Muse new tools. Each connector adds its own tools, and you decide whether Muse must ask before it changes anything. Disconnect anytime and the tools disappear.</p></div>
-          <div class="callout">These are practice connectors filled with sample data, so everyone can try them safely. Nothing here touches your real accounts. Real Muse, and Claude itself, connect to real services the same way, through a standard called MCP.</div>
+          <div class="callout">These are practice connectors filled with sample data, so everyone can try them safely. Nothing here touches your real accounts. Real Muse, and the assistant itself, connect to real services the same way, through a standard called MCP.</div>
           <div class="conns" id="connList"></div>
         </div>
       </div>
@@ -423,7 +423,7 @@ input.field:focus,textarea.field:focus{outline:none;border-color:var(--accent)}
   </main>
 </div>
 
-<script src="/claude-shim.js"></script>
+<script src="/agent-shim.js"></script>
 <script>
 (() => {
 "use strict";
@@ -491,8 +491,8 @@ function migrate(s) {
 }
 async function loadState() {
   try {
-    if (window.claude?.use) {
-      const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if (window.agent?.use) {
+      const [db, user] = await Promise.all([agent.use("db"), agent.use("user")]);
       const uid = user ? await user.id() : null;
       if (db && uid) {
         docRef = db.doc("data/users/" + uid + "/muse");
@@ -1026,11 +1026,11 @@ function makeTools(msg) {
 
 /* ---------- run one turn ---------- */
 const ERR = {
-  not_granted: "This page isn't allowed to use Claude, so Muse can't reply. Reload the page and choose Allow.",
-  sampling_disabled: "Claude isn't available on this account, so Muse can't reply.",
+  not_granted: "This page isn't allowed to use the assistant, so Muse can't reply. Reload the page and try again.",
+  sampling_disabled: "The assistant isn't available on this account, so Muse can't reply.",
   rate_limited: "Muse hit a usage limit. Wait a minute, then send again.",
-  session_expired: "Your Claude sign-in expired. Sign in again, then resend.",
-  tools_unavailable: "This Claude app can't run Muse's tools. Open the page on claude.ai in a browser.",
+  session_expired: "The assistant session expired. Reload the page, then resend.",
+  tools_unavailable: "The assistant can't run Muse's tools right now. Reload the page and try again.",
   refused: "Muse couldn't help with that. Try asking another way.",
   empty_completion: "Muse didn't produce a reply. Try a shorter request.",
   prompt_too_large: "The conversation got too long. Go to Settings and choose Start over to begin fresh."
@@ -1052,7 +1052,7 @@ async function run(userMsg) {
   } catch (e) {
     if (e?.text && e.code !== "refused") msg.text = e.text;
     if (e?.code === "refused") msg.text = "";
-    if (e?.code !== "cancelled") msg.error = ERR[e?.code] || "Muse couldn't reach Claude. Send your message again.";
+    if (e?.code !== "cancelled") msg.error = ERR[e?.code] || "Muse couldn't reach the assistant. Send your message again.";
     if (["not_granted", "sampling_disabled", "tools_unavailable"].includes(e?.code)) disableChat(ERR[e.code]);
   }
   for (const [, res] of approvals) res(null);
@@ -1132,7 +1132,7 @@ ${ideaContext()}`;
     else { $("genNote").dataset.err = "1"; $("genNote").textContent = "Muse came back empty. Try again."; }
   } catch (e) {
     $("genNote").dataset.err = "1";
-    $("genNote").textContent = ERR[e?.code] || (e?.code === "invalid_json" ? "Muse's answer didn't come through cleanly. Try again." : "Muse couldn't reach Claude. Your starter ideas are still here. Try again.");
+    $("genNote").textContent = ERR[e?.code] || (e?.code === "invalid_json" ? "Muse's answer didn't come through cleanly. Try again." : "Muse couldn't reach the assistant. Your starter ideas are still here. Try again.");
   }
   gen.busy = false; renderMine(); save();
 }
@@ -1365,9 +1365,9 @@ renderAll();
   } else {
     SEED.docs(); renderAll(); save();
   }
-  if (!window.claude?.use) { disableChat("Open this page inside Claude to talk to Muse."); return; }
-  const s = await claude.use("sample");
-  if (!s) { disableChat("Muse can't reach Claude from here. Open this page on claude.ai or in the Claude app."); return; }
+  if (!window.agent?.use) { disableChat("The assistant isn't loaded, so Muse can't reply. Reload the page."); return; }
+  const s = await agent.use("sample");
+  if (!s) { disableChat("Muse can't reach the assistant right now. Reload the page and try again."); return; }
   try { const lim = await s.limits(); if (lim && !lim.tools) { disableChat(ERR.tools_unavailable); return; } } catch (e) {}
   sample = s; $("note").textContent = noteText(); renderIdeas(); renderGoalSuggs();
   if ($("main").dataset.main === "ideas") maybeUpdateIdeas();
