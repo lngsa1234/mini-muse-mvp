@@ -1,7 +1,7 @@
 {
   "name": "mini-muse",
   "version": "1.0.0",
-  "description": "Mini Muse - a self-hostable personal AI agent demo (vanilla JS + Node/Express proxy to the Anthropic API).",
+  "description": "Mini Muse - a self-hostable personal AI agent demo (vanilla JS + Node/Express proxy to the OpenAI API).",
   "private": true,
   "type": "module",
   "scripts": {

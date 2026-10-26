@@ -19,7 +19,7 @@ export async function apiError(res) {
   else if (res.status === 429) code = "rate_limited";
   else if (res.status === 400 && /too long|max.*token|exceed/i.test(serverMsg || "")) code = "prompt_too_large";
   else if (res.status === 400) code = "refused";
-  const e = new Error(serverMsg || "Anthropic request failed (" + res.status + ")");
+  const e = new Error(serverMsg || "OpenAI request failed (" + res.status + ")");
   if (code) e.code = code;
   return e;
 }
@@ -47,40 +47,24 @@ export async function streamTurn(body, signal, onText) {
   let buf = "";
   let text = "";
   let stopReason = null;
-  const blocks = []; // ordered content blocks: {type, text} or {type:"tool_use", id, name, _json, input}
+  const toolCalls = [];
 
   const handle = evt => {
-    switch (evt.type) {
-      case "content_block_start": {
-        const cb = evt.content_block || {};
-        if (cb.type === "tool_use") blocks[evt.index] = { type: "tool_use", id: cb.id, name: cb.name, _json: "" };
-        else if (cb.type === "text") blocks[evt.index] = { type: "text", text: "" };
-        break;
-      }
-      case "content_block_delta": {
-        const d = evt.delta || {};
-        const b = blocks[evt.index];
-        if (d.type === "text_delta") {
-          text += d.text; if (b) b.text += d.text;
-          if (onText) try { onText({ text }); } catch (_) {}
-        } else if (d.type === "input_json_delta" && b) {
-          b._json += d.partial_json || "";
-        }
-        break;
-      }
-      case "content_block_stop": {
-        const b = blocks[evt.index];
-        if (b && b.type === "tool_use") {
-          try { b.input = b._json ? JSON.parse(b._json) : {}; } catch (_) { b.input = {}; }
-        }
-        break;
-      }
-      case "message_delta":
-        if (evt.delta && evt.delta.stop_reason) stopReason = evt.delta.stop_reason;
-        break;
-      case "error":
-        throw new Error((evt.error && evt.error.message) || "stream error");
+    if (evt.error) throw new Error(evt.error.message || "stream error");
+    const choice = evt.choices && evt.choices[0];
+    if (!choice) return;
+    const delta = choice.delta || {};
+    if (delta.content) {
+      text += delta.content;
+      if (onText) try { onText({ text }); } catch (_) {}
     }
+    for (const call of delta.tool_calls || []) {
+      const current = toolCalls[call.index] ||= { id: "", name: "", arguments: "" };
+      if (call.id) current.id = call.id;
+      if (call.function?.name) current.name = call.function.name;
+      if (call.function?.arguments) current.arguments += call.function.arguments;
+    }
+    if (choice.finish_reason) stopReason = choice.finish_reason;
   };
 
   while (true) {
@@ -101,13 +85,18 @@ export async function streamTurn(body, signal, onText) {
     }
   }
 
-  const ordered = blocks.filter(Boolean);
-  const toolUses = ordered.filter(b => b.type === "tool_use").map(b => ({ id: b.id, name: b.name, input: b.input || {} }));
-  const assistantContent = ordered.map(b =>
-    b.type === "tool_use" ? { type: "tool_use", id: b.id, name: b.name, input: b.input || {} }
-                          : { type: "text", text: b.text || "" }
-  );
-  return { text, toolUses, assistantContent, stopReason };
+  const ordered = toolCalls.filter(Boolean);
+  const toolUses = ordered.map(call => {
+    let input = {};
+    try { input = call.arguments ? JSON.parse(call.arguments) : {}; } catch (_) {}
+    return { id: call.id, name: call.name, input };
+  });
+  const assistantMessage = {
+    role: "assistant",
+    content: text || null,
+    ...(ordered.length ? { tool_calls: ordered.map(call => ({ id: call.id, type: "function", function: { name: call.name, arguments: call.arguments } })) } : {})
+  };
+  return { text, toolUses, assistantMessage, stopReason };
 }
 
 /* ---------- one-shot JSON generation (Ideas / Goals personalization) ---------- */
@@ -124,7 +113,7 @@ export async function completeJson(prompt, opts) {
   } catch (e) { throw new Error("Could not reach the server."); }
   if (!res.ok) throw await apiError(res);
   const data = await res.json();
-  const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  const text = data.choices?.[0]?.message?.content || "";
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   let raw = (fenced ? fenced[1] : text).trim();
   // Fall back to the outermost JSON array/object if there's surrounding prose.

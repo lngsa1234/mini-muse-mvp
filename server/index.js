@@ -1,7 +1,7 @@
 /*
  * Mini Muse backend (local development)
  * -------------------------------------------------------------------------
- * Serves the static front-end and proxies the Anthropic Messages API so the
+ * Serves the static front-end and proxies the OpenAI API so the
  * API key stays on the server. The browser sends a `tier` ("quick" | "default")
  * and server/routing.js maps it to a configured model; the raw response
  * (including the SSE stream) is piped straight back to the client.
@@ -50,7 +50,7 @@ app.get(["/healthz", "/api/healthz"], (_req, res) => res.json(health(process.env
 
 app.listen(PORT, () => {
   console.log(`Mini Muse running at http://localhost:${PORT}`);
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn("WARNING: ANTHROPIC_API_KEY is not set. Chat will be disabled until you add it to .env");
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn("WARNING: OPENAI_API_KEY is not set. Chat will be disabled until you add it to .env");
   }
 });

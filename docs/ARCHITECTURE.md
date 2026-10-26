@@ -24,7 +24,7 @@ server/index.js  or  api/llm.js          (local Express / Vercel Edge)
    │  server/proxy.js    inject API key, build upstream request
    │  server/routing.js  tier ("quick" | "default") → model
    ▼
-Anthropic Messages API
+OpenAI Chat Completions API
 ```
 
 ## Folder map

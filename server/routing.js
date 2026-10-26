@@ -12,17 +12,17 @@
  */
 
 export const DEFAULT_MODELS = {
-  quick: "claude-3-5-haiku-latest",
-  default: "claude-3-7-sonnet-latest"
+  quick: "gpt-4o-mini",
+  default: "gpt-4o"
 };
 
 export const TIERS = Object.keys(DEFAULT_MODELS);
 
-// env: process.env (or any object with MODEL_QUICK / MODEL_DEFAULT)
+// env: process.env (or any object with OPENAI_MODEL_QUICK / OPENAI_MODEL_DEFAULT)
 export function modelsFrom(env = {}) {
   return {
-    quick: env.MODEL_QUICK || DEFAULT_MODELS.quick,
-    default: env.MODEL_DEFAULT || DEFAULT_MODELS.default
+    quick: env.OPENAI_MODEL_QUICK || DEFAULT_MODELS.quick,
+    default: env.OPENAI_MODEL_DEFAULT || DEFAULT_MODELS.default
   };
 }
 

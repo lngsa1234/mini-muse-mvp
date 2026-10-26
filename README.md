@@ -9,7 +9,7 @@ data, and a Settings page with memory, an activity audit, and reset.
 The front end started as a single-file prototype (kept in
 `docs/reference/original-prototype.html`) and is now split into small ES
 modules, one folder per area, so the learning circle can build it together.
-A small Node/Express backend proxies the Anthropic Messages API so your API key
+A small Node/Express backend proxies the OpenAI API so your API key
 stays on the server. There's no build step.
 
 **Building this with the circle?** Start with [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -25,15 +25,15 @@ Browser (public/js: features register tools + pages; agent/ runs the loop)
    │     • tools execute locally and mutate app state / show approvals
    ▼
 POST /api/llm       (server/index.js locally, api/llm.js on Vercel)
-   │  • injects ANTHROPIC_API_KEY            (server/proxy.js)
+   │  • injects OPENAI_API_KEY               (server/proxy.js)
    │  • maps tier ("quick"/"default") → model (server/routing.js)
    │  • pipes the streaming response straight back
    ▼
-https://api.anthropic.com/v1/messages
+https://api.openai.com/v1/chat/completions
 ```
 
 - **Agent loop** lives in the browser (`public/js/agent/`): it sends the
-  conversation + tool definitions to Anthropic, streams the reply, executes any
+  conversation + tool definitions to OpenAI, streams the reply, executes any
   requested tools client-side, feeds results back, and repeats until the model
   answers.
 - **Features** (`public/js/features/`) each register their own page, tools and
@@ -49,7 +49,7 @@ Requires Node.js 18+ (uses the built-in `fetch`).
 ```bash
 npm install
 cp .env.example .env
-# edit .env and set ANTHROPIC_API_KEY=...
+# edit .env and set OPENAI_API_KEY=...
 npm run dev        # or: npm start
 npm test           # server unit tests
 ```
@@ -62,11 +62,10 @@ The UI "Response style" toggle picks a tier:
 
 | UI label  | Tier      | Env var         | Default                       |
 |-----------|-----------|-----------------|-------------------------------|
-| Fast      | `quick`   | `MODEL_QUICK`   | `claude-3-5-haiku-latest`     |
-| Thorough  | `default` | `MODEL_DEFAULT` | `claude-3-7-sonnet-latest`    |
+| Fast      | `quick`   | `OPENAI_MODEL_QUICK`   | `gpt-4o-mini`     |
+| Thorough  | `default` | `OPENAI_MODEL_DEFAULT` | `gpt-4o`          |
 
-Set these in `.env` to any models your account can access (for example
-`claude-haiku-4-5` and `claude-sonnet-4-5`).
+Set these in `.env` to any OpenAI models your account can access.
 
 ## Deploy to Vercel
 
@@ -80,10 +79,9 @@ the Express server (`server/index.js` stays for local dev only).
 
    | Variable            | Required | Example                     |
    |---------------------|----------|-----------------------------|
-   | `ANTHROPIC_API_KEY` | yes      | `sk-ant-...`                |
-   | `MODEL_QUICK`       | no       | `claude-haiku-4-5`          |
-   | `MODEL_DEFAULT`     | no       | `claude-sonnet-4-5`         |
-   | `ANTHROPIC_VERSION` | no       | `2023-06-01`                |
+   | `OPENAI_API_KEY`    | yes      | `sk-...`                    |
+   | `OPENAI_MODEL_QUICK` | no      | `gpt-4o-mini`               |
+   | `OPENAI_MODEL_DEFAULT` | no    | `gpt-4o`                    |
 
 3. Deploy. The app is served at `/`, chat is proxied through
    `/api/llm`, and `/api/healthz` reports whether a key is set.
@@ -120,7 +118,7 @@ Full map and the feature contract: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Notes
 
-- The API key is never sent to the browser; all Anthropic calls go through the
+- The API key is never sent to the browser; all OpenAI calls go through the
   backend. The server pins the model from the `tier` and ignores any client-sent
   model, so the proxy can't be used to call arbitrary models.
 - `GET /healthz` reports whether a key is configured.
