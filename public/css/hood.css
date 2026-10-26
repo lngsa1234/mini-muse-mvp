@@ -1,0 +1,21 @@
+/* "How Muse works" side panel + activity list. Owner: features/hood. */
+/* hood */
+.loop{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.loop li{display:flex;gap:10px;align-items:center;padding:7px 9px;border-radius:8px;font-size:13px;color:var(--muted);transition:background .2s,color .2s}
+.loop li b{font:600 11px var(--f-mono);width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;flex:none}
+.loop li.on{background:var(--accent-soft);color:var(--ink)}
+.loop li.on b{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.loop li.on.waitp{background:var(--wait-soft)}
+.loop li.on.waitp b{border-color:var(--wait);background:var(--wait)}
+.explain{font-size:13px;color:var(--muted);margin:0 0 10px}
+.map{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12.5px}
+.map div{background:var(--surface);padding:6px 8px}
+.map .h{font:600 10.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+.audit{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-family:var(--f-mono);font-size:11.5px}
+.audit li{background:var(--bg);border-radius:6px;padding:7px 8px;overflow-wrap:anywhere}
+.audit .top{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px}
+.audit .tool{color:var(--accent);font-weight:600}
+.audit .tool.c{color:var(--link)}
+.audit .by{color:var(--wait)}
+.audit .io{color:var(--muted);line-height:1.45}
+.confirm{display:flex;gap:6px;align-items:center;font-size:13px}

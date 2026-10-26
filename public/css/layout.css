@@ -1,0 +1,35 @@
+/* Responsive layout: pages | optional hood panel. Owner: shared (ui). */
+/* layout v2: pages | (optional) how Muse works */
+.panes{grid-template-columns:240px minmax(0,1fr)}
+.panes[data-learn="on"]{grid-template-columns:240px minmax(0,1fr) 360px}
+.hood{display:none}
+.panes[data-learn="on"] .hood{display:flex}
+.sidebar{gap:0;justify-content:space-between}
+.nav.bottom{border-top:1px solid var(--line);padding-top:10px;margin-top:16px}
+.learn-only{display:none}
+.panes[data-learn="on"] ~ * .learn-only,.app[data-learn="on"] .learn-only{display:inline-block}
+.main[data-main="settings"] .v-settings{display:block;overflow:auto}
+.switch{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 13px 5px 6px;font-size:13.5px}
+.switch .track{width:34px;height:20px;border-radius:999px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.switch .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgb(0 0 0 / .25);transition:transform .2s}
+.switch[aria-checked="true"]{border-color:var(--accent)}
+.switch[aria-checked="true"] .track{background:var(--accent)}
+.switch[aria-checked="true"] .knob{transform:translateX(14px)}
+.workbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+.workbar > div{flex:1 1 280px;min-width:0}
+.setsec{display:flex;flex-direction:column;gap:10px;padding-top:18px;border-top:1px solid var(--line)}
+.sethead{display:flex;align-items:baseline;gap:10px}
+.sethead h3{margin:0;font:700 18px/1.2 var(--f-display)}
+.setsec .audit{max-height:420px;overflow:auto}
+.setsec.danger h3{color:var(--bad)}
+#resetBtn:hover{border-color:var(--bad);color:var(--bad)}
+@media (max-width:1100px){
+  .tabs{display:flex}
+  .app{grid-template-rows:auto auto 1fr}
+  .panes,.panes[data-learn="on"]{grid-template-columns:minmax(0,1fr)}
+  .panes .pane,.panes[data-learn="on"] .hood{display:none}
+  .panes[data-mobile="main"] .main{display:grid}
+  .panes[data-learn="on"][data-mobile="hood"] .hood{display:flex}
+}
+@media (max-width:640px){ .brand small{display:none} .conns{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }

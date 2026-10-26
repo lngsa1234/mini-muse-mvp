@@ -1,0 +1,24 @@
+/* Connectors page. Owner: features/connectors. */
+/* connectors */
+.callout{background:var(--link-soft);border-radius:10px;padding:12px 14px;font-size:13.5px;max-width:70ch}
+.conns{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.conn{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--surface);min-width:0}
+.conn.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.conn .top{display:flex;gap:12px;align-items:center}
+.logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font:700 15px var(--f-display);background:var(--sunk);color:var(--ink);flex:none}
+.conn.on .logo{background:var(--accent);color:var(--accent-ink)}
+.conn h3{margin:0;font:700 17px/1.2 var(--f-display)}
+.conn .like{font-size:12.5px;color:var(--muted)}
+.pill{margin-left:auto;font:600 11px var(--f-mono);padding:4px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.conn.on .pill{background:var(--accent-soft);color:var(--accent)}
+.conn p{margin:0;font-size:14px}
+.toolchips{display:flex;flex-wrap:wrap;gap:5px}
+.toolchips code{font:11.5px var(--f-mono);background:var(--bg);padding:3px 7px;border-radius:5px;color:var(--muted)}
+.toolchips code.w{color:var(--wait)}
+.perm{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.perm .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.consent{background:var(--bg);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.consent ul{margin:0;padding-left:18px}
+.manage{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.manage form{display:flex;flex-direction:column;gap:6px}
+.manage textarea.field{min-height:90px;resize:vertical}

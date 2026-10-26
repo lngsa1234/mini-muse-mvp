@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Mini Muse - a self-hostable personal AI agent demo (vanilla JS + Node/Express proxy to the Anthropic API).",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "node --watch server/index.js"
+    "dev": "node --watch server/index.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

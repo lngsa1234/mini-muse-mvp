@@ -1,0 +1,33 @@
+# Who reviews what. Replace the placeholders with GitHub usernames
+# (e.g. @maya-chen) and uncomment the lines for your area.
+# Later lines take precedence over earlier ones.
+
+# Default: repo owner
+*                                     @lngsa1234
+
+# Shared core: everyone touches it, owner reviews
+# /public/js/core/                    @lngsa1234
+# /public/js/main.js                  @lngsa1234
+# /public/index.html                  @lngsa1234
+
+# Agent core
+# /public/js/agent/                   @agent-core-1 @agent-core-2
+
+# Workflow
+# /public/js/workflow/                @workflow-owner
+
+# Routing
+# /server/routing.js                  @routing-owner
+# /server/proxy.js                    @routing-owner
+# /api/                               @routing-owner
+
+# Features
+# /public/js/features/goals/          @goals-owner
+# /public/js/features/ideas/          @ideas-owner
+# /public/js/features/library/        @library-owner
+# /public/js/features/connectors/     @connectors-owner
+# /public/js/features/memory/         @memory-owner
+# /public/js/features/chat/           @ui-owner
+# /public/js/features/settings/       @ui-owner
+# /public/js/features/hood/           @ui-owner
+# /public/css/                        @ui-owner
