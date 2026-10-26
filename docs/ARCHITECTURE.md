@@ -18,9 +18,9 @@ agent/loop.js        tool-use loop: model → run tools → feed results → rep
    │                      │
    │                      └─ a tool needs approval? ─► workflow/approvals.js (card in chat)
    ▼
-agent/transport.js   POST /api/messages, parse the SSE stream
+agent/transport.js   POST /api/llm, parse the SSE stream
    ▼
-server/index.js  or  api/messages.js     (local Express / Vercel Edge)
+server/index.js  or  api/llm.js          (local Express / Vercel Edge)
    │  server/proxy.js    inject API key, build upstream request
    │  server/routing.js  tier ("quick" | "default") → model
    ▼
@@ -63,7 +63,7 @@ public/
       settings/              response style, "How Muse works" toggle, start over
       hood/                  "How Muse works" panel, Settings → Activity
 server/
-  index.js                 Express: static hosting + /api/messages (local dev)
+  index.js                 Express: static hosting + /api/llm (local dev)
   proxy.js                 runtime-neutral request building (shared with api/)
   routing.js               ROUTING: tier → model
 api/                       Vercel Edge Functions (deploy), reuse server/proxy.js

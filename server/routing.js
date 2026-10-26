@@ -6,7 +6,7 @@
  * here, so the proxy can't be used to call arbitrary models.
  *
  * Shared by the local Express server (server/index.js) and the Vercel Edge
- * Function (api/messages.js). This is the place to add smarter routing, e.g.
+ * Function (api/llm.js). This is the place to add smarter routing, e.g.
  * choosing by task (chat turn vs. one-shot JSON), by tools present, or by
  * prompt size.
  */

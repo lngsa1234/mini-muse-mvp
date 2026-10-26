@@ -1,7 +1,7 @@
 /*
  * Mini Muse backend — Vercel Edge Function
  * -------------------------------------------------------------------------
- * Serverless equivalent of the /api/messages route in server/index.js; both
+ * Serverless equivalent of the /api/llm route in server/index.js; both
  * share server/proxy.js and server/routing.js. Runs on the Edge runtime so
  * SSE streaming works without the short default timeout of Node serverless
  * functions.

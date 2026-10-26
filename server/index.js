@@ -6,7 +6,7 @@
  * and server/routing.js maps it to a configured model; the raw response
  * (including the SSE stream) is piped straight back to the client.
  *
- * When deployed to Vercel, api/messages.js does the same job.
+ * When deployed to Vercel, api/llm.js does the same job.
  */
 import "dotenv/config";
 import path from "node:path";
@@ -22,7 +22,7 @@ const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..",
 app.use(express.json({ limit: "4mb" }));
 app.use(express.static(PUBLIC_DIR));
 
-app.post("/api/messages", async (req, res) => {
+app.post("/api/llm", async (req, res) => {
   const up = buildUpstreamRequest(req.body, process.env);
   if (up.error) return res.status(up.error.status).json(up.error.body);
 

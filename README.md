@@ -24,7 +24,7 @@ Browser (public/js: features register tools + pages; agent/ runs the loop)
    │     • runs the tool-use agent loop in the browser
    │     • tools execute locally and mutate app state / show approvals
    ▼
-POST /api/messages  (server/index.js locally, api/messages.js on Vercel)
+POST /api/llm       (server/index.js locally, api/llm.js on Vercel)
    │  • injects ANTHROPIC_API_KEY            (server/proxy.js)
    │  • maps tier ("quick"/"default") → model (server/routing.js)
    │  • pipes the streaming response straight back
@@ -86,9 +86,9 @@ the Express server (`server/index.js` stays for local dev only).
    | `ANTHROPIC_VERSION` | no       | `2023-06-01`                |
 
 3. Deploy. The app is served at `/`, chat is proxied through
-   `/api/messages`, and `/api/healthz` reports whether a key is set.
+   `/api/llm`, and `/api/healthz` reports whether a key is set.
 
-The proxy lives in `api/messages.js` and uses the Edge runtime so streaming
+The proxy lives in `api/llm.js` and uses the Edge runtime so streaming
 responses aren't cut off by the short default timeout on Node serverless
 functions. `PORT` is only used by the local Express server; Vercel ignores it.
 
@@ -105,11 +105,11 @@ public/
     workflow/         approvals, background check-in
     features/         chat, ideas, goals, library, memory, connectors, settings, hood
 server/
-  index.js            Express: static hosting + /api/messages proxy (local dev)
+  index.js            Express: static hosting + /api/llm proxy (local dev)
   proxy.js            builds the upstream request (shared with api/)
   routing.js          tier → model routing (shared with api/)
 api/
-  messages.js         Vercel Edge Function: same proxy, used when deployed
+  llm.js              Vercel Edge Function: same proxy, used when deployed
   healthz.js          Vercel Edge Function: key-configured check
 test/                 npm test
 docs/                 ARCHITECTURE.md, reference/original-prototype.html

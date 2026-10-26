@@ -1,9 +1,9 @@
 /*
- * Transport: talks to our backend at /api/messages (never to the provider
+ * Transport: talks to our backend at /api/llm (never to the provider
  * directly; the server holds the API key and picks the model, see
  * server/routing.js). Parses the SSE stream into text + tool calls.
  */
-export const API_URL = "/api/messages";
+export const API_URL = "/api/llm";
 export const MAX_TOKENS = 2048;
 
 // Map an HTTP error / payload from the proxy to a code the app understands (agent/errors.js).

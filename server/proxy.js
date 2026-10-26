@@ -2,7 +2,7 @@
  * Provider proxy: turns the browser's request into an upstream request.
  * ---------------------------------------------------------------------------
  * Runtime-neutral (no Express, no Node-only APIs) so the same code runs in
- * server/index.js and in the Vercel Edge Function api/messages.js.
+ * server/index.js and in the Vercel Edge Function api/llm.js.
  */
 import { routeModel } from "./routing.js";
 
