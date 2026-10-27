@@ -9,6 +9,7 @@ export function migrate(s) {
   out.connectors = Object.assign(blank().connectors, s.connectors || {});
   if (!s.connectors && (s.events || []).length) { out.connectors.calendar.on = true; out.seeded = { ...(out.seeded || {}), calendar: true }; }
   out.seeded ||= {};
+  out.docs = []; // documents live on the server now; loaded separately at boot (main.js)
   return out;
 }
 
@@ -37,6 +38,7 @@ export async function flush() {
   state.chat = state.chat.slice(-40);
   state.audit = state.audit.slice(0, 150);
   const body = JSON.parse(JSON.stringify(state));
+  delete body.docs; // documents are persisted server-side, not in localStorage
   try { if (docRef) await docRef.set(body); else localStorage.setItem(LS, JSON.stringify(body)); }
   catch (e) { try { localStorage.setItem(LS, JSON.stringify(body)); } catch (_) {} }
   saving = false;

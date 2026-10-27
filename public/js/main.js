@@ -13,6 +13,7 @@ import { $ } from "./core/dom.js";
 import { state, rt, blank, replaceState } from "./core/state.js";
 import { renderAll, installDelegates } from "./core/registry.js";
 import { loadState, save } from "./core/storage.js";
+import * as docsApi from "./core/api.js";
 import "./core/nav.js";
 import { ERR } from "./agent/errors.js";
 import { disableChat } from "./agent/run.js";
@@ -24,7 +25,7 @@ import { initIdeas, renderIdeas, maybeUpdateIdeas } from "./features/ideas/ideas
 import { initGoals } from "./features/goals/goals.js";
 import { renderGoalSuggs } from "./features/goals/suggestions.js";
 import "./features/memory/memory.js";
-import { seedLibrary } from "./features/library/library.js";
+import "./features/library/library.js";
 import "./features/connectors/index.js";
 import { initSettings } from "./features/settings/settings.js";
 import "./features/hood/hood.js";
@@ -41,10 +42,12 @@ renderAll();
   if (saved) {
     replaceState(saved);
     for (const m of state.chat) { m.live = false; for (const a of m.acts || []) if (a.approval === "pending") { a.approval = "expired"; a.label = "No answer: " + (a.card?.summary || a.data?.subject || "request"); } }
-    if (!rt.busy) renderAll();
   } else {
-    seedLibrary(); renderAll(); save();
+    save();
   }
+  // Documents live on the server (Neon + Vercel Blob), not in localStorage.
+  try { state.docs = await docsApi.listDocs(); } catch (e) { state.docs = []; }
+  if (!rt.busy) renderAll();
   if (!window.agent?.use) { disableChat("The assistant isn't loaded, so Muse can't reply. Reload the page."); return; }
   const s = await agent.use("sample");
   if (!s) { disableChat("Muse can't reach the assistant right now. Reload the page and try again."); return; }

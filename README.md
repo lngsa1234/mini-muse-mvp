@@ -38,23 +38,47 @@ https://api.openai.com/v1/chat/completions
   answers.
 - **Features** (`public/js/features/`) each register their own page, tools and
   prompt guidance, so adding a tool or connector touches one folder.
-- **Persistence** uses `localStorage` (the `db`/`user` artifact services return
-  `null`, so the app falls back automatically). Data stays in your browser.
+- **Persistence** is split: the **Library** stores documents in **Neon
+  (Postgres)** with the original uploaded files in **Vercel Blob**
+  (`/api/docs`); everything else (chat, ideas, goals, memory, prefs) still uses
+  `localStorage`. The document schema has a `user_id` column so it's
+  multi-user ready, but ships with one hardcoded dev user (see `server/auth.js`)
+  until auth is added.
 - **Connectors use sample data only** — nothing touches real accounts.
 
 ## Setup
 
 Requires Node.js 18+ (uses the built-in `fetch`).
 
+You'll need a free [Neon](https://neon.tech) Postgres database (for the Library)
+and a [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) store (for
+uploaded files).
+
 ```bash
 npm install
 cp .env.example .env
-# edit .env and set OPENAI_API_KEY=...
+# edit .env: set OPENAI_API_KEY, DATABASE_URL (Neon), BLOB_READ_WRITE_TOKEN (Vercel Blob)
+npm run db:init    # create tables + seed the example document (run once)
 npm run dev        # or: npm start
 npm test           # server unit tests
 ```
 
 Then open http://localhost:3000.
+
+## Developer evaluations
+
+Mini Muse includes a small regression suite for agent behavior, seeded with
+the résumé/goal-progress failure case. Run the no-cost checks with:
+
+    npm test
+
+Run the live model checks with:
+
+    npm run evals
+
+The live runner uses OPENAI_API_KEY, makes a few paid API requests, and exits
+non-zero if the agent claims to have an unprovided résumé or marks goal progress
+without evidence. Add cases in evals/cases.js whenever users report a failure.
 
 ### Models
 
@@ -70,25 +94,36 @@ Set these in `.env` to any OpenAI models your account can access.
 ## Deploy to Vercel
 
 The same app runs on Vercel without changes to the front-end. Vercel serves
-the static `public/` folder and runs the proxy as an Edge Function instead of
-the Express server (`server/index.js` stays for local dev only).
+the static `public/` folder, runs the LLM proxy as an Edge Function, and runs
+the document API (`/api/docs`) as Node functions (`server/index.js` stays for
+local dev only).
 
 1. Push this repo to GitHub and import it in Vercel (framework preset:
    **Other** — there's no build step).
-2. In **Project → Settings → Environment Variables**, add at least:
+2. Add a **Neon** Postgres database (Vercel's Neon integration sets
+   `DATABASE_URL` for you) and a **Vercel Blob** store (sets
+   `BLOB_READ_WRITE_TOKEN`).
+3. In **Project → Settings → Environment Variables**, add at least:
 
    | Variable            | Required | Example                     |
    |---------------------|----------|-----------------------------|
    | `OPENAI_API_KEY`    | yes      | `sk-...`                    |
+   | `DATABASE_URL`      | yes      | `postgresql://...neon.tech/...` |
+   | `BLOB_READ_WRITE_TOKEN` | yes  | `vercel_blob_rw_...`        |
    | `OPENAI_MODEL_QUICK` | no      | `gpt-4o-mini`               |
    | `OPENAI_MODEL_DEFAULT` | no    | `gpt-4o`                    |
 
-3. Deploy. The app is served at `/`, chat is proxied through
-   `/api/llm`, and `/api/healthz` reports whether a key is set.
+4. Initialise the database once (locally, with the deployed `DATABASE_URL` in
+   your `.env`): `npm run db:init`.
+5. Deploy. The app is served at `/`, chat is proxied through `/api/llm`,
+   documents through `/api/docs`, and `/api/healthz` reports whether a key is
+   set.
 
-The proxy lives in `api/llm.js` and uses the Edge runtime so streaming
-responses aren't cut off by the short default timeout on Node serverless
-functions. `PORT` is only used by the local Express server; Vercel ignores it.
+The LLM proxy (`api/llm.js`) uses the Edge runtime so streaming responses
+aren't cut off by the short default timeout on Node serverless functions. The
+document routes (`api/docs/*`) use the Node runtime (for PDF/DOCX parsing and
+the Blob SDK). `PORT` is only used by the local Express server; Vercel ignores
+it.
 
 ## Project layout
 
@@ -98,17 +133,26 @@ public/
   css/                styles, one file per area
   js/
     main.js           entry point: loads features, boots the app
-    core/             registry, state, storage, navigation, activity log
+    core/             registry, state, storage, api (docs client), navigation, activity log
     agent/            agent core: loop, transport, prompt, tools, run
     workflow/         approvals, background check-in
     features/         chat, ideas, goals, library, memory, connectors, settings, hood
 server/
-  index.js            Express: static hosting + /api/llm proxy (local dev)
+  index.js            Express: static hosting + /api/llm + /api/docs (local dev)
   proxy.js            builds the upstream request (shared with api/)
   routing.js          tier → model routing (shared with api/)
+  auth.js             current user id (dev stub until real auth)
+  db.js               Neon Postgres access for documents
+  extract.js          pulls searchable text out of PDF/DOCX/TXT uploads
+  docs.js             document request handlers (shared with api/docs/)
 api/
-  llm.js              Vercel Edge Function: same proxy, used when deployed
+  llm.js              Vercel Edge Function: LLM proxy, used when deployed
   healthz.js          Vercel Edge Function: key-configured check
+  docs/               Vercel Node functions: list/create (index.js) + delete ([id].js)
+db/
+  schema.sql          Postgres tables (users, documents)
+scripts/
+  db-init.mjs         npm run db:init — creates tables + seeds the example doc
 test/                 npm test
 docs/                 ARCHITECTURE.md, reference/original-prototype.html
 vercel.json           serves public/ as the static output

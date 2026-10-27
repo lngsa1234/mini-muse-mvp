@@ -7,13 +7,19 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node --test"
+    "db:init": "node scripts/db-init.mjs",
+    "test": "node --test",
+    "evals": "node evals/run.mjs"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "@vercel/blob": "^0.27.0",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1"
   }
 }

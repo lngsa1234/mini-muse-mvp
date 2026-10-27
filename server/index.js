@@ -14,13 +14,30 @@ import { fileURLToPath } from "node:url";
 import { Readable } from "node:stream";
 import express from "express";
 import { buildUpstreamRequest, UPSTREAM_UNREACHABLE, health } from "./proxy.js";
+import { currentUserId } from "./auth.js";
+import { handleList, handleCreate, handleDelete } from "./docs.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public");
 
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json({ limit: "6mb" })); // base64 file uploads can be a few MB
 app.use(express.static(PUBLIC_DIR));
+
+/* ---------- Library documents (Neon + Vercel Blob) ---------- */
+const sendDocs = res => ({ status, json }) => res.status(status).json(json);
+app.get("/api/docs", async (req, res) => {
+  try { sendDocs(res)(await handleList(currentUserId(req))); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post("/api/docs", async (req, res) => {
+  try { sendDocs(res)(await handleCreate(currentUserId(req), req.body)); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.delete("/api/docs/:id", async (req, res) => {
+  try { sendDocs(res)(await handleDelete(currentUserId(req), req.params.id)); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 app.post("/api/llm", async (req, res) => {
   const up = buildUpstreamRequest(req.body, process.env);
