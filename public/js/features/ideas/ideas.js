@@ -1,5 +1,5 @@
 // Ideas page: starter ideas from rules, personal ideas from Muse, and the save_idea tool.
-import { $, esc, rid } from "../../core/dom.js";
+import { $, esc } from "../../core/dom.js";
 import { clock, fmtDay } from "../../core/format.js";
 import { state, rt } from "../../core/state.js";
 import { defineFeature, onClick, renderMine } from "../../core/registry.js";
@@ -8,15 +8,18 @@ import { audit } from "../../core/activity.js";
 import { S } from "../../core/schema.js";
 import { say } from "../../agent/run.js";
 import { ERR } from "../../agent/errors.js";
+import { createIdea, updateIdea } from "../../core/api.js";
 import { ideaTitle, ideaStatus, KINDS } from "./model.js";
 import { ruleIdeas, ideasFingerprint } from "./rules.js";
 import { ideaContext } from "./context.js";
 
 const findIdea = id => id.startsWith("r:") ? ruleIdeas().find(r => r.id === id) : state.ideas.find(x => x.id === id);
-function materialize(i) {  // turn a starter idea into a stored one when you act on it
+// Keep the in-memory cache (state.ideas) in sync with the server.
+function replaceIdea(i) { const n = state.ideas.findIndex(x => x.id === i.id); if (n >= 0) state.ideas[n] = i; else state.ideas.push(i); }
+async function materialize(i) {  // turn a starter idea into a stored one (server) when you act on it
   if (!i.id.startsWith("r:")) return i;
-  const s = { id: "i" + rid(), ruleKey: i.key, title: i.title, why: i.why, kind: i.kind, basedOn: i.basedOn, action: i.action, status: "saved", by: "rule", t: Date.now() };
-  state.ideas.push(s); return s;
+  const created = await createIdea({ title: i.title, why: i.why, kind: i.kind, basedOn: i.basedOn, action: i.action, status: "saved", by: "rule", ruleKey: i.key });
+  state.ideas.push(created); return created;
 }
 
 /* ---------- render ---------- */
@@ -85,8 +88,12 @@ ${ideaContext()}`;
     const out = await rt.sample.json(prompt, { modelTier: "quick", cache: false });
     const arr = (Array.isArray(out) ? out : []).filter(o => o && o.title).slice(0, 6);
     const now = Date.now();
-    for (const o of arr) state.ideas.push({ id: "i" + rid(), title: String(o.title), why: String(o.why || ""), kind: KINDS.includes(o.kind) ? o.kind : "Get ahead",
-      basedOn: (Array.isArray(o.based_on) ? o.based_on : []).map(String).slice(0, 4), action: String(o.action || o.title), status: "new", by: "muse", t: now });
+    for (const o of arr) {
+      try {
+        state.ideas.push(await createIdea({ title: String(o.title), why: String(o.why || ""), kind: KINDS.includes(o.kind) ? o.kind : "Get ahead",
+          basedOn: (Array.isArray(o.based_on) ? o.based_on : []).map(String).slice(0, 4), action: String(o.action || o.title), status: "new", by: "muse" }));
+      } catch (e) {}
+    }
     audit("suggest_ideas", "memory, goals, connected services", arr.map(o => o.title).join(" | ") || "no ideas");
     if (arr.length) { state.ideasFp = fpNow; state.ideasAt = now; }
     else { $("genNote").dataset.err = "1"; $("genNote").textContent = "Muse came back empty. Try again."; }
@@ -107,17 +114,34 @@ export function maybeUpdateIdeas() {
 /* ---------- user actions ---------- */
 export function initIdeas() { $("genIdeas").addEventListener("click", generateIdeas); }
 
-onClick("doIdea", id => { let i = findIdea(id); if (i && rt.sample && !rt.busy) { i = materialize(i); i.status = "done"; renderMine(); say(`Do this idea from my Ideas page: "${ideaTitle(i)}". ${i.action && i.action !== ideaTitle(i) ? i.action : ""}`.trim()); } });
-onClick("promote", id => { let i = findIdea(id); if (i && rt.sample && !rt.busy) { i = materialize(i); say(`Turn my idea ${i.id} into a goal with a plan: "${ideaTitle(i)}".${i.why ? " Context: " + i.why : ""}`); } });
-onClick("keepIdea", id => { let i = findIdea(id); if (i) { i = materialize(i); i.status = "saved"; audit("idea_feedback", ideaTitle(i), "saved", "you"); renderMine(); save(); } });
-onClick("skipIdea", id => {
-  const i = findIdea(id);
-  if (i) {
-    if (i.id.startsWith("r:")) (state.skippedRules ||= []).push(i.key); else i.status = "dismissed";
-    audit("idea_feedback", ideaTitle(i), "not for me (Muse will avoid ideas like this)", "you"); renderMine(); save();
-  }
+onClick("doIdea", async id => {
+  let i = findIdea(id); if (!i || !rt.sample || rt.busy) return;
+  i = await materialize(i);
+  try { replaceIdea(i = await updateIdea(i.id, { status: "done" })); } catch (e) {}
+  renderMine(); say(`Do this idea from my Ideas page: "${ideaTitle(i)}". ${i.action && i.action !== ideaTitle(i) ? i.action : ""}`.trim());
 });
-onClick("delIdea", id => { const i = state.ideas.find(x => x.id === id); if (i) { i.status = "dismissed"; i.goalId = undefined; audit("delete_idea", ideaTitle(i), "Removed by you", "you"); renderMine(); save(); } });
+onClick("promote", async id => {
+  let i = findIdea(id); if (!i || !rt.sample || rt.busy) return;
+  i = await materialize(i);
+  say(`Turn my idea ${i.id} into a goal with a plan: "${ideaTitle(i)}".${i.why ? " Context: " + i.why : ""}`);
+});
+onClick("keepIdea", async id => {
+  let i = findIdea(id); if (!i) return;
+  i = await materialize(i);
+  try { replaceIdea(i = await updateIdea(i.id, { status: "saved" })); } catch (e) {}
+  audit("idea_feedback", ideaTitle(i), "saved", "you"); renderMine(); save();
+});
+onClick("skipIdea", async id => {
+  const i = findIdea(id); if (!i) return;
+  if (i.id.startsWith("r:")) (state.skippedRules ||= []).push(i.key);
+  else { try { replaceIdea(await updateIdea(i.id, { status: "dismissed" })); } catch (e) {} }
+  audit("idea_feedback", ideaTitle(i), "not for me (Muse will avoid ideas like this)", "you"); renderMine(); save();
+});
+onClick("delIdea", async id => {
+  const i = state.ideas.find(x => x.id === id); if (!i) return;
+  try { replaceIdea(await updateIdea(i.id, { status: "dismissed", goalId: null })); } catch (e) {}
+  audit("delete_idea", ideaTitle(i), "Removed by you", "you"); renderMine(); save();
+});
 
 /* ---------- feature ---------- */
 defineFeature({
@@ -129,11 +153,12 @@ defineFeature({
   tools: [
     { name: "save_idea", description: "Save an idea to the user's Ideas page, either one the user shares or one you suggest. title is a short action; why is one sentence. Returns the idea_id.",
       inputSchema: { type: "object", properties: { title: S, why: S }, required: ["title"] },
-      run: ({ title, why, idea }, _ctx, h) => {
+      run: async ({ title, why, idea }, _ctx, h) => {
         const text = String(title || idea || "").trim(); if (!text) throw new Error("title is empty");
         if (state.ideas.some(i => ideaTitle(i).toLowerCase() === text.toLowerCase())) return "Already on the Ideas page.";
-        const id = "i" + rid(); state.ideas.push({ id, title: text, why: why ? String(why) : "", kind: "Get ahead", basedOn: ["chat"], action: text, status: "saved", by: "muse", t: Date.now() });
-        h.act(text); return { idea_id: id };
+        const created = await createIdea({ title: text, why: why ? String(why) : "", kind: "Get ahead", basedOn: ["chat"], action: text, status: "saved", by: "muse" });
+        state.ideas.push(created);
+        h.act(text); return { idea_id: created.id };
       } }
   ]
 });

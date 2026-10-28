@@ -45,8 +45,10 @@ renderAll();
   } else {
     save();
   }
-  // Documents live on the server (Neon + Vercel Blob), not in localStorage.
+  // Documents, ideas and goals live on the server (Neon), not in localStorage.
   try { state.docs = await docsApi.listDocs(); } catch (e) { state.docs = []; }
+  try { state.ideas = await docsApi.listIdeas(); } catch (e) { state.ideas = []; }
+  try { state.plans = await docsApi.listGoals(); } catch (e) { state.plans = []; }
   if (!rt.busy) renderAll();
   if (!window.agent?.use) { disableChat("The assistant isn't loaded, so Muse can't reply. Reload the page."); return; }
   const s = await agent.use("sample");

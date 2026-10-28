@@ -16,6 +16,8 @@ import express from "express";
 import { buildUpstreamRequest, UPSTREAM_UNREACHABLE, health } from "./proxy.js";
 import { currentUserId } from "./auth.js";
 import { handleList, handleCreate, handleDelete } from "./docs.js";
+import * as ideas from "./ideas.js";
+import * as goals from "./goals.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +40,23 @@ app.delete("/api/docs/:id", async (req, res) => {
   try { sendDocs(res)(await handleDelete(currentUserId(req), req.params.id)); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+/* ---------- Ideas & Goals (Neon) ---------- */
+// Register the same CRUD shape for both resources; handlers share server/docs.js's
+// { status, json } contract, so one helper wires list/create/update/delete.
+const wire = (base, h) => {
+  const done = res => ({ status, json }) => res.status(status).json(json);
+  const guard = fn => async (req, res) => {
+    try { done(res)(await fn(req)); } catch (e) { res.status(500).json({ error: e.message }); }
+  };
+  app.get(`/api/${base}`, guard(req => h.handleList(currentUserId(req))));
+  app.post(`/api/${base}`, guard(req => h.handleCreate(currentUserId(req), req.body)));
+  app.patch(`/api/${base}/:id`, guard(req => h.handleUpdate(currentUserId(req), req.params.id, req.body)));
+  app.delete(`/api/${base}/:id`, guard(req => h.handleDelete(currentUserId(req), req.params.id)));
+};
+wire("ideas", ideas);
+wire("goals", goals);
+
 
 app.post("/api/llm", async (req, res) => {
   const up = buildUpstreamRequest(req.body, process.env);

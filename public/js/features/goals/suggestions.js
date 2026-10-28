@@ -5,6 +5,7 @@ import { state, rt, isOn } from "../../core/state.js";
 import { onClick, renderMine } from "../../core/registry.js";
 import { save } from "../../core/storage.js";
 import { audit } from "../../core/activity.js";
+import { createGoal, updateIdea } from "../../core/api.js";
 import { say } from "../../agent/run.js";
 import { ERR } from "../../agent/errors.js";
 import { ideaTitle, ideaStatus } from "../ideas/model.js";
@@ -115,15 +116,18 @@ function retireGoalSugg(g, status) {
 
 export function initGoalSuggestions() { $("genGoals").addEventListener("click", generateGoals); }
 
-onClick("startGoal", sid => {
+onClick("startGoal", async sid => {
   const g = findGoalSugg(sid);
-  if (g) {
-    const id = "g" + rid();
-    state.plans.push({ id, goal: g.title, steps: g.steps.map(text => ({ text, status: "todo" })), t: Date.now() });
-    if (g.key?.startsWith("idea:")) { const i = state.ideas.find(x => x.id === g.key.slice(5)); if (i) i.goalId = id; }
-    retireGoalSugg(g, "started");
-    audit("create_goal", g.title, `Started from a suggestion (${g.steps.length} steps)`, "you"); renderMine(); save();
+  if (!g) return;
+  let created;
+  try { created = await createGoal(g.title, g.steps); } catch (e) { return; }
+  state.plans.push(created);
+  if (g.key?.startsWith("idea:")) {
+    const i = state.ideas.find(x => x.id === g.key.slice(5));
+    if (i) { try { const u = await updateIdea(i.id, { goalId: created.id }); const n = state.ideas.findIndex(x => x.id === u.id); if (n >= 0) state.ideas[n] = u; } catch (e) {} }
   }
+  retireGoalSugg(g, "started");
+  audit("create_goal", g.title, `Started from a suggestion (${created.steps.length} steps)`, "you"); renderMine(); save();
 });
 onClick("tailorGoal", sid => {
   const g = findGoalSugg(sid);

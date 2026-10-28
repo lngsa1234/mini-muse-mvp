@@ -1,5 +1,5 @@
 // Goals page: plans with steps, and the create_goal / update_step tools.
-import { $, esc, rid } from "../../core/dom.js";
+import { $, esc } from "../../core/dom.js";
 import { fmtDay } from "../../core/format.js";
 import { state, rt } from "../../core/state.js";
 import { defineFeature, onClick, renderMine } from "../../core/registry.js";
@@ -7,9 +7,14 @@ import { save } from "../../core/storage.js";
 import { audit } from "../../core/activity.js";
 import { S } from "../../core/schema.js";
 import { say } from "../../agent/run.js";
+import { createGoal, updateStep, removeGoal, updateIdea } from "../../core/api.js";
 import { renderGoalSuggs, maybeUpdateGoals, initGoalSuggestions } from "./suggestions.js";
 
 const STATUSES = ["todo", "doing", "done", "blocked"];
+
+// Keep the in-memory cache (state.plans/state.ideas) in sync with the server.
+export function replaceGoal(g) { const i = state.plans.findIndex(p => p.id === g.id); if (i >= 0) state.plans[i] = g; else state.plans.push(g); }
+function replaceIdea(i) { const n = state.ideas.findIndex(x => x.id === i.id); if (n >= 0) state.ideas[n] = i; }
 
 function renderGoals() {
   const p = state.plans;
@@ -36,8 +41,13 @@ export function initGoals() {
 }
 
 onClick("nudge", id => { const g = state.plans.find(x => x.id === id); if (g && rt.sample && !rt.busy) say(`Move my goal ${g.id} ("${g.goal}") forward: do the next steps you can, update them, and tell me what you need from me.`); });
-onClick("delPlan", id => { const g = state.plans.find(x => x.id === id); state.plans = state.plans.filter(x => x.id !== id); audit("delete_goal", g?.goal, "Deleted by you", "you"); renderMine(); save(); });
-onClick("step", v => { const [gid, i] = v.split(":"); const s = state.plans.find(p => p.id === gid)?.steps[+i]; if (s) { s.status = s.status === "done" ? "todo" : "done"; audit("update_step", s.text, s.status + " (by you)", "you"); renderMine(); save(); } });
+onClick("delPlan", async id => { const g = state.plans.find(x => x.id === id); try { await removeGoal(id); } catch (e) {} state.plans = state.plans.filter(x => x.id !== id); audit("delete_goal", g?.goal, "Deleted by you", "you"); renderMine(); save(); });
+onClick("step", async v => {
+  const [gid, i] = v.split(":"); const g = state.plans.find(p => p.id === gid); const s = g?.steps[+i];
+  if (!s) return;
+  const status = s.status === "done" ? "todo" : "done";
+  try { replaceGoal(await updateStep(gid, +i + 1, status)); audit("update_step", s.text, status + " (by you)", "you"); renderMine(); save(); } catch (e) {}
+});
 
 defineFeature({
   id: "goals",
@@ -48,22 +58,26 @@ defineFeature({
   tools: [
     { name: "create_goal", description: "Create a goal on the Goals page with 3-6 ordered steps. Pass idea_id if it comes from an idea. Returns the goal_id and numbered steps.",
       inputSchema: { type: "object", properties: { goal: S, steps: { type: "array", items: S }, idea_id: S }, required: ["goal", "steps"] },
-      run: ({ goal, steps, idea_id }, _ctx, h) => {
+      run: async ({ goal, steps, idea_id }, _ctx, h) => {
         const list = (Array.isArray(steps) ? steps : []).map(String).filter(Boolean).slice(0, 8);
         if (!goal || !list.length) throw new Error("need a goal and at least one step");
-        const id = "g" + rid();
-        state.plans.push({ id, goal: String(goal), steps: list.map(text => ({ text, status: "todo" })), t: Date.now() });
-        const idea = idea_id && state.ideas.find(i => i.id === String(idea_id)); if (idea) idea.goalId = id;
-        h.act(`${goal} (${list.length} steps)`);
-        return { goal_id: id, steps: list.map((s, i) => `${i + 1}. ${s}`) };
+        const created = await createGoal(String(goal), list);
+        replaceGoal(created);
+        if (idea_id) {
+          const idea = state.ideas.find(i => i.id === String(idea_id));
+          if (idea) { try { replaceIdea(await updateIdea(idea.id, { goalId: created.id })); } catch (e) {} }
+        }
+        h.act(`${goal} (${created.steps.length} steps)`);
+        return { goal_id: created.id, steps: created.steps.map((s, i) => `${i + 1}. ${s.text}`) };
       } },
     { name: "update_step", description: "Set a goal step's status. step is 1-based. Use doing or done only after the user explicitly confirms progress or a tool result proves that specific action happened; otherwise leave new steps as todo.",
       inputSchema: { type: "object", properties: { goal_id: S, step: { type: "integer" }, status: { type: "string", enum: STATUSES } }, required: ["goal_id", "step", "status"] },
-      run: ({ goal_id, step, status }, _ctx, h) => {
+      run: async ({ goal_id, step, status }, _ctx, h) => {
         const g = state.plans.find(p => p.id === String(goal_id)); if (!g) throw new Error("no goal " + goal_id);
         const s = g.steps[Number(step) - 1]; if (!s) throw new Error("no step " + step);
         if (!STATUSES.includes(status)) throw new Error("bad status");
-        s.status = status; h.act(`${s.text} → ${status}`); return "Updated.";
+        replaceGoal(await updateStep(String(goal_id), Number(step), status));
+        h.act(`${s.text} → ${status}`); return "Updated.";
       } }
   ]
 });

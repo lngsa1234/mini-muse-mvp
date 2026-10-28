@@ -46,6 +46,46 @@ export async function removeDoc(id) {
   await jcall("/api/docs/" + encodeURIComponent(id), { method: "DELETE" });
 }
 
+/* ---------- Ideas (/api/ideas → Neon) ---------- */
+const jpost = (url, body) => jcall(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+const jpatch = (url, body) => jcall(url, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+
+// Returns an array of ideas ({ id, title, why, kind, basedOn, action, status, by, goalId, ruleKey, t }).
+export async function listIdeas() {
+  const data = await jcall("/api/ideas");
+  return (data && data.ideas) || [];
+}
+export async function createIdea(idea) {
+  const data = await jpost("/api/ideas", idea);
+  return data.idea;
+}
+export async function updateIdea(id, patch) {
+  const data = await jpatch("/api/ideas/" + encodeURIComponent(id), patch);
+  return data.idea;
+}
+export async function removeIdea(id) {
+  await jcall("/api/ideas/" + encodeURIComponent(id), { method: "DELETE" });
+}
+
+/* ---------- Goals (/api/goals → Neon) ---------- */
+// Returns an array of goals ({ id, goal, steps: [{text,status}], t }).
+export async function listGoals() {
+  const data = await jcall("/api/goals");
+  return (data && data.goals) || [];
+}
+export async function createGoal(goal, steps) {
+  const data = await jpost("/api/goals", { goal, steps });
+  return data.goal;
+}
+// step is 1-based.
+export async function updateStep(id, step, status) {
+  const data = await jpatch("/api/goals/" + encodeURIComponent(id), { step, status });
+  return data.goal;
+}
+export async function removeGoal(id) {
+  await jcall("/api/goals/" + encodeURIComponent(id), { method: "DELETE" });
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
