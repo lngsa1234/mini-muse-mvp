@@ -7,7 +7,8 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sql, listDocs, createDoc } from "../server/db.js";
+import { Pool } from "@neondatabase/serverless";
+import { listDocs, createDoc } from "../server/db.js";
 import { DEV_USER_ID } from "../server/auth.js";
 
 const EXAMPLE_TITLE = "Learning circle notes";
@@ -17,14 +18,20 @@ const EXAMPLE_TEXT =
 async function main() {
   const dir = path.dirname(fileURLToPath(import.meta.url));
   const schema = readFileSync(path.join(dir, "..", "db", "schema.sql"), "utf8");
-  const s = sql();
 
-  const statements = schema.split(";").map(x => x.trim()).filter(Boolean);
-  for (const stmt of statements) await s.query(stmt);
-  console.log(`Applied ${statements.length} schema statement(s).`);
+  // The HTTP neon() driver only runs tagged-template queries, so use a Pool
+  // (a pg-style client) to execute the raw DDL statements and the dev-user seed.
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    const statements = schema.split(";").map(x => x.trim()).filter(Boolean);
+    for (const stmt of statements) await pool.query(stmt);
+    console.log(`Applied ${statements.length} schema statement(s).`);
 
-  await s`insert into users (id) values (${DEV_USER_ID}) on conflict (id) do nothing`;
-  console.log(`Dev user ready: ${DEV_USER_ID}`);
+    await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [DEV_USER_ID]);
+    console.log(`Dev user ready: ${DEV_USER_ID}`);
+  } finally {
+    await pool.end();
+  }
 
   const docs = await listDocs(DEV_USER_ID);
   if (!docs.length) {
