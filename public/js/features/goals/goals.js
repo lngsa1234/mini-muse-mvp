@@ -30,7 +30,7 @@ export function initGoals() {
     e.preventDefault();
     const t = $("goalBox").value.trim(); if (!t) return;
     if (!rt.sample || rt.busy) { $("goalBox").placeholder = rt.busy ? "Muse is busy. Try again in a moment." : "Muse isn't connected yet."; return; }
-    $("goalBox").value = ""; say(`New goal: ${t}. Make a plan for it and start on what you can.`);
+    $("goalBox").value = ""; say("New goal: " + t + ". Make a plan for it. Leave every step as todo unless I explicitly say it is already in progress or you can complete it with an available tool.");
   });
   initGoalSuggestions();
 }
@@ -44,7 +44,7 @@ defineFeature({
   nav: { el: "navGoals", badge: () => { const active = state.plans.filter(p => p.steps.some(s => s.status !== "done")).length; return state.plans.length ? `${active} active` : ""; } },
   render() { renderGoals(); renderGoalSuggs(); },
   onShow: maybeUpdateGoals,
-  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). Then do the steps you can do right now with your tools and mark them with update_step.",
+  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Only call update_step with doing or done after the user explicitly confirms progress or a tool result proves you took that specific action. Never infer progress from a plan or assume a document exists.",
   tools: [
     { name: "create_goal", description: "Create a goal on the Goals page with 3-6 ordered steps. Pass idea_id if it comes from an idea. Returns the goal_id and numbered steps.",
       inputSchema: { type: "object", properties: { goal: S, steps: { type: "array", items: S }, idea_id: S }, required: ["goal", "steps"] },
@@ -57,7 +57,7 @@ defineFeature({
         h.act(`${goal} (${list.length} steps)`);
         return { goal_id: id, steps: list.map((s, i) => `${i + 1}. ${s}`) };
       } },
-    { name: "update_step", description: "Set a goal step's status. step is 1-based. status is todo, doing, done or blocked.",
+    { name: "update_step", description: "Set a goal step's status. step is 1-based. Use doing or done only after the user explicitly confirms progress or a tool result proves that specific action happened; otherwise leave new steps as todo.",
       inputSchema: { type: "object", properties: { goal_id: S, step: { type: "integer" }, status: { type: "string", enum: STATUSES } }, required: ["goal_id", "step", "status"] },
       run: ({ goal_id, step, status }, _ctx, h) => {
         const g = state.plans.find(p => p.id === String(goal_id)); if (!g) throw new Error("no goal " + goal_id);
