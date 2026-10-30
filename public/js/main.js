@@ -29,6 +29,7 @@ import "./features/library/library.js";
 import "./features/connectors/index.js";
 import { initSettings } from "./features/settings/settings.js";
 import "./features/hood/hood.js";
+import "./features/web/web.js";
 
 /* ---------- wire up the page ---------- */
 replaceState(blank());

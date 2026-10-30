@@ -1,6 +1,5 @@
 /*
- * Vercel Node function: delete a document by id (removes the row and its
- * Vercel Blob file). DELETE /api/docs/:id
+ * Vercel Node function: delete a document by id. DELETE /api/docs/:id
  */
 import { currentUserId } from "../../server/auth.js";
 import { handleDelete } from "../../server/docs.js";

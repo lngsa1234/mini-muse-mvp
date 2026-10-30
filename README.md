@@ -39,25 +39,23 @@ https://api.openai.com/v1/chat/completions
 - **Features** (`public/js/features/`) each register their own page, tools and
   prompt guidance, so adding a tool or connector touches one folder.
 - **Persistence** is split: the **Library** stores documents in **Neon
-  (Postgres)** with the original uploaded files in **Vercel Blob**
-  (`/api/docs`); everything else (chat, ideas, goals, memory, prefs) still uses
-  `localStorage`. The document schema has a `user_id` column so it's
-  multi-user ready, but ships with one hardcoded dev user (see `server/auth.js`)
-  until auth is added.
+  (Postgres)** (`/api/docs`). Uploaded files have their text extracted and
+  stored for search; the original file is not retained. Everything else (chat,
+  ideas, goals, memory, prefs) still uses `localStorage`. The document schema
+  has a `user_id` column so it's multi-user ready, but ships with one hardcoded
+  dev user (see `server/auth.js`) until auth is added.
 - **Connectors use sample data only** — nothing touches real accounts.
 
 ## Setup
 
 Requires Node.js 18+ (uses the built-in `fetch`).
 
-You'll need a free [Neon](https://neon.tech) Postgres database (for the Library)
-and a [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) store (for
-uploaded files).
+You'll need a free [Neon](https://neon.tech) Postgres database (for the Library).
 
 ```bash
 npm install
 cp .env.example .env
-# edit .env: set OPENAI_API_KEY, DATABASE_URL (Neon), BLOB_READ_WRITE_TOKEN (Vercel Blob)
+# edit .env: set OPENAI_API_KEY, DATABASE_URL (Neon)
 npm run db:init    # create tables + seed the example document (run once)
 npm run dev        # or: npm start
 npm test           # server unit tests
@@ -101,15 +99,13 @@ local dev only).
 1. Push this repo to GitHub and import it in Vercel (framework preset:
    **Other** — there's no build step).
 2. Add a **Neon** Postgres database (Vercel's Neon integration sets
-   `DATABASE_URL` for you) and a **Vercel Blob** store (sets
-   `BLOB_READ_WRITE_TOKEN`).
+   `DATABASE_URL` for you).
 3. In **Project → Settings → Environment Variables**, add at least:
 
    | Variable            | Required | Example                     |
    |---------------------|----------|-----------------------------|
    | `OPENAI_API_KEY`    | yes      | `sk-...`                    |
    | `DATABASE_URL`      | yes      | `postgresql://...neon.tech/...` |
-   | `BLOB_READ_WRITE_TOKEN` | yes  | `vercel_blob_rw_...`        |
    | `OPENAI_MODEL_QUICK` | no      | `gpt-4o-mini`               |
    | `OPENAI_MODEL_DEFAULT` | no    | `gpt-4o`                    |
 
@@ -121,9 +117,8 @@ local dev only).
 
 The LLM proxy (`api/llm.js`) uses the Edge runtime so streaming responses
 aren't cut off by the short default timeout on Node serverless functions. The
-document routes (`api/docs/*`) use the Node runtime (for PDF/DOCX parsing and
-the Blob SDK). `PORT` is only used by the local Express server; Vercel ignores
-it.
+document routes (`api/docs/*`) use the Node runtime (for PDF/DOCX parsing).
+`PORT` is only used by the local Express server; Vercel ignores it.
 
 ## Project layout
 

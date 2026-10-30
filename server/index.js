@@ -18,6 +18,7 @@ import { currentUserId } from "./auth.js";
 import { handleList, handleCreate, handleDelete } from "./docs.js";
 import * as ideas from "./ideas.js";
 import * as goals from "./goals.js";
+import * as web from "./web.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +27,7 @@ const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..",
 app.use(express.json({ limit: "6mb" })); // base64 file uploads can be a few MB
 app.use(express.static(PUBLIC_DIR));
 
-/* ---------- Library documents (Neon + Vercel Blob) ---------- */
+/* ---------- Library documents (Neon Postgres) ---------- */
 const sendDocs = res => ({ status, json }) => res.status(status).json(json);
 app.get("/api/docs", async (req, res) => {
   try { sendDocs(res)(await handleList(currentUserId(req))); }
@@ -56,6 +57,16 @@ const wire = (base, h) => {
 };
 wire("ideas", ideas);
 wire("goals", goals);
+
+/* ---------- Web browsing (Tavily search + extract) ---------- */
+app.post("/api/web/search", async (req, res) => {
+  try { const { status, json } = await web.handleSearch(req.body, process.env); res.status(status).json(json); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post("/api/web/open", async (req, res) => {
+  try { const { status, json } = await web.handleOpen(req.body, process.env); res.status(status).json(json); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 
 app.post("/api/llm", async (req, res) => {

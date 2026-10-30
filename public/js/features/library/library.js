@@ -1,5 +1,5 @@
 // Library page: documents Muse can search and cite, and the docs_* tools.
-// Documents live in the backend (Neon + Vercel Blob); see core/api.js. They are
+// Documents live in the backend (Neon Postgres); see core/api.js. They are
 // loaded into state.docs at boot (main.js) and kept in sync here, so the
 // client-side search in search.js keeps working unchanged.
 import { $, esc } from "../../core/dom.js";
@@ -13,10 +13,9 @@ import * as api from "../../core/api.js";
 function renderLibrary() {
   const n = state.docs.length;
   $("libSummary").textContent = n ? `${n} ${n === 1 ? "document" : "documents"} Muse can search and cite.` : "";
-  $("libList").innerHTML = n ? state.docs.map(d => {
-    const file = d.url ? ` <a class="tag" href="${esc(d.url)}" target="_blank" rel="noopener">file</a>` : "";
-    return `<li class="item"><span class="grow"><strong>${esc(d.title)}</strong> ${d.example ? `<span class="tag ex">example</span>` : ""}${file}<br><span class="sub">${(d.text || "").length.toLocaleString()} characters</span></span><button class="x" data-del-doc="${d.id}" aria-label="Remove document">×</button></li>`;
-  }).join("")
+  $("libList").innerHTML = n ? state.docs.map(d =>
+    `<li class="item"><span class="grow"><strong>${esc(d.title)}</strong> ${d.example ? `<span class="tag ex">example</span>` : ""}<br><span class="sub">${(d.text || "").length.toLocaleString()} characters</span></span><button class="x" data-del-doc="${d.id}" aria-label="Remove document">×</button></li>`
+  ).join("")
     : `<li><p class="empty">No documents yet. Paste notes or upload a file (PDF, DOCX, TXT) above, or ask Muse to save something for you.</p></li>`;
 }
 

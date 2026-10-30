@@ -27,7 +27,6 @@ const toDoc = r => ({
   title: r.title,
   text: r.text || "",
   t: new Date(r.created_at).getTime(),
-  url: r.blob_url || null,
   contentType: r.content_type || null,
   size: r.size_bytes || null,
   example: !!r.is_example
@@ -47,10 +46,10 @@ export async function createDoc(userId, d) {
   const id = newId("d");
   const rows = await s`
     insert into documents
-      (id, user_id, title, text, blob_url, blob_pathname, content_type, size_bytes, is_example)
+      (id, user_id, title, text, content_type, size_bytes, is_example)
     values
-      (${id}, ${userId}, ${d.title}, ${d.text || ""}, ${d.blobUrl || null},
-       ${d.blobPathname || null}, ${d.contentType || null}, ${d.size || null}, ${d.isExample || false})
+      (${id}, ${userId}, ${d.title}, ${d.text || ""},
+       ${d.contentType || null}, ${d.size || null}, ${d.isExample || false})
     returning *`;
   return toDoc(rows[0]);
 }
@@ -60,9 +59,9 @@ export async function deleteDoc(userId, id) {
   const rows = await s`
     delete from documents
     where user_id = ${userId} and id = ${id}
-    returning title, blob_url, blob_pathname`;
+    returning title`;
   if (!rows[0]) return null;
-  return { title: rows[0].title, blobUrl: rows[0].blob_url, blobPathname: rows[0].blob_pathname };
+  return { title: rows[0].title };
 }
 
 /* ---------- Ideas ---------- */

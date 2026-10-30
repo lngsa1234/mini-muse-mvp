@@ -1,4 +1,4 @@
-// Browser client for the document backend (/api/docs → Neon + Vercel Blob).
+// Browser client for the document backend (/api/docs → Neon Postgres).
 // No build step: plain fetch + FileReader, no npm SDK in the browser.
 
 const MAX_BYTES = 3 * 1024 * 1024; // keep in sync with server/docs.js
@@ -11,7 +11,7 @@ async function jcall(url, opts) {
   return data;
 }
 
-// Returns an array of docs ({ id, title, text, t, url, contentType, size, example }).
+// Returns an array of docs ({ id, title, text, t, contentType, size, example }).
 export async function listDocs() {
   const data = await jcall("/api/docs");
   return (data && data.docs) || [];
@@ -84,6 +84,17 @@ export async function updateStep(id, step, status) {
 }
 export async function removeGoal(id) {
   await jcall("/api/goals/" + encodeURIComponent(id), { method: "DELETE" });
+}
+
+/* ---------- Web browsing (/api/web → Tavily) ---------- */
+// Returns an array of results ({ title, url, snippet }).
+export async function webSearch(query) {
+  const data = await jpost("/api/web/search", { query });
+  return (data && data.results) || [];
+}
+// Returns { title, url, text } for a single page.
+export async function webOpen(url) {
+  return jpost("/api/web/open", { url });
 }
 
 function fileToBase64(file) {

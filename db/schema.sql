@@ -14,10 +14,8 @@ create table if not exists documents (
   user_id       text not null references users(id) on delete cascade,
   title         text not null,
   text          text not null default '',   -- extracted/pasted text, used for search
-  blob_url      text,                        -- Vercel Blob URL (null for pasted docs)
-  blob_pathname text,                        -- pathname used to delete from Blob
-  content_type  text,
-  size_bytes    integer,
+  content_type  text,                        -- mime type of the uploaded file (null for pasted docs)
+  size_bytes    integer,                     -- original file size (null for pasted docs)
   is_example    boolean not null default false,
   created_at    timestamptz not null default now()
 );

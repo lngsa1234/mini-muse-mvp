@@ -1,8 +1,8 @@
 /*
  * Extract searchable plain text from an uploaded file.
  * ---------------------------------------------------------------------------
- * Best-effort: returns "" for unknown/unreadable types, which simply means the
- * document has no text to search (the original file is still stored in Blob).
+ * Best-effort: returns "" for unknown/unreadable types. The caller rejects
+ * uploads with no extractable text, since only the text is stored.
  */
 import mammoth from "mammoth";
 // Import the implementation directly: pdf-parse's package entry runs a debug

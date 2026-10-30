@@ -3,7 +3,7 @@
  *   GET  /api/docs  -> { docs: [...] }
  *   POST /api/docs  -> { doc } (pasted text or an uploaded file)
  * Shares server/docs.js with the local Express server. Node runtime is
- * required for pdf-parse, mammoth and the Vercel Blob SDK.
+ * required for pdf-parse and mammoth.
  */
 import { currentUserId } from "../../server/auth.js";
 import { handleList, handleCreate } from "../../server/docs.js";
