@@ -11,6 +11,9 @@ import { createGoal, updateStep, removeGoal, updateIdea } from "../../core/api.j
 import { renderGoalSuggs, maybeUpdateGoals, initGoalSuggestions } from "./suggestions.js";
 
 const STATUSES = ["todo", "doing", "done", "blocked"];
+// Tools that only record intent, not real work — they can't count as proof of
+// progress when the model tries to mark a step doing/done.
+const BOOKKEEPING = new Set(["create_goal", "update_step"]);
 
 // Keep the in-memory cache (state.plans/state.ideas) in sync with the server.
 export function replaceGoal(g) { const i = state.plans.findIndex(p => p.id === g.id); if (i >= 0) state.plans[i] = g; else state.plans.push(g); }
@@ -54,7 +57,7 @@ defineFeature({
   nav: { el: "navGoals", badge: () => { const active = state.plans.filter(p => p.steps.some(s => s.status !== "done")).length; return state.plans.length ? `${active} active` : ""; } },
   render() { renderGoals(); renderGoalSuggs(); },
   onShow: maybeUpdateGoals,
-  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Only call update_step with doing or done after the user explicitly confirms progress or a tool result proves you took that specific action. Never infer progress from a plan or assume a document exists.",
+  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Mark a step doing or done only when a tool actually did that work this turn, or the user did it themselves — in that case pass confirmed_by_user:true. update_step enforces this and refuses an unsupported doing/done, so never mark progress just because you planned it, and never assume a document or result exists.",
   tools: [
     { name: "create_goal", description: "Create a goal on the Goals page with 3-6 ordered steps. Pass idea_id if it comes from an idea. Returns the goal_id and numbered steps.",
       inputSchema: { type: "object", properties: { goal: S, steps: { type: "array", items: S }, idea_id: S }, required: ["goal", "steps"] },
@@ -70,12 +73,19 @@ defineFeature({
         h.act(`${goal} (${created.steps.length} steps)`);
         return { goal_id: created.id, steps: created.steps.map((s, i) => `${i + 1}. ${s.text}`) };
       } },
-    { name: "update_step", description: "Set a goal step's status. step is 1-based. Use doing or done only after the user explicitly confirms progress or a tool result proves that specific action happened; otherwise leave new steps as todo.",
-      inputSchema: { type: "object", properties: { goal_id: S, step: { type: "integer" }, status: { type: "string", enum: STATUSES } }, required: ["goal_id", "step", "status"] },
-      run: async ({ goal_id, step, status }, _ctx, h) => {
+    { name: "update_step", description: "Set a goal step's status. step is 1-based. doing and done need proof: either a tool did the work this turn, or the user did it themselves (then pass confirmed_by_user:true). Otherwise leave the step todo — a plan is not progress. This tool refuses an unsupported doing/done.",
+      inputSchema: { type: "object", properties: { goal_id: S, step: { type: "integer" }, status: { type: "string", enum: STATUSES }, confirmed_by_user: { type: "boolean" } }, required: ["goal_id", "step", "status"] },
+      run: async ({ goal_id, step, status, confirmed_by_user }, _ctx, h) => {
         const g = state.plans.find(p => p.id === String(goal_id)); if (!g) throw new Error("no goal " + goal_id);
         const s = g.steps[Number(step) - 1]; if (!s) throw new Error("no step " + step);
         if (!STATUSES.includes(status)) throw new Error("bad status");
+        // Progress must be backed by real work: a step only moves to doing/done if
+        // a non-bookkeeping tool ran this turn, or the user did it (confirmed_by_user).
+        // This stops the model marking a step done it never actually worked on.
+        if ((status === "doing" || status === "done") && !confirmed_by_user) {
+          const worked = h.turnActions().some(a => !BOOKKEEPING.has(a.tool));
+          if (!worked) throw new Error(`Refused: nothing this turn shows work on "${s.text}". Use a tool to do it first, or leave it todo. If the user already did it, call again with confirmed_by_user: true.`);
+        }
         replaceGoal(await updateStep(String(goal_id), Number(step), status));
         h.act(`${s.text} → ${status}`); return "Updated.";
       } }

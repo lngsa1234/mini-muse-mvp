@@ -49,7 +49,8 @@ export function makeTools(msg, turnSpan) {
     act: label => act(name, label),
     ask: (tool, card, context) => requestApproval(msg, act, tool, card, context),
     needsAsk: k => CONNECTORS[k].lockAsk || state.connectors[k].writes === "ask",
-    refusal: ok => ok === null ? "The user did not answer. Nothing was changed." : "The user declined. Nothing was changed."
+    refusal: ok => ok === null ? "The user did not answer. Nothing was changed." : "The user declined. Nothing was changed.",
+    turnActions: () => (msg.acts || []).slice()   // tool actions already taken this turn (for progress proof)
   });
   const build = t => ({
     name: t.name, description: t.description, inputSchema: t.inputSchema,
