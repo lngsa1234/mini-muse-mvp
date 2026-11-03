@@ -1,10 +1,19 @@
 // Browser client for the document backend (/api/docs → Neon Postgres).
 // No build step: plain fetch + FileReader, no npm SDK in the browser.
+import { activeTraceparent } from "./trace.js";
 
 const MAX_BYTES = 3 * 1024 * 1024; // keep in sync with server/docs.js
 
+// Attach the active span's W3C traceparent so the server's db/http spans join
+// the current client trace. No-op when nothing is being traced.
+function withTraceparent(opts = {}) {
+  const tp = activeTraceparent();
+  if (!tp) return opts;
+  return { ...opts, headers: { ...(opts.headers || {}), traceparent: tp } };
+}
+
 async function jcall(url, opts) {
-  const res = await fetch(url, opts);
+  const res = await fetch(url, withTraceparent(opts));
   let data = null;
   try { data = await res.json(); } catch (_) {}
   if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
@@ -95,6 +104,24 @@ export async function webSearch(query) {
 // Returns { title, url, text } for a single page.
 export async function webOpen(url) {
   return jpost("/api/web/open", { url });
+}
+
+/* ---------- Observability viewer (/api/trace → Neon) ---------- */
+// Recent traces, newest first: [{ trace_id, name, root_kind, duration_ms, status, ... }].
+export async function listTraces(limit = 50) {
+  const data = await jcall("/api/trace?limit=" + encodeURIComponent(limit));
+  return (data && data.traces) || [];
+}
+// One trace with its spans: { trace, spans: [...] }.
+export async function getTrace(id) {
+  return jcall("/api/trace?id=" + encodeURIComponent(id));
+}
+// Recent logs, optionally scoped to a trace: [{ id, severity, body, ... }].
+export async function listLogs({ traceId, limit = 100 } = {}) {
+  const qs = new URLSearchParams({ view: "logs", limit: String(limit) });
+  if (traceId) qs.set("trace_id", traceId);
+  const data = await jcall("/api/trace?" + qs.toString());
+  return (data && data.logs) || [];
 }
 
 function fileToBase64(file) {

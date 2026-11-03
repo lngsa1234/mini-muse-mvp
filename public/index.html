@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/css/connectors.css">
 <link rel="stylesheet" href="/css/chat.css">
 <link rel="stylesheet" href="/css/hood.css">
+<link rel="stylesheet" href="/css/observability.css">
 <link rel="stylesheet" href="/css/layout.css">
 </head><body>
 <!-- Page markup. Each view is rendered by the feature noted above it; see docs/ARCHITECTURE.md. -->
@@ -26,6 +27,7 @@
     <button role="tab" aria-selected="false" data-tab="library">Library</button>
     <button role="tab" aria-selected="false" data-tab="connectors">Connectors</button>
     <button role="tab" aria-selected="false" data-tab="settings">Settings</button>
+    <button role="tab" aria-selected="false" data-tab="observability">Observability</button>
     <button role="tab" aria-selected="false" data-tab="hood" class="learn-only">How it works</button>
   </nav>
 
@@ -39,6 +41,7 @@
         <button data-go="connectors"><span class="glyph">+</span>Connectors<span class="n" id="navConns"></span></button>
       </nav>
       <nav class="nav bottom" aria-label="Settings">
+        <button data-go="observability"><span class="glyph">O</span>Observability</button>
         <button data-go="settings"><span class="glyph">S</span>Settings</button>
       </nav>
     </aside>
@@ -137,6 +140,18 @@
             <p class="note">Erase your memory, ideas, goals, chat, activity and connector data. This can't be undone.</p>
             <div id="resetWrap"><button class="btn" id="resetBtn">Erase everything…</button></div>
           </section>
+        </div>
+      </div>
+
+      <!-- Owner: features/observability -->
+      <div class="view v-observability">
+        <div class="page">
+          <div><h2>Observability</h2><p class="lede">Every agent turn, traced end to end: the browser loop, each model call (prompt, response, tokens), each tool call with its input and output, and the backend spans they trigger. A turn that <em>claims</em> an action but ran no matching tool shows it here.</p></div>
+          <div class="adder" style="align-items:center"><button class="btn primary" id="obsRefresh">Refresh</button><span class="note" id="obsNote"></span></div>
+          <div class="obs">
+            <div class="obs-list" id="obsList"></div>
+            <div class="obs-detail" id="obsDetail"></div>
+          </div>
         </div>
       </div>
     </section>

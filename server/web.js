@@ -8,6 +8,8 @@
  * and /extract for reading a page's content. The key stays server-side; the
  * browser only ever calls our /api/web/* routes.
  */
+import { traceChild, SPAN_KIND, STATUS } from "./trace-core.js";
+
 export const TAVILY_SEARCH_URL = "https://api.tavily.com/search";
 export const TAVILY_EXTRACT_URL = "https://api.tavily.com/extract";
 
@@ -33,13 +35,20 @@ export async function handleSearch(body, env) {
   const apiKey = env.TAVILY_API_KEY;
   if (!apiKey) return noKey();
 
+  const span = traceChild("tavily.search", { kind: SPAN_KIND.HTTP });
+  span?.set({ "http.url": TAVILY_SEARCH_URL, "tavily.query": query });
+
   let res;
   try {
     res = await fetch(TAVILY_SEARCH_URL, tavilyInit(apiKey, { query, max_results: 5, search_depth: "basic" }));
   } catch {
+    span?.fail(new Error("upstream unreachable"));
     return unreachable();
   }
-  if (!res.ok) return err(res.status, "search_failed", `Search failed (${res.status}).`);
+  if (!res.ok) {
+    span?.set({ "http.response.status_code": res.status }).end(STATUS.ERROR, `search failed (${res.status})`);
+    return err(res.status, "search_failed", `Search failed (${res.status}).`);
+  }
 
   const data = await res.json();
   const results = (Array.isArray(data.results) ? data.results : []).map(r => ({
@@ -47,6 +56,7 @@ export async function handleSearch(body, env) {
     url: String(r.url || ""),
     snippet: String(r.content || "").slice(0, 1000)
   }));
+  span?.set({ "http.response.status_code": res.status, "tavily.result_count": results.length }).end(STATUS.OK);
   return { status: 200, json: { results } };
 }
 
@@ -56,20 +66,29 @@ export async function handleOpen(body, env) {
   const apiKey = env.TAVILY_API_KEY;
   if (!apiKey) return noKey();
 
+  const span = traceChild("tavily.extract", { kind: SPAN_KIND.HTTP });
+  span?.set({ "http.url": TAVILY_EXTRACT_URL, "tavily.target_url": url });
+
   let res;
   try {
     res = await fetch(TAVILY_EXTRACT_URL, tavilyInit(apiKey, { urls: url, format: "text" }));
   } catch {
+    span?.fail(new Error("upstream unreachable"));
     return unreachable();
   }
-  if (!res.ok) return err(res.status, "open_failed", `Could not open the page (${res.status}).`);
+  if (!res.ok) {
+    span?.set({ "http.response.status_code": res.status }).end(STATUS.ERROR, `open failed (${res.status})`);
+    return err(res.status, "open_failed", `Could not open the page (${res.status}).`);
+  }
 
   const data = await res.json();
   const first = Array.isArray(data.results) ? data.results[0] : null;
   if (!first) {
     const reason = Array.isArray(data.failed_results) && data.failed_results[0]?.error;
+    span?.set({ "http.response.status_code": res.status }).end(STATUS.ERROR, "page could not be read");
     return err(422, "open_failed", reason ? String(reason) : "The page could not be read.");
   }
   const text = String(first.raw_content || "").slice(0, TEXT_CAP);
+  span?.set({ "http.response.status_code": res.status, "tavily.text_length": text.length }).end(STATUS.OK);
   return { status: 200, json: { title: String(first.title || url), url, text } };
 }

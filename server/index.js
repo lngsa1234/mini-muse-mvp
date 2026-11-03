@@ -14,11 +14,16 @@ import { fileURLToPath } from "node:url";
 import { Readable } from "node:stream";
 import express from "express";
 import { buildUpstreamRequest, UPSTREAM_UNREACHABLE, health } from "./proxy.js";
+import { routeModel } from "./routing.js";
 import { currentUserId } from "./auth.js";
 import { handleList, handleCreate, handleDelete } from "./docs.js";
 import * as ideas from "./ideas.js";
 import * as goals from "./goals.js";
 import * as web from "./web.js";
+import * as trace from "./trace.js";
+import { withTrace } from "./trace-node.js";
+import { makeCollector, startSpan, parseTraceparent, SPAN_KIND, STATUS } from "./trace-core.js";
+import { writeBatch } from "./trace-store.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,57 +32,75 @@ const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..",
 app.use(express.json({ limit: "6mb" })); // base64 file uploads can be a few MB
 app.use(express.static(PUBLIC_DIR));
 
+// Run a { status, json } handler and send it; one try/catch for every route.
+// `name` labels the server span withTrace opens so child db/http spans attach.
+const done = res => ({ status, json }) => res.status(status).json(json);
+const route = (name, fn) => {
+  const traced = withTrace(name, fn, { userId: currentUserId });
+  return async (req, res) => {
+    try { done(res)(await traced(req)); } catch (e) { res.status(500).json({ error: e.message }); }
+  };
+};
+
 /* ---------- Library documents (Neon Postgres) ---------- */
-const sendDocs = res => ({ status, json }) => res.status(status).json(json);
-app.get("/api/docs", async (req, res) => {
-  try { sendDocs(res)(await handleList(currentUserId(req))); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.post("/api/docs", async (req, res) => {
-  try { sendDocs(res)(await handleCreate(currentUserId(req), req.body)); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.delete("/api/docs/:id", async (req, res) => {
-  try { sendDocs(res)(await handleDelete(currentUserId(req), req.params.id)); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
+app.get("/api/docs", route("GET /api/docs", req => handleList(currentUserId(req))));
+app.post("/api/docs", route("POST /api/docs", req => handleCreate(currentUserId(req), req.body)));
+app.delete("/api/docs/:id", route("DELETE /api/docs/:id", req => handleDelete(currentUserId(req), req.params.id)));
 
 /* ---------- Ideas & Goals (Neon) ---------- */
 // Register the same CRUD shape for both resources; handlers share server/docs.js's
 // { status, json } contract, so one helper wires list/create/update/delete.
 const wire = (base, h) => {
-  const done = res => ({ status, json }) => res.status(status).json(json);
-  const guard = fn => async (req, res) => {
-    try { done(res)(await fn(req)); } catch (e) { res.status(500).json({ error: e.message }); }
-  };
-  app.get(`/api/${base}`, guard(req => h.handleList(currentUserId(req))));
-  app.post(`/api/${base}`, guard(req => h.handleCreate(currentUserId(req), req.body)));
-  app.patch(`/api/${base}/:id`, guard(req => h.handleUpdate(currentUserId(req), req.params.id, req.body)));
-  app.delete(`/api/${base}/:id`, guard(req => h.handleDelete(currentUserId(req), req.params.id)));
+  app.get(`/api/${base}`, route(`GET /api/${base}`, req => h.handleList(currentUserId(req))));
+  app.post(`/api/${base}`, route(`POST /api/${base}`, req => h.handleCreate(currentUserId(req), req.body)));
+  app.patch(`/api/${base}/:id`, route(`PATCH /api/${base}/:id`, req => h.handleUpdate(currentUserId(req), req.params.id, req.body)));
+  app.delete(`/api/${base}/:id`, route(`DELETE /api/${base}/:id`, req => h.handleDelete(currentUserId(req), req.params.id)));
 };
 wire("ideas", ideas);
 wire("goals", goals);
 
 /* ---------- Web browsing (Tavily search + extract) ---------- */
-app.post("/api/web/search", async (req, res) => {
-  try { const { status, json } = await web.handleSearch(req.body, process.env); res.status(status).json(json); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.post("/api/web/open", async (req, res) => {
-  try { const { status, json } = await web.handleOpen(req.body, process.env); res.status(status).json(json); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
+app.post("/api/web/search", route("POST /api/web/search", req => web.handleSearch(req.body, process.env)));
+app.post("/api/web/open", route("POST /api/web/open", req => web.handleOpen(req.body, process.env)));
+
+/* ---------- Observability (ingest + viewer) ---------- */
+// Query-based dispatch shared with api/trace.js. These routes are NOT wrapped
+// in withTrace (ingest/reads would otherwise trace the tracer).
+const traceRoute = async (req, res) => {
+  try {
+    const out = await trace.dispatch(
+      { method: req.method, userId: currentUserId(req), query: req.query, body: req.body },
+      process.env
+    );
+    done(res)(out);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+};
+app.get("/api/trace", traceRoute);
+app.post("/api/trace", traceRoute);
 
 
 app.post("/api/llm", async (req, res) => {
   const up = buildUpstreamRequest(req.body, process.env);
   if (up.error) return res.status(up.error.status).json(up.error.body);
 
+  // Server-side LLM span: model, tier, latency-to-first-byte and HTTP status.
+  // Token usage is captured client-side (stream_options.include_usage); teeing
+  // the SSE stream here is out of scope. The span attaches to the browser's
+  // trace via its traceparent, or stands alone if there isn't one.
+  const span = llmSpan(req);
+
   let upstream;
   try {
     upstream = await fetch(up.url, up.init);
   } catch (e) {
+    if (span) { span.fail(e); flushLlm(span); }
     return res.status(UPSTREAM_UNREACHABLE.status).json(UPSTREAM_UNREACHABLE.body);
+  }
+
+  if (span) {
+    span.set({ "http.response.status_code": upstream.status });
+    span.end(upstream.ok ? STATUS.OK : STATUS.ERROR, upstream.ok ? undefined : `upstream ${upstream.status}`);
+    flushLlm(span);
   }
 
   res.status(upstream.status);
@@ -92,6 +115,31 @@ app.post("/api/llm", async (req, res) => {
   // Pipe the (possibly streaming) response straight through to the browser.
   Readable.fromWeb(upstream.body).pipe(res);
 });
+
+// Build an openai.chat LLM span (or null when OBS is off). Carries its own
+// collector so flushLlm can write it without an ALS context on this route.
+function llmSpan(req) {
+  const cfg = trace.obsConfig(process.env);
+  if (!cfg.enabled) return null;
+  const parent = parseTraceparent(req.headers.traceparent);
+  const collector = makeCollector({ traceId: parent ? parent.traceId : undefined, userId: currentUserId(req) });
+  const handle = startSpan(collector, "openai.chat", {
+    kind: SPAN_KIND.LLM,
+    parentSpanId: parent ? parent.spanId : null,
+    attributes: {
+      "gen_ai.system": "openai",
+      "gen_ai.request.model": routeModel(req.body, process.env),
+      "gen_ai.request.tier": (req.body && req.body.tier) || "default"
+    }
+  });
+  handle._collector = collector;
+  return handle;
+}
+
+function flushLlm(span) {
+  if (!span || !span._collector) return;
+  writeBatch({ spans: span._collector.spans }).catch(() => {});
+}
 
 app.get(["/healthz", "/api/healthz"], (_req, res) => res.json(health(process.env)));
 

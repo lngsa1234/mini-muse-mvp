@@ -81,7 +81,7 @@ details.mail pre{white-space:pre-wrap;font:13px/1.45 var(--f-body);margin:8px 0 
 .main{padding:0;overflow:hidden;display:grid}
 .view{display:none;min-height:0}
 .main[data-main="chat"] .v-chat{display:grid;grid-template-rows:1fr auto}
-.main[data-main="ideas"] .v-ideas,.main[data-main="goals"] .v-goals,.main[data-main="library"] .v-library,.main[data-main="connectors"] .v-connectors{display:block;overflow:auto}
+.main[data-main="ideas"] .v-ideas,.main[data-main="goals"] .v-goals,.main[data-main="library"] .v-library,.main[data-main="connectors"] .v-connectors,.main[data-main="observability"] .v-observability{display:block;overflow:auto}
 .page{padding:22px clamp(16px,3vw,40px);display:flex;flex-direction:column;gap:18px;max-width:1280px}
 .page h2{font:700 clamp(24px,3vw,30px)/1.1 var(--f-display);margin:0;letter-spacing:-.015em}
 .page .lede{margin:6px 0 0;color:var(--muted);max-width:62ch}

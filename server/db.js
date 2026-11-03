@@ -8,15 +8,49 @@
  */
 import { neon } from "@neondatabase/serverless";
 import { randomBytes } from "node:crypto";
+import { startChildSpan } from "./trace-node.js";
+import { SPAN_KIND, STATUS, capContent } from "./trace-core.js";
 
+let _raw = null;
 let _sql = null;
 export function sql() {
   if (!_sql) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not set. Add your Neon connection string to .env");
-    _sql = neon(url);
+    _raw = neon(url);
+    _sql = traced(_raw);
   }
   return _sql;
+}
+
+// Wrap neon's tagged-template function so each query emits a `db.query` child
+// span (statement text truncated, row count, duration) when a trace collector
+// is active. With no active context startChildSpan returns null and this is a
+// thin passthrough. The span never swallows the query's result or errors.
+function traced(raw) {
+  return (strings, ...values) => {
+    const span = startChildSpan("db.query", { kind: SPAN_KIND.DB });
+    if (span) span.set({ "db.system": "postgresql", "db.statement": capContent(statementText(strings), { cap: 2000 }) });
+    let out;
+    try {
+      out = raw(strings, ...values);
+    } catch (e) {
+      span?.fail(e);
+      throw e;
+    }
+    if (!span) return out;
+    return Promise.resolve(out).then(
+      rows => { span.set({ "db.row_count": Array.isArray(rows) ? rows.length : undefined }).end(STATUS.OK); return rows; },
+      err => { span.fail(err); throw err; }
+    );
+  };
+}
+
+// Reconstruct a readable statement from the tagged-template parts, with `?` for
+// each interpolated value (we never log the bound values themselves).
+function statementText(strings) {
+  const parts = Array.isArray(strings) ? strings : [String(strings || "")];
+  return parts.join("?").replace(/\s+/g, " ").trim();
 }
 
 export const newId = (prefix = "d") => prefix + randomBytes(9).toString("hex");

@@ -2,7 +2,7 @@
 import { $ } from "./dom.js";
 import { features, onClick } from "./registry.js";
 
-export const MAINS = ["chat", "ideas", "goals", "library", "connectors", "settings"];
+export const MAINS = ["chat", "ideas", "goals", "library", "connectors", "settings", "observability"];
 
 export function go(view) {
   if (MAINS.includes(view)) {

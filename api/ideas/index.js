@@ -6,14 +6,20 @@
  */
 import { currentUserId } from "../../server/auth.js";
 import { handleList, handleCreate } from "../../server/ideas.js";
+import { withTrace } from "../../server/trace-node.js";
 
 export const config = { runtime: "nodejs" };
 
 export default async function handler(req, res) {
   try {
     const userId = currentUserId(req);
-    if (req.method === "GET") return send(res, await handleList(userId));
-    if (req.method === "POST") return send(res, await handleCreate(userId, await readJson(req)));
+    if (req.method === "GET") {
+      return send(res, await withTrace("GET /api/ideas", () => handleList(userId))(req));
+    }
+    if (req.method === "POST") {
+      const body = await readJson(req);
+      return send(res, await withTrace("POST /api/ideas", () => handleCreate(userId, body))(req));
+    }
     return send(res, { status: 405, json: { error: "method not allowed" } });
   } catch (e) {
     return send(res, { status: 500, json: { error: e?.message || "server error" } });

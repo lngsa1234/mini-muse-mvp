@@ -10,6 +10,7 @@ import { expireApprovals } from "../workflow/approvals.js";
 import { buildInput } from "./prompt.js";
 import { makeTools } from "./tools.js";
 import { ERR } from "./errors.js";
+import { startTrace, setActive, flush } from "../core/trace.js";
 
 export async function run(userMsg) {
   if (rt.busy || !rt.sample) return;
@@ -19,17 +20,29 @@ export async function run(userMsg) {
   state.chat.push(msg);
   renderChat(); setPhase("thinking");
   rt.ctl = new AbortController();
+  // Root span for the whole turn: every LLM call, tool call and backend span
+  // this turn produces attaches under it (see core/trace.js).
+  const turnSpan = startTrace("agent.turn", {
+    rootKind: "agent_turn",
+    attributes: { "app.mode": rt.mode, "app.user_message_length": (userMsg.text || "").length }
+  });
+  const prevActive = setActive(turnSpan);
   try {
     const { text, truncated } = await rt.sample(buildInput(), {
-      modelTier: rt.mode, signal: rt.ctl.signal, tools: makeTools(msg),
+      modelTier: rt.mode, signal: rt.ctl.signal, tools: makeTools(msg, turnSpan), trace: turnSpan,
       onText: ({ text }) => { setPhase("answering"); msg.text = text; updateMsg(msg); }
     });
     msg.text = text; if (truncated) msg.error = "The reply was cut short. Ask for less at once.";
+    turnSpan.set({ "app.final_text_length": (text || "").length, "app.truncated": !!truncated }).end("ok");
   } catch (e) {
     if (e?.text && e.code !== "refused") msg.text = e.text;
     if (e?.code === "refused") msg.text = "";
     if (e?.code !== "cancelled") msg.error = ERR[e?.code] || "Muse couldn't reach the assistant. Send your message again.";
     if (["not_granted", "sampling_disabled", "tools_unavailable"].includes(e?.code)) disableChat(ERR[e.code]);
+    turnSpan.set({ "error.code": e?.code || "unknown" }).fail(e);
+  } finally {
+    setActive(prevActive);
+    flush();
   }
   expireApprovals();
   msg.live = false; if (!msg.text && !msg.error && msg.acts.length) msg.text = "Done.";

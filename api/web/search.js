@@ -4,13 +4,15 @@
  * Shares server/web.js with the local Express server.
  */
 import { handleSearch } from "../../server/web.js";
+import { withTrace } from "../../server/trace-node.js";
 
 export const config = { runtime: "nodejs" };
 
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") return send(res, { status: 405, json: { error: "method not allowed" } });
-    return send(res, await handleSearch(await readJson(req), process.env));
+    const body = await readJson(req);
+    return send(res, await withTrace("POST /api/web/search", () => handleSearch(body, process.env))(req));
   } catch (e) {
     return send(res, { status: 500, json: { error: e?.message || "server error" } });
   }

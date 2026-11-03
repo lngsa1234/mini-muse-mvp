@@ -3,6 +3,7 @@
  * for, feed the results back, repeat until the model answers (or MAX_STEPS).
  */
 import { streamTurn, cancelled } from "./transport.js";
+import { setActive } from "../core/trace.js";
 
 export const MAX_STEPS = 12; // safety cap on tool-use loop iterations
 
@@ -66,16 +67,26 @@ export async function runLoop(turns, opts) {
   const apiTools = toApiTools(tools);
 
   const { messages } = normalize(turns);
+  const root = opts.trace || null;
   let finalText = "";
   let truncated = false;
 
   for (let step = 0; step < MAX_STEPS; step++) {
     if (signal && signal.aborted) throw cancelled();
-    const turn = await streamTurn(
-      { tier, messages, tools: apiTools },
-      signal,
-      opts.onText
-    );
+    // One gen_ai.chat span per model round-trip; the server's openai.chat span
+    // joins it via the traceparent transport.js sends.
+    const chat = root ? root.child("gen_ai.chat", { kind: "llm", attributes: { "gen_ai.step": step } }) : null;
+    const prevActive = setActive(chat);
+    let turn;
+    try {
+      turn = await streamTurn({ tier, messages, tools: apiTools }, signal, opts.onText, chat);
+      chat?.set({ "gen_ai.response.finish_reason": turn.stopReason || null }).end("ok");
+    } catch (e) {
+      chat?.fail(e);
+      throw e;
+    } finally {
+      setActive(prevActive);
+    }
     finalText = turn.text;
     if (turn.stopReason === "max_tokens") truncated = true;
 

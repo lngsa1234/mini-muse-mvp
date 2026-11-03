@@ -21,16 +21,28 @@ import { save } from "../core/storage.js";
 import { rid } from "../core/dom.js";
 import { updateMsg } from "../features/chat/chat.js";
 import { requestApproval } from "../workflow/approvals.js";
+import { cap } from "../core/trace.js";
 
 // Names of the always-on tools, for display (features/hood).
 export const coreToolNames = () => features.flatMap(f => (f.tools || []).map(t => t.name));
 
-export function makeTools(msg) {
+export function makeTools(msg, turnSpan) {
   const act = (tool, label, extra = {}) => { const a = { id: rid(), tool, label, ...extra }; (msg.acts ||= []).push(a); updateMsg(msg); return a; };
   const wrap = (name, fn) => async (input, context) => {
     setPhase("tool"); msg.status = "Using " + name + "…"; updateMsg(msg);
-    try { const r = await fn(input || {}, context); audit(name, input, r); return r; }
-    catch (e) { audit(name, input, "Error: " + e.message); throw e; }
+    // tool.<name> span: raw input + output. A turn that *claims* an action but
+    // ran no tool shows no matching span here — the hallucination signal.
+    const span = turnSpan ? turnSpan.child("tool." + name, { kind: "tool", attributes: { "tool.name": name, "tool.input": cap(input || {}) } }) : null;
+    try {
+      const r = await fn(input || {}, context);
+      audit(name, input, r);
+      span?.set({ "tool.output": cap(r) }).end("ok");
+      return r;
+    } catch (e) {
+      audit(name, input, "Error: " + e.message);
+      span?.set({ "tool.output": cap(e && e.message ? e.message : String(e)) }).fail(e);
+      throw e;
+    }
     finally { renderMine(); save(); setPhase("thinking"); msg.status = "Thinking…"; updateMsg(msg); }
   };
   const helpersFor = name => ({

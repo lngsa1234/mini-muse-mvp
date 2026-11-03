@@ -5,6 +5,7 @@
  */
 import { currentUserId } from "../../server/auth.js";
 import { handleUpdate, handleDelete } from "../../server/goals.js";
+import { withTrace } from "../../server/trace-node.js";
 
 export const config = { runtime: "nodejs" };
 
@@ -12,8 +13,13 @@ export default async function handler(req, res) {
   try {
     const userId = currentUserId(req);
     const id = req.query?.id || req.url.split("?")[0].split("/").pop();
-    if (req.method === "PATCH") return send(res, await handleUpdate(userId, id, await readJson(req)));
-    if (req.method === "DELETE") return send(res, await handleDelete(userId, id));
+    if (req.method === "PATCH") {
+      const body = await readJson(req);
+      return send(res, await withTrace("PATCH /api/goals/:id", () => handleUpdate(userId, id, body))(req));
+    }
+    if (req.method === "DELETE") {
+      return send(res, await withTrace("DELETE /api/goals/:id", () => handleDelete(userId, id))(req));
+    }
     return send(res, { status: 405, json: { error: "method not allowed" } });
   } catch (e) {
     return send(res, { status: 500, json: { error: e?.message || "server error" } });

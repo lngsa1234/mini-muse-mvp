@@ -54,3 +54,72 @@ create table if not exists goals (
 
 create index if not exists goals_user_created
   on goals (user_id, created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- Observability: OpenTelemetry-style traces, spans and logs.
+-- Written by both the browser (shipped to /api/trace) and the backend. A trace
+-- is one agent turn (or a one-shot generation, or a standalone API request);
+-- spans are the steps within it (LLM calls, tool runs, DB queries, HTTP). See
+-- server/trace-core.js for the data model and public/js/core/trace.js for the
+-- client tracer. Rows are purged after OBS_RETENTION_DAYS (scripts/obs-purge.mjs).
+
+-- One row per trace, used for the observability list view.
+create table if not exists traces (
+  trace_id    text primary key,
+  user_id     text,
+  name        text not null,
+  root_kind   text,                               -- agent_turn | generate | api
+  started_at  timestamptz not null,
+  ended_at    timestamptz,
+  duration_ms integer,
+  status      text,                               -- ok | error
+  attributes  jsonb not null default '{}'::jsonb,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists traces_user_started
+  on traces (user_id, started_at desc);
+
+-- Spans: the steps within a trace. parent_span_id builds the tree and kind
+-- groups them (client | server | llm | tool | db | http). attributes carries
+-- gen_ai.* fields for LLM spans, events an append-only list of {name,t,attrs}.
+create table if not exists spans (
+  span_id        text primary key,
+  trace_id       text not null,
+  parent_span_id text,
+  name           text not null,
+  kind           text,
+  started_at     timestamptz not null,
+  ended_at       timestamptz,
+  duration_ms    integer,
+  status         text,                            -- ok | error
+  status_message text,
+  attributes     jsonb not null default '{}'::jsonb,
+  events         jsonb not null default '[]'::jsonb,
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists spans_trace
+  on spans (trace_id);
+
+create index if not exists spans_created
+  on spans (created_at);
+
+-- Structured logs, optionally correlated to a trace/span.
+create table if not exists logs (
+  id          text primary key,
+  trace_id    text,
+  span_id     text,
+  user_id     text,
+  ts          timestamptz not null,
+  severity    text not null,                      -- debug | info | warn | error
+  body        text not null,
+  attributes  jsonb not null default '{}'::jsonb,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists logs_trace
+  on logs (trace_id);
+
+create index if not exists logs_created
+  on logs (created_at);

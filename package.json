@@ -8,6 +8,7 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "db:init": "node scripts/db-init.mjs",
+    "obs:purge": "node scripts/obs-purge.mjs",
     "test": "node --test",
     "evals": "node evals/run.mjs"
   },

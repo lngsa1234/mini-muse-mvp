@@ -30,6 +30,8 @@ import "./features/connectors/index.js";
 import { initSettings } from "./features/settings/settings.js";
 import "./features/hood/hood.js";
 import "./features/web/web.js";
+import "./features/observability/observability.js";
+import { initTracer } from "./core/trace.js";
 
 /* ---------- wire up the page ---------- */
 replaceState(blank());
@@ -38,6 +40,7 @@ initChat(); initCheckin(); initIdeas(); initGoals(); initSettings();
 
 /* ---------- boot ---------- */
 renderAll();
+initTracer();   // load capture config, start periodic flush (best-effort)
 (async () => {
   const saved = await loadState();
   if (saved) {
