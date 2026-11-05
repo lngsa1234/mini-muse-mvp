@@ -16,6 +16,7 @@ const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
 const COMPLETION_CLAIM = /\b(?:updated|finished|completed|done|marked|mark)\b/i;
 const GOAL_PROGRESS_REQUEST = /\b(?:goal|step|plan)\b/i;
 const GOAL_PROGRESS_ACTION = /\b(?:forward|next|progress|update)\b/i;
+const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|jobs?|open positions?|roles?)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
@@ -27,11 +28,29 @@ function documentVerificationStep(text) {
   return candidate ? { ...candidate, directCompletion } : null;
 }
 
+function jobResearchStep(text) {
+  const message = String(text || "");
+  if (!GOAL_PROGRESS_REQUEST.test(message) || !GOAL_PROGRESS_ACTION.test(message)) return null;
+  return state.plans.flatMap(goal => goal.steps.map((step, index) => ({ goal, step, index })))
+    .find(({ goal, step, index }) => step.status !== "done" && JOB_RESEARCH_STEP.test(step.text) && goal.steps.slice(0, index).every(previous => previous.status === "done")) || null;
+}
+
 async function verifyDocumentCompletion(check, tools, signal) {
   const search = tools.find(tool => tool.name === "docs_search");
   if (!check || !search) return null;
   const result = await search.execute({ query: "résumé resume cover letter CV" }, { signal });
   return { ...check, matches: Array.isArray(result) ? result : [] };
+}
+
+async function researchOpenPositions(check, tools, signal) {
+  const search = tools.find(tool => tool.name === "web_search");
+  if (!check || !search) return null;
+  const query = "entry level technology consulting business analyst finance jobs";
+  try {
+    return { ...check, query, results: await search.execute({ query }, { signal }) };
+  } catch (error) {
+    return { ...check, query, error: error?.message || String(error) };
+  }
 }
 
 function documentCompletionReply(verification) {
@@ -61,11 +80,16 @@ export async function run(userMsg) {
   try {
     const tools = makeTools(msg, turnSpan);
     const verification = await verifyDocumentCompletion(documentVerificationStep(userMsg.text), tools, rt.ctl.signal);
+    const research = verification ? null : await researchOpenPositions(jobResearchStep(userMsg.text), tools, rt.ctl.signal);
     let text = "", truncated = false;
     if (verification) {
       text = documentCompletionReply(verification);
     } else {
-      const out = await rt.sample(buildInput(), {
+      const input = buildInput();
+      if (research) input.push({ role: "user", content: research.error
+        ? `Public web research for the current goal step could not run: ${research.error}. Do not claim job listings were found or use Gmail as a substitute for public web research.`
+        : `Public web research just ran for the current goal step. Use these results to answer with current openings and their URLs; do not use Gmail as a substitute for public job research:\n${research.results}` });
+      const out = await rt.sample(input, {
         modelTier: rt.mode, signal: rt.ctl.signal, tools, trace: turnSpan,
         onText: ({ text: partial }) => { setPhase("answering"); msg.text = partial; updateMsg(msg); }
       });
