@@ -60,7 +60,11 @@ defineFeature({
     { name: "docs_read", description: "Read a whole document from the Library by doc_id (first 6000 characters).",
       inputSchema: { type: "object", properties: { doc_id: S }, required: ["doc_id"] },
       run: ({ doc_id }, _ctx, h) => {
-        const d = state.docs.find(x => x.id === String(doc_id)); if (!d) throw new Error("no document " + doc_id);
+        const key = String(doc_id);
+        // Models sometimes pass the human-readable title returned by docs_search
+        // instead of its opaque doc_id. Accept an exact title as a safe fallback.
+        const d = state.docs.find(x => x.id === key) || state.docs.find(x => x.title === key);
+        if (!d) throw new Error("no document " + doc_id);
         h.act(d.title); return { title: d.title, text: d.text.slice(0, 6000) };
       } },
     { name: "docs_add", description: "Add a document or note to the user's Library so it can be searched and cited later. title is a short label; text is the full content. Returns the doc_id.",
