@@ -30,6 +30,7 @@ import { initConnectors } from "./features/connectors/index.js";
 import { initSettings } from "./features/settings/settings.js";
 import "./features/hood/hood.js";
 import "./features/web/web.js";
+import "./features/browser/browser.js";
 import "./features/observability/observability.js";
 import { initTracer } from "./core/trace.js";
 
