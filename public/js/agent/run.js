@@ -20,6 +20,7 @@ const GOAL_CONTINUATION = /\b(?:try again|again|continue|go ahead|proceed)\b/i;
 const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|jobs?|open positions?|roles?)\b/i;
 const APPLICATION_REQUEST = /\b(?:apply|application|submit)\b/i;
 const EXPLICIT_EMAIL_REQUEST = /\b(?:email|gmail|mail)\b/i;
+const APPLICATION_CONTINUATION = /\b(?:send|submit|try again|again|continue)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
@@ -65,7 +66,10 @@ async function researchOpenPositions(check, tools, signal) {
 }
 
 async function inspectApplicationPage(text, tools) {
-  if (!APPLICATION_REQUEST.test(String(text || "")) || EXPLICIT_EMAIL_REQUEST.test(String(text || ""))) return null;
+  const message = String(text || "");
+  const recentAssistantText = state.chat.slice(-4).filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
+  const isContinuation = APPLICATION_CONTINUATION.test(message) && APPLICATION_REQUEST.test(recentAssistantText);
+  if (!(APPLICATION_REQUEST.test(message) || isContinuation) || EXPLICIT_EMAIL_REQUEST.test(message)) return null;
   const snapshot = tools.find(tool => tool.name === "browser_snapshot");
   if (!snapshot) return { error: "The Chrome Browser Bridge is not available." };
   try { return { page: await snapshot.execute({}, {}) }; }
