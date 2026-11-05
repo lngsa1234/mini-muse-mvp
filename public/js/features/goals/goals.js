@@ -58,7 +58,7 @@ defineFeature({
   nav: { el: "navGoals", badge: () => { const active = state.plans.filter(p => p.steps.some(s => s.status !== "done")).length; return state.plans.length ? `${active} active` : ""; } },
   render() { renderGoals(); renderGoalSuggs(); },
   onShow: maybeUpdateGoals,
-  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Mark a step doing or done only for the specific step a tool just did this turn, and pass evidence naming that tool; update_step refuses otherwise. One action (e.g. a web search) only advances the step it did — not other steps you merely intend to do or assume are done. If no tool can do a step, do not silently skip it: set that step to blocked and tell the user what you need from them (or offer an alternative). For a step about a document like a résumé or cover letter, never try to edit the user's files — use docs_search to check the Library: if a suitable document already exists that is enough (mark the step done with evidence docs_search); if none exists, ask the user to add one or offer to draft one with docs_add. Never assume a document or result exists. If the user says they did a step themselves, tell them to click it — you cannot mark it for them.",
+  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Mark a step doing or done only for the specific step a tool just did this turn, and pass evidence naming that tool; update_step refuses otherwise. One action (e.g. a web search) only advances the step it did — not other steps you merely intend to do or assume are done. If no tool can do a step, do not silently skip it: set that step to blocked and tell the user what you need from them (or offer an alternative). For a step about a document like a résumé or cover letter, never try to edit the user's files — use docs_search to check the Library: a suitable résumé is enough for a combined “résumé and cover letter” step unless the user explicitly requires a cover letter. If none exists, ask the user to add one or offer to draft one with docs_add. Never assume a document or result exists. If the user says they did a step themselves, tell them to click it — you cannot mark it for them.",
   tools: [
     { name: "create_goal", description: "Create a goal on the Goals page with 3-6 ordered steps. Pass idea_id if it comes from an idea. Returns the goal_id and numbered steps.",
       inputSchema: { type: "object", properties: { goal: S, steps: { type: "array", items: S }, idea_id: S }, required: ["goal", "steps"] },
@@ -74,7 +74,7 @@ defineFeature({
         h.act(`${goal} (${created.steps.length} steps)`);
         return { goal_id: created.id, steps: created.steps.map((s, i) => `${i + 1}. ${s.text}`) };
       } },
-    { name: "update_step", description: "Set a goal step's status. step is 1-based. doing and done require evidence: name the specific tool you used THIS turn to do THIS step's work (e.g. evidence:\"web_search\"). The tool refuses doing/done unless that tool actually ran this turn. One tool call does not justify marking other, unrelated steps. Leave a step todo until a tool has really done it — a plan is not progress. The user marks steps they did themselves by clicking them; you cannot do that for them.",
+    { name: "update_step", description: "Set a goal step's status. step is 1-based. doing and done require evidence: name the specific tool you used THIS turn to do THIS step's work (e.g. evidence:\"web_search\"). A résumé/cover-letter step requires a successful docs_search result; a résumé is enough for a combined step unless the user explicitly requires a cover letter. The tool refuses doing/done unless that tool actually ran this turn. One tool call does not justify marking other, unrelated steps. Leave a step todo until a tool has really done it — a plan is not progress. The user marks steps they did themselves by clicking them; you cannot do that for them.",
       inputSchema: { type: "object", properties: { goal_id: S, step: { type: "integer" }, status: { type: "string", enum: STATUSES }, evidence: S }, required: ["goal_id", "step", "status"] },
       run: async ({ goal_id, step, status, evidence }, _ctx, h) => {
         const g = state.plans.find(p => p.id === String(goal_id)); if (!g) throw new Error("no goal " + goal_id);
@@ -87,10 +87,12 @@ defineFeature({
           const worked = h.turnActions().filter(a => !BOOKKEEPING.has(a.tool));
           if (!worked.length) throw new Error(`Cannot mark "${s.text}" as ${status}: no tool did any work this turn. Do it with a tool first, otherwise leave it todo.`);
           const cite = String(evidence || "").toLowerCase();
-          if (!cite || !worked.some(a => cite.includes(a.tool.toLowerCase())))
+          const documentProof = worked.some(a => a.tool === "docs_search" && a.matches > 0 && /\b(?:résumé|resume|cv|cover letter)\b/i.test(a.query || ""));
+          if (DOCUMENT_STEP.test(s.text)) {
+            if (!documentProof) throw new Error(`Cannot mark "${s.text}" as ${status}: first use docs_search for a résumé and find a matching Library document. A cover letter is optional unless the user explicitly requires one.`);
+          } else if (!cite || !worked.some(a => cite.includes(a.tool.toLowerCase()))) {
             throw new Error(`Cannot mark "${s.text}" as ${status}: set "evidence" to the tool you used this turn for THIS step. Tools used this turn: ${worked.map(a => a.tool).join(", ")}. If none did this step's work, leave it todo.`);
-          if (DOCUMENT_STEP.test(s.text) && !worked.some(a => a.tool === "docs_search" && a.matches > 0 && /\b(?:résumé|resume|cv|cover letter)\b/i.test(a.query || "")))
-            throw new Error(`Cannot mark "${s.text}" as ${status}: first use docs_search for a résumé or cover letter and find a matching Library document. If the user did this work outside Mini Muse, they must click the step themselves.`);
+          }
         }
         replaceGoal(await updateStep(String(goal_id), Number(step), status));
         h.act(`${s.text} → ${status}${evidence ? ` (via ${evidence})` : ""}`); return "Updated.";
