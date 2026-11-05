@@ -13,4 +13,7 @@ export function short(v, n = 140) { const s = typeof v === "string" ? v : JSON.s
 
 // Keyword tokenizer used by Library search and the Mail connector.
 const STOP = new Set("a an the and or of to in on at for is are was were be it this that with as by from what when where who how do does did my me i you your we our they".split(" "));
-export const toks = s => (String(s).toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !STOP.has(w) && w.length > 1);
+export const toks = s => String(s)
+  .normalize("NFKD").replace(/\p{M}/gu, "")
+  .replace(/([a-z])([A-Z])/g, "$1 $2")
+  .toLowerCase().match(/[a-z0-9]+/g)?.filter(w => !STOP.has(w) && w.length > 1) || [];
