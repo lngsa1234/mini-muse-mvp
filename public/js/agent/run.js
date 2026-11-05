@@ -16,12 +16,13 @@ const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
 const COMPLETION_CLAIM = /\b(?:updated|finished|completed|done|marked|mark)\b/i;
 const GOAL_PROGRESS_REQUEST = /\b(?:goal|step|plan)\b/i;
 const GOAL_PROGRESS_ACTION = /\b(?:forward|next|progress|update)\b/i;
+const GOAL_CONTINUATION = /\b(?:try again|again|continue|go ahead|proceed)\b/i;
 const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|jobs?|open positions?|roles?)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
   const directCompletion = DOCUMENT_STEP.test(message) && COMPLETION_CLAIM.test(message);
-  const moveGoalForward = GOAL_PROGRESS_REQUEST.test(message) && GOAL_PROGRESS_ACTION.test(message);
+  const moveGoalForward = (GOAL_PROGRESS_REQUEST.test(message) && GOAL_PROGRESS_ACTION.test(message)) || GOAL_CONTINUATION.test(message);
   if (!directCompletion && !moveGoalForward) return null;
   const candidate = state.plans.flatMap(goal => goal.steps.map((step, index) => ({ goal, step, index })))
     .find(({ goal, step, index }) => step.status !== "done" && DOCUMENT_STEP.test(step.text) && goal.steps.slice(0, index).every(previous => previous.status === "done"));
@@ -30,7 +31,7 @@ function documentVerificationStep(text) {
 
 function jobResearchStep(text) {
   const message = String(text || "");
-  if (!GOAL_PROGRESS_REQUEST.test(message) || !GOAL_PROGRESS_ACTION.test(message)) return null;
+  if (!(GOAL_PROGRESS_REQUEST.test(message) && GOAL_PROGRESS_ACTION.test(message)) && !GOAL_CONTINUATION.test(message)) return null;
   return state.plans.flatMap(goal => goal.steps.map((step, index) => ({ goal, step, index })))
     .find(({ goal, step, index }) => step.status !== "done" && JOB_RESEARCH_STEP.test(step.text) && goal.steps.slice(0, index).every(previous => previous.status === "done")) || null;
 }
@@ -39,7 +40,14 @@ async function verifyDocumentCompletion(check, tools, signal) {
   const search = tools.find(tool => tool.name === "docs_search");
   if (!check || !search) return null;
   const result = await search.execute({ query: "résumé resume cover letter CV" }, { signal });
-  return { ...check, matches: Array.isArray(result) ? result : [] };
+  const matches = Array.isArray(result) ? result : [];
+  const update = tools.find(tool => tool.name === "update_step");
+  let marked = false;
+  if (matches.length && update) {
+    await update.execute({ goal_id: check.goal.id, step: check.index + 1, status: "done", evidence: "docs_search" }, { signal });
+    marked = true;
+  }
+  return { ...check, matches, marked };
 }
 
 async function researchOpenPositions(check, tools, signal) {
@@ -55,6 +63,7 @@ async function researchOpenPositions(check, tools, signal) {
 
 function documentCompletionReply(verification) {
   const step = verification.step.text;
+  if (verification.marked) return `I checked your Library, found ${verification.matches.map(match => match.title).join(", ")}, and marked “${step}” done based on that document.`;
   if (verification.matches.length) {
     const titles = verification.matches.map(match => match.title).join(", ");
     return `I checked your Library and found ${titles}. I did not skip or mark “${step}” done: please click that goal step to record work you completed yourself.`;
