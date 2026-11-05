@@ -14,6 +14,7 @@ const STATUSES = ["todo", "doing", "done", "blocked"];
 // Tools that only record intent, not real work — they can't count as proof of
 // progress when the model tries to mark a step doing/done.
 const BOOKKEEPING = new Set(["create_goal", "update_step"]);
+const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
 
 // Keep the in-memory cache (state.plans/state.ideas) in sync with the server.
 export function replaceGoal(g) { const i = state.plans.findIndex(p => p.id === g.id); if (i >= 0) state.plans[i] = g; else state.plans.push(g); }
@@ -88,6 +89,8 @@ defineFeature({
           const cite = String(evidence || "").toLowerCase();
           if (!cite || !worked.some(a => cite.includes(a.tool.toLowerCase())))
             throw new Error(`Cannot mark "${s.text}" as ${status}: set "evidence" to the tool you used this turn for THIS step. Tools used this turn: ${worked.map(a => a.tool).join(", ")}. If none did this step's work, leave it todo.`);
+          if (DOCUMENT_STEP.test(s.text) && !worked.some(a => a.tool === "docs_search" && a.matches > 0 && /\b(?:résumé|resume|cv|cover letter)\b/i.test(a.query || "")))
+            throw new Error(`Cannot mark "${s.text}" as ${status}: first use docs_search for a résumé or cover letter and find a matching Library document. If the user did this work outside Mini Muse, they must click the step themselves.`);
         }
         replaceGoal(await updateStep(String(goal_id), Number(step), status));
         h.act(`${s.text} → ${status}${evidence ? ` (via ${evidence})` : ""}`); return "Updated.";

@@ -47,7 +47,7 @@ export function makeTools(msg, turnSpan) {
     finally { renderMine(); save(); setPhase("thinking"); msg.status = "Thinking…"; updateMsg(msg); }
   };
   const helpersFor = name => ({
-    act: label => act(name, label),
+    act: (label, extra) => act(name, label, extra),
     ask: (tool, card, context) => requestApproval(msg, act, tool, card, context),
     needsAsk: k => CONNECTORS[k].lockAsk || state.connectors[k].writes === "ask",
     refusal: ok => ok === null ? "The user did not answer. Nothing was changed." : "The user declined. Nothing was changed.",

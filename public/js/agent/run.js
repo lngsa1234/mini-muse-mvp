@@ -12,6 +12,31 @@ import { makeTools } from "./tools.js";
 import { ERR } from "./errors.js";
 import { startTrace, setActive, flush } from "../core/trace.js";
 
+const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
+const COMPLETION_CLAIM = /\b(?:updated|finished|completed|done|marked|mark)\b/i;
+
+function documentCompletionStep(text) {
+  if (!DOCUMENT_STEP.test(String(text || "")) || !COMPLETION_CLAIM.test(String(text || ""))) return null;
+  return state.plans.flatMap(goal => goal.steps.map((step, index) => ({ goal, step, index })))
+    .find(({ step }) => step.status !== "done" && DOCUMENT_STEP.test(step.text)) || null;
+}
+
+async function verifyDocumentCompletion(check, tools, signal) {
+  const search = tools.find(tool => tool.name === "docs_search");
+  if (!check || !search) return null;
+  const result = await search.execute({ query: "résumé resume cover letter CV" }, { signal });
+  return { ...check, matches: Array.isArray(result) ? result : [] };
+}
+
+function documentCompletionReply(verification) {
+  const step = verification.step.text;
+  if (verification.matches.length) {
+    const titles = verification.matches.map(match => match.title).join(", ");
+    return `I checked your Library and found ${titles}. I did not mark “${step}” done: you said you completed the update yourself, so please click that goal step to record it.`;
+  }
+  return `I checked your Library but could not find a résumé or cover letter to verify “${step}.” Please add the document to the Library, or click the goal step yourself if you completed it outside Mini Muse.`;
+}
+
 export async function run(userMsg) {
   if (rt.busy || !rt.sample) return;
   rt.busy = true; setBusy(true); go("chat");
@@ -28,12 +53,18 @@ export async function run(userMsg) {
   });
   const prevActive = setActive(turnSpan);
   try {
-    const { text, truncated } = await rt.sample(buildInput(), {
-      modelTier: rt.mode, signal: rt.ctl.signal, tools: makeTools(msg, turnSpan), trace: turnSpan,
+    const tools = makeTools(msg, turnSpan);
+    const verification = await verifyDocumentCompletion(documentCompletionStep(userMsg.text), tools, rt.ctl.signal);
+    const input = buildInput();
+    if (verification) input.push({ role: "user", content: `Mandatory document verification ran before this reply. Library matches: ${verification.matches.length ? verification.matches.map(match => match.title).join(", ") : "none"}. Do not claim the user’s résumé or cover letter was verified, changed, or marked done beyond this result.` });
+    const { text, truncated } = await rt.sample(input, {
+      modelTier: rt.mode, signal: rt.ctl.signal, tools, trace: turnSpan,
       onText: ({ text }) => { setPhase("answering"); msg.text = text; updateMsg(msg); }
     });
-    msg.text = text; if (truncated) msg.error = "The reply was cut short. Ask for less at once.";
-    turnSpan.set({ "app.final_text_length": (text || "").length, "app.truncated": !!truncated }).end("ok");
+    const finalText = verification ? documentCompletionReply(verification) : text;
+    msg.text = finalText;
+    if (truncated) msg.error = "The reply was cut short. Ask for less at once.";
+    turnSpan.set({ "app.final_text_length": (finalText || "").length, "app.truncated": !!truncated }).end("ok");
   } catch (e) {
     if (e?.text && e.code !== "refused") msg.text = e.text;
     if (e?.code === "refused") msg.text = "";

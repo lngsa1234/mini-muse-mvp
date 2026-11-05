@@ -54,7 +54,7 @@ defineFeature({
       inputSchema: { type: "object", properties: { query: S }, required: ["query"] },
       run: ({ query }, _ctx, h) => {
         const r = searchDocs(String(query || ""));
-        h.act(`“${query}” → ${r.length ? r.map(x => x.title + " (" + x.score + ")").join(", ") : "no matches"}`);
+        h.act(`“${query}” → ${r.length ? r.map(x => x.title + " (" + x.score + ")").join(", ") : "no matches"}`, { query: String(query || ""), matches: r.length });
         return r.length ? r : "No passages matched. Try other keywords.";
       } },
     { name: "docs_read", description: "Read a whole document from the Library by doc_id (first 6000 characters).",
