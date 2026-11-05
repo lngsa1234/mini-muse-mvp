@@ -66,6 +66,13 @@ npm test           # server unit tests
 
 Then open http://localhost:3000.
 
+### Integration guides
+
+Detailed setup instructions live in [docs/setup](docs/setup/README.md):
+
+- [Google Cloud Gmail and Calendar OAuth](docs/setup/google-gmail-calendar.md)
+- [Chrome Browser Bridge extension](docs/setup/chrome-browser-bridge.md)
+
 ### Google Gmail and Calendar setup
 
 In Google Cloud Console, enable the Gmail API and Google Calendar API, create
