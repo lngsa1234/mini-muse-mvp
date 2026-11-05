@@ -51,8 +51,9 @@ async function verifyDocumentCompletion(check, tools, signal) {
 }
 
 async function researchOpenPositions(check, tools, signal) {
+  if (!check) return null;
   const search = tools.find(tool => tool.name === "web_search");
-  if (!check || !search) return null;
+  if (!search) return { ...check, webSearchDisabled: true };
   const query = "entry level technology consulting business analyst finance jobs";
   try {
     return { ...check, query, results: await search.execute({ query }, { signal }) };
@@ -93,6 +94,8 @@ export async function run(userMsg) {
     let text = "", truncated = false;
     if (verification) {
       text = documentCompletionReply(verification);
+    } else if (research?.webSearchDisabled) {
+      text = "Web search is turned off, so I can’t research public job openings. Turn it on in Settings → Web search, then ask me to move this goal forward again. I won’t use Gmail as a substitute for public job research.";
     } else {
       const input = buildInput();
       if (research) input.push({ role: "user", content: research.error
