@@ -4,14 +4,14 @@ import * as google from "../../server/google.js";
 export const config = { runtime: "nodejs" };
 
 export default async function handler(req, res) {
-  // Vercel normally supplies catch-all path segments through req.query.action.
-  // Some deployments only expose query-string values there, so retain a path
-  // fallback to ensure `/api/google/authorize` resolves reliably.
+  // Vercel normally supplies catch-all path segments through req.query.action,
+  // but some deployments truncate a nested path such as `mail/send` to `mail`.
+  // The request pathname is the complete, canonical source for this route.
   const routedAction = (Array.isArray(req.query?.action) ? req.query.action : [req.query?.action]).filter(Boolean).join("/");
   const pathAction = new URL(req.url, "http://localhost").pathname
     .replace(/^\/api\/google\/?/, "")
     .replace(/\/$/, "");
-  const action = routedAction || pathAction;
+  const action = pathAction || routedAction;
   const body = await readJson(req);
   const handlers = {
     status: () => google.handleGoogleStatus(req, process.env),
