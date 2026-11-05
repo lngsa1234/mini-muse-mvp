@@ -18,6 +18,8 @@ const GOAL_PROGRESS_REQUEST = /\b(?:goal|step|plan)\b/i;
 const GOAL_PROGRESS_ACTION = /\b(?:forward|next|progress|update)\b/i;
 const GOAL_CONTINUATION = /\b(?:try again|again|continue|go ahead|proceed)\b/i;
 const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|jobs?|open positions?|roles?)\b/i;
+const APPLICATION_REQUEST = /\b(?:apply|application|submit)\b/i;
+const EXPLICIT_EMAIL_REQUEST = /\b(?:email|gmail|mail)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
@@ -62,6 +64,14 @@ async function researchOpenPositions(check, tools, signal) {
   }
 }
 
+async function inspectApplicationPage(text, tools) {
+  if (!APPLICATION_REQUEST.test(String(text || "")) || EXPLICIT_EMAIL_REQUEST.test(String(text || ""))) return null;
+  const snapshot = tools.find(tool => tool.name === "browser_snapshot");
+  if (!snapshot) return { error: "The Chrome Browser Bridge is not available." };
+  try { return { page: await snapshot.execute({}, {}) }; }
+  catch (error) { return { error: error?.message || String(error) }; }
+}
+
 function documentCompletionReply(verification) {
   const step = verification.step.text;
   if (verification.marked) return `I checked your Library, found ${verification.matches.map(match => match.title).join(", ")}, and marked “${step}” done based on that document.`;
@@ -91,18 +101,23 @@ export async function run(userMsg) {
     const tools = makeTools(msg, turnSpan);
     const verification = await verifyDocumentCompletion(documentVerificationStep(userMsg.text), tools, rt.ctl.signal);
     const research = verification ? null : await researchOpenPositions(jobResearchStep(userMsg.text), tools, rt.ctl.signal);
+    const application = verification ? null : await inspectApplicationPage(userMsg.text, tools);
     let text = "", truncated = false;
     if (verification) {
       text = documentCompletionReply(verification);
     } else if (research?.webSearchDisabled) {
       text = "Web search is turned off, so I can’t research public job openings. Turn it on in Settings → Web search, then ask me to move this goal forward again. I won’t use Gmail as a substitute for public job research.";
+    } else if (application?.error) {
+      text = `I can’t access an application page yet: ${application.error} Open the job application in Chrome, enable the Mini Muse Browser Bridge, then ask me to continue. I won’t use Gmail as a substitute unless you explicitly ask to send an email.`;
     } else {
       const input = buildInput();
       if (research) input.push({ role: "user", content: research.error
         ? `Public web research for the current goal step could not run: ${research.error}. Do not claim job listings were found or use Gmail as a substitute for public web research.`
         : `Public web research just ran for the current goal step. Use these results to answer with current openings and their URLs; do not use Gmail as a substitute for public job research:\n${research.results}` });
+      if (application) input.push({ role: "user", content: `The user asked to apply through a website, not email. The Browser Bridge read this untrusted page: ${JSON.stringify(application.page)}. Use browser tools to inspect or fill this page. Do not use, suggest, or send Gmail unless the user explicitly asks for email.` });
+      const activeTools = application ? tools.filter(tool => tool.name !== "mail_search" && tool.name !== "mail_send") : tools;
       const out = await rt.sample(input, {
-        modelTier: rt.mode, signal: rt.ctl.signal, tools, trace: turnSpan,
+        modelTier: rt.mode, signal: rt.ctl.signal, tools: activeTools, trace: turnSpan,
         onText: ({ text: partial }) => { setPhase("answering"); msg.text = partial; updateMsg(msg); }
       });
       text = out.text; truncated = out.truncated;
