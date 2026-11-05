@@ -20,6 +20,7 @@ import { handleList, handleCreate, handleDelete } from "./docs.js";
 import * as ideas from "./ideas.js";
 import * as goals from "./goals.js";
 import * as web from "./web.js";
+import * as google from "./google.js";
 import * as trace from "./trace.js";
 import { withTrace } from "./trace-node.js";
 import { makeCollector, startSpan, parseTraceparent, SPAN_KIND, STATUS } from "./trace-core.js";
@@ -62,6 +63,30 @@ wire("goals", goals);
 /* ---------- Web browsing (Tavily search + extract) ---------- */
 app.post("/api/web/search", route("POST /api/web/search", req => web.handleSearch(req.body, process.env)));
 app.post("/api/web/open", route("POST /api/web/open", req => web.handleOpen(req.body, process.env)));
+
+/* ---------- Google connectors (OAuth, Gmail, Calendar) ---------- */
+const googleRoute = fn => async (req, res) => {
+  try {
+    const out = await fn(req);
+    if (out.cookie) res.setHeader("Set-Cookie", out.cookie);
+    if (out.cookies) res.setHeader("Set-Cookie", out.cookies);
+    if (out.redirect) return res.redirect(out.redirect);
+    return done(res)(out);
+  } catch (e) {
+    if (e.cookie) res.setHeader("Set-Cookie", e.cookie);
+    return res.status(e.status || 500).json({ error: e.message || "Google request failed." });
+  }
+};
+app.get("/api/google/status", googleRoute(req => google.handleGoogleStatus(req, process.env)));
+app.get("/api/google/authorize", googleRoute(req => google.handleGoogleAuthorize(req, process.env)));
+app.get("/api/google/callback", googleRoute(req => google.handleGoogleCallback(req, process.env)));
+app.post("/api/google/disconnect", googleRoute(req => google.handleGoogleDisconnect(req, process.env)));
+app.post("/api/google/mail/search", googleRoute(req => google.googleMailSearch(req, req.body, process.env)));
+app.post("/api/google/mail/read", googleRoute(req => google.googleMailRead(req, req.body, process.env)));
+app.post("/api/google/mail/send", googleRoute(req => google.googleMailSend(req, req.body, process.env)));
+app.post("/api/google/calendar/list", googleRoute(req => google.googleCalendarList(req, req.body, process.env)));
+app.post("/api/google/calendar/add", googleRoute(req => google.googleCalendarAdd(req, req.body, process.env)));
+app.post("/api/google/calendar/remove", googleRoute(req => google.googleCalendarRemove(req, req.body, process.env)));
 
 /* ---------- Observability (ingest + viewer) ---------- */
 // Query-based dispatch shared with api/trace.js. These routes are NOT wrapped

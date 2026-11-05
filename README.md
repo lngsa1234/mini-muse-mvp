@@ -3,8 +3,8 @@
 A self-hostable version of **Mini Muse**, a "personal AI agent" demo (a classroom
 replica of the Muse concept). It has a chat agent loop, an Ideas page, a Goals
 page with plans the agent works through, a Library of documents it searches
-and cites, pluggable Connectors (Mail, Calendar, Contacts) backed by sample
-data, and a Settings page with memory, an activity audit, and reset.
+and cites, pluggable Connectors (Gmail, Google Calendar, Contacts), and a
+Settings page with memory, an activity audit, and reset.
 
 The front end started as a single-file prototype (kept in
 `docs/reference/original-prototype.html`) and is now split into small ES
@@ -44,7 +44,10 @@ https://api.openai.com/v1/chat/completions
   ideas, goals, memory, prefs) still uses `localStorage`. The document schema
   has a `user_id` column so it's multi-user ready, but ships with one hardcoded
   dev user (see `server/auth.js`) until auth is added.
-- **Connectors use sample data only** — nothing touches real accounts.
+- **Gmail and Google Calendar connectors** use a Google OAuth grant. Tokens
+  are encrypted server-side into an HttpOnly cookie and never enter browser
+  storage or the model prompt. Both connectors require the Google environment
+  variables below; connecting either requests one shared Google grant.
 
 ## Setup
 
@@ -62,6 +65,18 @@ npm test           # server unit tests
 ```
 
 Then open http://localhost:3000.
+
+### Google Gmail and Calendar setup
+
+In Google Cloud Console, enable the Gmail API and Google Calendar API, create
+an OAuth 2.0 **Web application** client, and add
+`http://localhost:3000/api/google/callback` as an authorized redirect URI.
+Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and a
+base64 32-byte `GOOGLE_TOKEN_ENCRYPTION_KEY` in `.env`. For a deployment, use
+its HTTPS origin for both `APP_URL` and the redirect URI and register that URI
+with Google. The app can then connect Gmail and the primary Google Calendar
+from Connectors. Web search has a separate Settings switch and needs
+`TAVILY_API_KEY` when enabled.
 
 ## Developer evaluations
 

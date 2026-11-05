@@ -108,7 +108,7 @@
       <div class="view v-connectors">
         <div class="page">
           <div><h2>Connectors</h2><p class="lede">Connect a service to give Muse new tools. Each connector adds its own tools, and you decide whether Muse must ask before it changes anything. Disconnect anytime and the tools disappear.</p></div>
-          <div class="callout">These are practice connectors filled with sample data, so everyone can try them safely. Nothing here touches your real accounts. Real Muse, and the assistant itself, connect to real services the same way, through a standard called MCP.</div>
+          <div class="callout">Google connections use secure OAuth. Mini Muse stores Google tokens only in an encrypted, HttpOnly cookie; it never stores them in your browser data or sends them to the assistant.</div>
           <div class="conns" id="connList"></div>
         </div>
       </div>
@@ -117,6 +117,7 @@
       <div class="view v-settings">
         <div class="page">
           <div><h2>Settings</h2><p class="lede">Control what Muse remembers, review everything it has done, and choose how it answers.</p></div>
+          <section class="setsec"><div class="sethead"><div><h3>Web search</h3><p class="note">Allow Muse to use web search and open public web pages for current information.</p></div><button class="switch" id="webSearch" role="switch" aria-checked="true"><span class="track" aria-hidden="true"><span class="knob"></span></span>Web search</button></div></section>
           <section class="setsec">
             <div class="sethead"><h3>Memory</h3><span class="sub" id="memCount"></span></div>
             <p class="note">What Muse knows about you. Muse adds to this when you tell it something lasting. Remove anything, anytime, or tell Muse “forget that” in Chat.</p>

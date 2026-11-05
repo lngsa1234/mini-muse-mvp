@@ -24,7 +24,8 @@ import { requestApproval } from "../workflow/approvals.js";
 import { cap } from "../core/trace.js";
 
 // Names of the always-on tools, for display (features/hood).
-export const coreToolNames = () => features.flatMap(f => (f.tools || []).map(t => t.name));
+const enabledFeatureTools = f => f.id === "web" && !state.prefs?.webSearch ? [] : (f.tools || []);
+export const coreToolNames = () => features.flatMap(enabledFeatureTools).map(t => t.name);
 
 export function makeTools(msg, turnSpan) {
   const act = (tool, label, extra = {}) => { const a = { id: rid(), tool, label, ...extra }; (msg.acts ||= []).push(a); updateMsg(msg); return a; };
@@ -57,7 +58,7 @@ export function makeTools(msg, turnSpan) {
     execute: wrap(t.name, (input, context) => t.run(input, context, helpersFor(t.name)))
   });
 
-  const tools = features.flatMap(f => f.tools || []).map(build);
+  const tools = features.flatMap(enabledFeatureTools).map(build);
   for (const [k, c] of Object.entries(CONNECTORS)) if (isOn(k)) tools.push(...c.tools.map(build));
   return tools;
 }

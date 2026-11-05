@@ -106,6 +106,16 @@ export async function webOpen(url) {
   return jpost("/api/web/open", { url });
 }
 
+/* ---------- Google connectors (tokens remain in an HttpOnly server cookie) ---------- */
+export async function googleStatus() { return jcall("/api/google/status"); }
+export async function disconnectGoogle() { return jpost("/api/google/disconnect", {}); }
+export async function googleMailSearch(query) { return jpost("/api/google/mail/search", { query }); }
+export async function googleMailRead(id) { return jpost("/api/google/mail/read", { id }); }
+export async function googleMailSend(data) { return jpost("/api/google/mail/send", data); }
+export async function googleCalendarList(from_date) { return jpost("/api/google/calendar/list", { from_date }); }
+export async function googleCalendarAdd(data) { return jpost("/api/google/calendar/add", data); }
+export async function googleCalendarRemove(event_id) { return jpost("/api/google/calendar/remove", { event_id }); }
+
 /* ---------- Observability viewer (/api/trace → Neon) ---------- */
 // Recent traces, newest first: [{ trace_id, name, root_kind, duration_ms, status, ... }].
 export async function listTraces(limit = 50) {

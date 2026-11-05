@@ -9,6 +9,7 @@ export function migrate(s) {
   out.connectors = Object.assign(blank().connectors, s.connectors || {});
   if (!s.connectors && (s.events || []).length) { out.connectors.calendar.on = true; out.seeded = { ...(out.seeded || {}), calendar: true }; }
   out.seeded ||= {};
+  out.prefs = { ...b.prefs, ...(s.prefs || {}) };
   out.docs = []; // documents live on the server now; loaded separately at boot (main.js)
   out.ideas = []; out.plans = []; // ideas & goals live on the server too (main.js)
   return out;

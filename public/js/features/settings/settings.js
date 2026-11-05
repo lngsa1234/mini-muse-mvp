@@ -10,6 +10,7 @@ import { noteText } from "../chat/chat.js";
 function renderSettings() {
   $("mFast").setAttribute("aria-pressed", rt.mode === "quick"); $("mSmart").setAttribute("aria-pressed", rt.mode === "default");
   $("modeNote").textContent = rt.mode === "quick" ? "Fast: replies in seconds. Good for most things." : "Thorough: a stronger model that plans more carefully. Replies can take up to a minute.";
+  const web = $("webSearch"); if (web) web.setAttribute("aria-checked", state.prefs?.webSearch !== false);
 }
 
 // "quick" | "default" — the server maps these tiers to models (server/routing.js).
@@ -29,6 +30,7 @@ export function initSettings() {
   $("learnBtn").addEventListener("click", () => { const on = !(state.prefs?.learn); setLearn(on); if (on && matchMedia("(max-width:1100px)").matches) go("hood"); save(); });
   $("mFast").onclick = () => setMode("quick");
   $("mSmart").onclick = () => setMode("default");
+  $("webSearch")?.addEventListener("click", () => { state.prefs.webSearch = state.prefs.webSearch === false; renderSettings(); save(); });
   $("resetWrap").addEventListener("click", e => {
     const id = e.target.id;
     if (id === "resetBtn") $("resetWrap").innerHTML = `<span class="confirm">Are you sure? <button class="btn" id="resetYes" style="border-color:var(--bad);color:var(--bad)">Yes, erase it all</button><button class="btn" id="resetNo">Cancel</button></span>`;

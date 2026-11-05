@@ -23,7 +23,7 @@ export const blank = () => ({
   chat: [],                   // features/chat     messages, see agent/run.js
   audit: [],                  // core/activity     { t, tool, input, result, by }
   seeded: {},                 // which connectors already loaded their sample data
-  prefs: { mode: "quick", learn: false }, // features/settings
+  prefs: { mode: "quick", learn: false, webSearch: true }, // features/settings
   connectors: Object.fromEntries(Object.keys(CONNECTORS).map(k => [k, { on: false, writes: "ask" }]))
 });
 

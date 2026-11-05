@@ -26,7 +26,7 @@ import { initGoals } from "./features/goals/goals.js";
 import { renderGoalSuggs } from "./features/goals/suggestions.js";
 import "./features/memory/memory.js";
 import "./features/library/library.js";
-import "./features/connectors/index.js";
+import { initConnectors } from "./features/connectors/index.js";
 import { initSettings } from "./features/settings/settings.js";
 import "./features/hood/hood.js";
 import "./features/web/web.js";
@@ -49,6 +49,7 @@ initTracer();   // load capture config, start periodic flush (best-effort)
   } else {
     save();
   }
+  await initConnectors();
   // Documents, ideas and goals live on the server (Neon), not in localStorage.
   try { state.docs = await docsApi.listDocs(); } catch (e) { state.docs = []; }
   try { state.ideas = await docsApi.listIdeas(); } catch (e) { state.ideas = []; }
