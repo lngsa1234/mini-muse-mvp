@@ -21,6 +21,7 @@ const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|
 const APPLICATION_REQUEST = /\b(?:apply|application|submit)\b/i;
 const EXPLICIT_EMAIL_REQUEST = /\b(?:email|gmail|mail)\b/i;
 const APPLICATION_CONTINUATION = /\b(?:y|yes|ok|okay|send|submit|try again|again|continue)\b/i;
+const OPEN_APPLICATION_REQUEST = /\b(?:open|apply|application|submit|continue|y|yes|ok|okay)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
@@ -76,6 +77,18 @@ async function inspectApplicationPage(text, tools) {
   catch (error) { return { error: error?.message || String(error) }; }
 }
 
+async function openRecentApplication(text, tools) {
+  const message = String(text || "");
+  if (!OPEN_APPLICATION_REQUEST.test(message) || EXPLICIT_EMAIL_REQUEST.test(message)) return null;
+  const recentText = state.chat.slice(-5).filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
+  const url = recentText.match(/https?:\/\/[^\s)\]]+/i)?.[0];
+  if (!url || !/\b(?:job|application|indeed|linkedin|glassdoor)\b/i.test(recentText)) return null;
+  const open = tools.find(tool => tool.name === "browser_open");
+  if (!open) return { error: "The Chrome Browser Bridge is not available." };
+  try { return { result: await open.execute({ url }, {}) }; }
+  catch (error) { return { error: error?.message || String(error) }; }
+}
+
 function documentCompletionReply(verification) {
   const step = verification.step.text;
   if (verification.marked) return `I checked your Library, found ${verification.matches.map(match => match.title).join(", ")}, and marked “${step}” done based on that document.`;
@@ -105,10 +118,15 @@ export async function run(userMsg) {
     const tools = makeTools(msg, turnSpan);
     const verification = await verifyDocumentCompletion(documentVerificationStep(userMsg.text), tools, rt.ctl.signal);
     const research = verification ? null : await researchOpenPositions(jobResearchStep(userMsg.text), tools, rt.ctl.signal);
-    const application = verification ? null : await inspectApplicationPage(userMsg.text, tools);
+    const opened = verification ? null : await openRecentApplication(userMsg.text, tools);
+    const application = verification || opened ? null : await inspectApplicationPage(userMsg.text, tools);
     let text = "", truncated = false;
     if (verification) {
       text = documentCompletionReply(verification);
+    } else if (opened?.error) {
+      text = `I couldn’t open the application page: ${opened.error}`;
+    } else if (opened?.result) {
+      text = `I opened the application page in Chrome: ${opened.result.opened}. Once it loads, ask me to read the page and I can help fill the application.`;
     } else if (research?.webSearchDisabled) {
       text = "Web search is turned off, so I can’t research public job openings. Turn it on in Settings → Web search, then ask me to move this goal forward again. I won’t use Gmail as a substitute for public job research.";
     } else if (application?.error) {
