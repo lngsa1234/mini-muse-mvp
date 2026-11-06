@@ -9,6 +9,7 @@ It is not a Chrome Web Store package and does not run a remote browser. It works
 | Capability | Behavior |
 | --- | --- |
 | Read a page | Mini Muse can read the page title, URL, and visible text. |
+| Open a public job page | Mini Muse can open a selected `http(s)` job-posting URL in a new Chrome tab. |
 | Fill form fields | Requires an approval card in Mini Muse before any values are entered. |
 | Click a button/link | Requires an approval card, including for form submission. |
 | Passwords, MFA codes, CAPTCHAs, payment details | Not handled by Mini Muse. Enter these yourself. |
@@ -35,7 +36,7 @@ You can revoke permission at any time from `chrome://extensions` or the extensio
 
 ## 3. Use it with Mini Muse
 
-1. Open the job site or other target website in Chrome.
+1. Ask Muse to open a selected job-posting URL, or open the target website in Chrome yourself.
 2. Return to Mini Muse in a different tab.
 3. Ask Muse to read the current browser page, fill a field, or prepare an application.
 4. Review every approval card carefully before allowing a form fill or click.

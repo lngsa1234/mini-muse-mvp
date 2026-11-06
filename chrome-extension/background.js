@@ -14,6 +14,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 });
 
 async function dispatch(request) {
+  if (request?.type === "open") return openPage(request.url);
   if (!lastTargetTabId) throw new Error("Open the website you want Mini Muse to use, then return to Mini Muse.");
   const tab = await chrome.tabs.get(lastTargetTabId);
   if (isMuseTab(tab) || !tab.url || !/^https?:/i.test(tab.url)) throw new Error("Select a normal website tab before using browser tools.");
@@ -23,6 +24,15 @@ async function dispatch(request) {
   }
   await chrome.scripting.executeScript({ target: { tabId: lastTargetTabId }, files: ["target.js"] });
   return chrome.tabs.sendMessage(lastTargetTabId, { type: "mini-muse:tab-request", request });
+}
+
+async function openPage(value) {
+  let url;
+  try { url = new URL(String(value)); } catch { throw new Error("Mini Muse can only open a valid http(s) URL."); }
+  if (!/^https?:$/i.test(url.protocol)) throw new Error("Mini Muse can only open http(s) URLs.");
+  const tab = await chrome.tabs.create({ url: url.toString(), active: true });
+  lastTargetTabId = tab.id;
+  return { opened: url.toString(), tabId: tab.id };
 }
 
 const isMuseTab = tab => {
