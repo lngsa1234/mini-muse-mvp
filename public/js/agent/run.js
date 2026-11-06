@@ -20,7 +20,7 @@ const GOAL_CONTINUATION = /\b(?:try again|again|continue|go ahead|proceed)\b/i;
 const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|jobs?|open positions?|roles?)\b/i;
 const APPLICATION_REQUEST = /\b(?:apply|application|submit)\b/i;
 const EXPLICIT_EMAIL_REQUEST = /\b(?:email|gmail|mail)\b/i;
-const APPLICATION_CONTINUATION = /\b(?:send|submit|try again|again|continue)\b/i;
+const APPLICATION_CONTINUATION = /\b(?:y|yes|ok|okay|send|submit|try again|again|continue)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
