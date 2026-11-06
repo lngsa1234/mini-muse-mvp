@@ -68,7 +68,7 @@ async function researchOpenPositions(check, tools, signal) {
 
 async function inspectApplicationPage(text, tools) {
   const message = String(text || "");
-  const recentAssistantText = state.chat.slice(-4).filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
+  const recentAssistantText = state.chat.filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
   const isContinuation = APPLICATION_CONTINUATION.test(message) && APPLICATION_REQUEST.test(recentAssistantText);
   if (!(APPLICATION_REQUEST.test(message) || isContinuation) || EXPLICIT_EMAIL_REQUEST.test(message)) return null;
   const snapshot = tools.find(tool => tool.name === "browser_snapshot");
@@ -80,9 +80,10 @@ async function inspectApplicationPage(text, tools) {
 async function openRecentApplication(text, tools) {
   const message = String(text || "");
   if (!OPEN_APPLICATION_REQUEST.test(message) || EXPLICIT_EMAIL_REQUEST.test(message)) return null;
-  const recentText = state.chat.slice(-5).filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
-  const url = recentText.match(/https?:\/\/[^\s)\]]+/i)?.[0];
-  if (!url || !/\b(?:job|application|indeed|linkedin|glassdoor)\b/i.test(recentText)) return null;
+  const recentText = state.chat.filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
+  const url = [...recentText.matchAll(/https?:\/\/[^\s)\]]+/gi)].map(match => match[0])
+    .find(candidate => /\b(?:job|application|indeed|linkedin|glassdoor)\b/i.test(candidate));
+  if (!url) return null;
   const open = tools.find(tool => tool.name === "browser_open");
   if (!open) return { error: "The Chrome Browser Bridge is not available." };
   try { return { result: await open.execute({ url }, {}) }; }
