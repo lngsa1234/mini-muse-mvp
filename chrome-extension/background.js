@@ -15,6 +15,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 
 async function dispatch(request) {
   if (request?.type === "open") return openPage(request.url);
+  if (!lastTargetTabId) lastTargetTabId = await findRecentTarget();
   if (!lastTargetTabId) throw new Error("Open the website you want Mini Muse to use, then return to Mini Muse.");
   const tab = await chrome.tabs.get(lastTargetTabId);
   if (isMuseTab(tab) || !tab.url || !/^https?:/i.test(tab.url)) throw new Error("Select a normal website tab before using browser tools.");
@@ -24,6 +25,14 @@ async function dispatch(request) {
   }
   await chrome.scripting.executeScript({ target: { tabId: lastTargetTabId }, files: ["target.js"] });
   return chrome.tabs.sendMessage(lastTargetTabId, { type: "mini-muse:tab-request", request });
+}
+
+async function findRecentTarget() {
+  const tabs = await chrome.tabs.query({});
+  const target = tabs
+    .filter(tab => !isMuseTab(tab) && /^https?:/i.test(tab.url || ""))
+    .sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
+  return target?.id || null;
 }
 
 async function openPage(value) {

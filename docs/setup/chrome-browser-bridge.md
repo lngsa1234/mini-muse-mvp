@@ -41,7 +41,7 @@ You can revoke permission at any time from `chrome://extensions` or the extensio
 3. Ask Muse to read the current browser page, fill a field, or prepare an application.
 4. Review every approval card carefully before allowing a form fill or click.
 
-The extension uses the last non–Mini Muse tab as the target. If Mini Muse says it cannot find a target tab, open the intended website once, then return to Mini Muse and retry.
+The extension uses the most recently used non–Mini Muse website tab as the target. If Mini Muse says it cannot find a target tab, open the intended website once, then return to Mini Muse and retry.
 
 ## Security model
 
