@@ -1,15 +1,19 @@
-if (!globalThis.__miniMuseTargetInstalled) {
-  globalThis.__miniMuseTargetInstalled = true;
-  chrome.runtime.onMessage.addListener(message => {
-    if (message?.type !== "mini-muse:tab-request") return;
-    const { request } = message;
-    if (request.type === "snapshot") return snapshot();
-    if (request.type === "fields") return fields();
-    if (request.type === "fill") return fill(request.fields);
-    if (request.type === "click") return click(request.selector);
-    throw new Error("Unsupported browser action.");
-  });
+// background.js re-injects this file before each request. Drop any listener
+// from a previous injection (e.g. after an extension reload the old one's
+// context is dead) and register a fresh one, so there is always exactly one.
+if (globalThis.__miniMuseTargetListener) {
+  try { chrome.runtime.onMessage.removeListener(globalThis.__miniMuseTargetListener); } catch (e) {}
 }
+globalThis.__miniMuseTargetListener = message => {
+  if (message?.type !== "mini-muse:tab-request") return;
+  const { request } = message;
+  if (request.type === "snapshot") return snapshot();
+  if (request.type === "fields") return fields();
+  if (request.type === "fill") return fill(request.fields);
+  if (request.type === "click") return click(request.selector);
+  throw new Error("Unsupported browser action.");
+};
+chrome.runtime.onMessage.addListener(globalThis.__miniMuseTargetListener);
 
 function snapshot() {
   return { title: document.title, url: location.href, text: document.body?.innerText?.slice(0, 12000) || "" };
