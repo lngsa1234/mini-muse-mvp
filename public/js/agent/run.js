@@ -86,9 +86,17 @@ async function inspectApplicationPage(text, tools, force = false) {
 async function openRecentApplication(text, tools) {
   const message = String(text || "");
   if (!OPEN_APPLICATION_REQUEST.test(message) || EXPLICIT_EMAIL_REQUEST.test(message)) return null;
-  const recentText = state.chat.filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
-  const url = [...recentText.matchAll(/https?:\/\/[^\s)\]]+/gi)].map(match => match[0])
-    .find(candidate => /\b(?:job|application|indeed|linkedin|glassdoor)\b/i.test(candidate));
+  // Scan the newest messages first (current message, then history newest→oldest)
+  // so a freshly shared apply link wins over an older search/listing link, and
+  // within a message prefer a real /apply page over a job-board search URL.
+  const LINK = /apply|application|careers?|posting|greenhouse|lever|myworkday|workday|smartrecruiters|icims|ashby|job|indeed|linkedin|glassdoor|roberthalf/i;
+  const recent = [message, ...state.chat.filter(item => item.role === "assistant" || item.role === "user").map(item => item.text || "").reverse()];
+  let url = null;
+  for (const chunk of recent) {
+    const links = [...String(chunk).matchAll(/https?:\/\/[^\s)\]]+/gi)].map(match => match[0]).filter(candidate => LINK.test(candidate));
+    const chosen = links.find(candidate => /\/apply\b|\bapply\b/i.test(candidate)) || links[links.length - 1];
+    if (chosen) { url = chosen; break; }
+  }
   if (!url) return null;
   const open = tools.find(tool => tool.name === "browser_open");
   if (!open) return { error: "The Chrome Browser Bridge is not available." };
