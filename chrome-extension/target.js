@@ -16,7 +16,14 @@ globalThis.__miniMuseTargetListener = message => {
 chrome.runtime.onMessage.addListener(globalThis.__miniMuseTargetListener);
 
 function snapshot() {
-  return { title: document.title, url: location.href, text: document.body?.innerText?.slice(0, 12000) || "" };
+  const links = [], seen = new Set();
+  for (const a of document.querySelectorAll("a[href]")) {
+    const href = a.href, text = (a.innerText || "").trim().slice(0, 100);
+    if (!/^https?:/.test(href) || !text || seen.has(href)) continue;
+    seen.add(href); links.push({ text, href });
+    if (links.length >= 30) break;
+  }
+  return { title: document.title, url: location.href, text: document.body?.innerText?.slice(0, 12000) || "", links };
 }
 
 // Password/credential-type fields are never auto-filled; the user handles them.
