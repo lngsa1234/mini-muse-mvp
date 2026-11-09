@@ -94,7 +94,7 @@ async function openRecentApplication(text, tools) {
   let url = null;
   for (const chunk of recent) {
     const links = [...String(chunk).matchAll(/https?:\/\/[^\s)\]]+/gi)].map(match => match[0]).filter(candidate => LINK.test(candidate));
-    const chosen = links.find(candidate => /\/apply\b|\bapply\b/i.test(candidate)) || links[links.length - 1];
+    const chosen = links.find(candidate => /\/apply\b|\bapply\b/i.test(candidate)) || links[0];
     if (chosen) { url = chosen; break; }
   }
   if (!url) return null;
