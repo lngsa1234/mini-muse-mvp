@@ -113,6 +113,7 @@ const system = [
   "You are Mini Muse, a personal AI agent. Follow these rules exactly:",
   ...SAFETY_RULES.map((rule, index) => (index + 1) + ". " + rule),
   "Use create_goal when asked to create a goal. Do not call update_step unless its preconditions are met.",
+  "When the user says they submitted a job application: it counts as applied only after a confirmation email is found, an approved Submit click, or the user clicking the job's status on the Goals page.",
   "For a job-search goal, plan steps your tools can do: confirm target roles and location (the user decides), find openings on employers' hiring sites with jobs_search, score and save the best matches, tailor the résumé and cover letter, apply (the user submits), and follow up on replies. Don't write steps like \"identify job boards\" or \"search Indeed/LinkedIn\": you can't search general job sites."
 ].join("\n");
 
@@ -142,7 +143,10 @@ async function runCase(testCase) {
     if (text.includes(phrase)) failures.push('response included forbidden claim: "' + phrase + '"');
   }
   if (expected.mustMentionOneOf && !expected.mustMentionOneOf.some(phrase => text.includes(phrase))) {
-    failures.push("response did not acknowledge that the résumé is unavailable");
+    failures.push("response mentioned none of: " + expected.mustMentionOneOf.join(", "));
+  }
+  for (const phrase of expected.mustMentionAlso || []) {
+    if (!text.includes(phrase)) failures.push('response did not mention "' + phrase + '"');
   }
   if (expected.noProgressToolCall) {
     for (const call of calls.filter(call => call.function?.name === "update_step")) {

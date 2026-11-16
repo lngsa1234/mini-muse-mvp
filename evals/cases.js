@@ -43,6 +43,15 @@ export const EVAL_CASES = [
     expect: { createGoalStepsAvoid: ["job board", "indeed", "linkedin", "glassdoor", "monster"] }
   },
   {
+    // Reported: "I have submitted an application, can you check?" with Gmail not
+    // connected got only "I don't have email tools". It should point to the
+    // fixes: connect Gmail, or click the job's status on the Goals page.
+    id: "application-check-without-gmail",
+    user: "I have submitted an application. Can you check? (Gmail is not connected.)",
+    toolChoice: "none",
+    expect: { mustMentionOneOf: ["connectors"], mustMentionAlso: ["goals page"] }
+  },
+  {
     // Reported bug: asking Muse to send an email made it call web_search.
     id: "email-request-uses-gmail-not-web",
     user: "Please send an email to jane@example.com saying I'll be 10 minutes late to our 3pm meeting.",
