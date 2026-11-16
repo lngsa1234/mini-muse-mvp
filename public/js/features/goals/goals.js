@@ -8,15 +8,15 @@ import { save } from "../../core/storage.js";
 import { audit } from "../../core/activity.js";
 import { S } from "../../core/schema.js";
 import { say } from "../../agent/run.js";
-import { createGoal, updateStep, removeGoal, updateIdea, saveApplication } from "../../core/api.js";
-import { APP_STATUSES, TARGET_METRICS, normTarget, deadlineIn, normApplication, findApplication, nextStatus, goalProgress } from "./model.js";
+import { createGoal, updateStep, updateGoalSteps, removeGoal, updateIdea, saveApplication } from "../../core/api.js";
+import { APP_STATUSES, TARGET_METRICS, normTarget, deadlineIn, normApplication, findApplication, nextStatus, goalProgress, revisePlan, diffPlan } from "./model.js";
 import { renderGoalSuggs, maybeUpdateGoals, initGoalSuggestions } from "./suggestions.js";
 import { renderDaily } from "../../workflow/checkin.js";
 
 const STATUSES = ["todo", "doing", "done", "blocked"];
 // Tools that only record intent, not real work — they can't count as proof of
 // progress when the model tries to mark a step doing/done.
-const BOOKKEEPING = new Set(["create_goal", "update_step", "track_application"]);
+const BOOKKEEPING = new Set(["create_goal", "update_step", "track_application", "revise_plan"]);
 const MAIL_TOOLS = new Set(["mail_search", "mail_read"]);
 const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
 
@@ -84,7 +84,7 @@ defineFeature({
   nav: { el: "navGoals", badge: () => { const active = state.plans.filter(p => p.steps.some(s => s.status !== "done")).length; return state.plans.length ? `${active} active` : ""; } },
   render() { renderGoals(); renderGoalSuggs(); renderDaily(); },
   onShow: maybeUpdateGoals,
-  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Mark a step doing or done only for the specific step a tool just did this turn, and pass evidence naming that tool; update_step refuses otherwise. One action (e.g. a web search) only advances the step it did — not other steps you merely intend to do or assume are done. If no tool can do a step, do not silently skip it: set that step to blocked and tell the user what you need from them (or offer an alternative). For a step about a document like a résumé or cover letter, never try to edit the user's files — use docs_search to check the Library: a suitable résumé is enough for a combined “résumé and cover letter” step unless the user explicitly requires a cover letter. If none exists, ask the user to add one or offer to draft one with docs_add. Never assume a document or result exists. If the user says they did a step themselves, tell them to click it — you cannot mark it for them. For a measurable goal like “land 3 interviews in 30 days”, also pass target_metric (interviews or applications), target_count, and days, so the Goals page can show progress against the target and the days left. For a job-search goal, track each job with track_application: saved when you find a posting worth applying to; drafted after you save a tailored résumé or cover letter with docs_add; applied only right after the user approved your browser_click on the Submit button; interview, offer, or rejected only after mail_search or mail_read found the employer's email this turn (interview and offer also need the user to confirm). Otherwise ask the user to click the application's status on the Goals page. Never count an interview you only expect.",
+  guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Mark a step doing or done only for the specific step a tool just did this turn, and pass evidence naming that tool; update_step refuses otherwise. One action (e.g. a web search) only advances the step it did — not other steps you merely intend to do or assume are done. If no tool can do a step, do not silently skip it: set that step to blocked and tell the user what you need from them (or offer an alternative). For a step about a document like a résumé or cover letter, never try to edit the user's files — use docs_search to check the Library: a suitable résumé is enough for a combined “résumé and cover letter” step unless the user explicitly requires a cover letter. If none exists, ask the user to add one or offer to draft one with docs_add. Never assume a document or result exists. If the user says they did a step themselves, tell them to click it — you cannot mark it for them. For a measurable goal like “land 3 interviews in 30 days”, also pass target_metric (interviews or applications), target_count, and days, so the Goals page can show progress against the target and the days left. For a job-search goal, track each job with track_application: saved when you find a posting worth applying to; drafted after you save a tailored résumé or cover letter with docs_add; applied only right after the user approved your browser_click on the Submit button; interview, offer, or rejected only after mail_search or mail_read found the employer's email this turn (interview and offer also need the user to confirm). Otherwise ask the user to click the application's status on the Goals page. Never count an interview you only expect. To change a goal's plan (reword, add, or remove steps) when the user asks, call revise_plan; it shows the user the before and after and changes nothing unless they approve. Never use it to change a step's status.",
   tools: [
     { name: "create_goal", description: "Create a goal on the Goals page with 3-6 ordered steps. Pass idea_id if it comes from an idea. For a measurable goal, pass target_metric (interviews or applications), target_count, and days until the deadline (e.g. 3 interviews in 30 days: target_metric \"interviews\", target_count 3, days 30). Returns the goal_id and numbered steps.",
       inputSchema: { type: "object", properties: { goal: S, steps: { type: "array", items: S }, idea_id: S,
@@ -126,6 +126,22 @@ defineFeature({
         }
         replaceGoal(await updateStep(String(goal_id), Number(step), status));
         h.act(`${s.text} → ${status}${evidence ? ` (via ${evidence})` : ""}`); return "Updated.";
+      } },
+    { name: "revise_plan", description: "Change a goal's plan when the user asks: reword a step, add a step, or remove one. Pass the goal_id and the full new list of step texts, in order (keep the wording of steps you aren't changing). Existing steps keep their status when their text is unchanged or reworded in the same position; new steps start as todo. The user approves the change first. Never use it to mark progress.",
+      inputSchema: { type: "object", properties: { goal_id: S, steps: { type: "array", items: S }, reason: S }, required: ["goal_id", "steps"] },
+      run: async ({ goal_id, steps, reason }, context, h) => {
+        const g = state.plans.find(p => p.id === String(goal_id)); if (!g) throw new Error("no goal " + goal_id);
+        const texts = (Array.isArray(steps) ? steps : []).map(s => String(s).trim()).filter(Boolean);
+        if (!texts.length) throw new Error("a plan needs at least one step");
+        if (texts.length > 8) throw new Error("a plan can have at most 8 steps");
+        const next = revisePlan(g.steps, texts);
+        const before = g.steps.map(s => s.text), changed = diffPlan(before, texts);
+        if (!changed.length) return "No change: the new plan matches the current one.";
+        const ok = await h.ask("revise_plan", { heading: `Change the plan for “${g.goal}”?`, rows: changed, body: reason ? String(reason) : undefined, yes: "Update plan", summary: `${changed.length} change${changed.length === 1 ? "" : "s"} to “${g.goal}”` }, context);
+        if (ok !== true) return h.refusal(ok);
+        replaceGoal(await updateGoalSteps(g.id, next));
+        h.act(`${g.goal}: ${changed.map(([k, v]) => `${k} ${v}`).join("; ")}`);
+        return { goal_id: g.id, steps: next.map((s, i) => `${i + 1}. ${s.text} (${s.status})`) };
       } },
     { name: "track_application", description: "Add or update a job application on a goal's tracker, matched by company and role. Statuses: saved (a posting worth applying to), drafted (a tailored résumé or cover letter was saved with docs_add this turn), applied (only right after the user approved your browser_click on Submit this turn), interview / offer / rejected (only after mail_search or mail_read found the employer's email this turn; interview and offer also ask the user to confirm). The tool refuses a status the turn's actions don't prove; then ask the user to click the status on the Goals page instead.",
       inputSchema: { type: "object", properties: { goal_id: S, company: S, role: S, status: { type: "string", enum: APP_STATUSES }, url: S, note: S }, required: ["goal_id", "company", "role", "status"] },

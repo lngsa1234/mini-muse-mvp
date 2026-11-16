@@ -93,3 +93,21 @@ export function goalProgress(goal, now = new Date()) {
   }
   return { metric: target.metric, count: target.count, done, daysLeft };
 }
+
+// revise_plan helpers: keep a step's status if its text survives (anywhere) or is
+// reworded in the same position; brand-new steps start as todo.
+export function revisePlan(old, texts) {
+  const byText = new Map(old.map(s => [s.text.toLowerCase(), s.status]));
+  return texts.map((text, i) => ({ text, status: byText.get(text.toLowerCase()) ?? (old[i] && !texts.some(t => t.toLowerCase() === old[i].text.toLowerCase()) ? old[i].status : "todo") }));
+}
+// [[label, value]] rows describing what changed, for the approval card.
+export function diffPlan(before, after) {
+  const rows = [], lower = a => a.map(t => t.toLowerCase()), b = lower(before), a = lower(after);
+  after.forEach((t, i) => {
+    if (b.includes(a[i])) return;
+    if (before[i] !== undefined && !a.includes(b[i])) rows.push([`Step ${i + 1}`, `“${before[i]}” → “${t}”`]);
+    else rows.push(["Add", `“${t}”`]);
+  });
+  before.forEach((t, i) => { if (!a.includes(b[i]) && !(after[i] !== undefined && !b.includes(a[i]))) rows.push(["Remove", `“${t}”`]); });
+  return rows;
+}

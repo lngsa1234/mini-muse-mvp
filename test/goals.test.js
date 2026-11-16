@@ -43,3 +43,23 @@ test("goals: progress counts interviews and offers against the target", () => {
   assert.equal(goalProgress(goal, new Date(2026, 11, 20)).daysLeft, 0);
   assert.equal(goalProgress({ steps: [] }), null);
 });
+
+test("goals: revise_plan keeps statuses and describes each change", async () => {
+  const { revisePlan, diffPlan } = await import("../public/js/features/goals/model.js");
+  const old = [
+    { text: "Update résumé and cover letter", status: "done" },
+    { text: "Research job openings", status: "todo" },
+    { text: "Apply to a minimum of 5 jobs each week", status: "doing" },
+    { text: "Network with professionals in my field", status: "todo" },
+    { text: "Prepare for interviews", status: "todo" }
+  ];
+  const texts = old.map(s => s.text); texts[3] = "Follow up on applications and log employer replies";
+  assert.deepEqual(revisePlan(old, texts).map(s => s.status), ["done", "todo", "doing", "todo", "todo"]);
+  assert.deepEqual(diffPlan(old.map(s => s.text), texts),
+    [["Step 4", "“Network with professionals in my field” → “Follow up on applications and log employer replies”"]]);
+  // Remove step 2 and add a new last step: the rest keep their status.
+  const t2 = [old[0].text, old[2].text, old[3].text, old[4].text, "Run a mock interview"];
+  assert.deepEqual(revisePlan(old, t2).map(s => s.status), ["done", "doing", "todo", "todo", "todo"]);
+  assert.deepEqual(diffPlan(old.map(s => s.text), t2), [["Add", "“Run a mock interview”"], ["Remove", "“Research job openings”"]]);
+  assert.deepEqual(diffPlan(["A"], ["a"]), []);
+});

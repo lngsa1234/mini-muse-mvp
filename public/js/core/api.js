@@ -92,6 +92,11 @@ export async function saveApplication(id, application) {
   const data = await jpatch("/api/goals/" + encodeURIComponent(id), { application });
   return data.goal;
 }
+// Replace a goal's steps ([{ text, status }]).
+export async function updateGoalSteps(id, steps) {
+  const data = await jpatch("/api/goals/" + encodeURIComponent(id), { steps });
+  return data.goal;
+}
 // step is 1-based.
 export async function updateStep(id, step, status) {
   const data = await jpatch("/api/goals/" + encodeURIComponent(id), { step, status });
