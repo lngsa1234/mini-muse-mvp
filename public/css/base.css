@@ -125,5 +125,6 @@ input.field:focus,textarea.field:focus{outline:none;border-color:var(--accent)}
 .app-st.a-applied{color:var(--ink);border-color:var(--muted)}
 .app-st.a-interview,.app-st.a-offer{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .app-st.a-rejected{text-decoration:line-through}
+.workbar .daily{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);white-space:nowrap}
 .st{margin-left:auto;font:11px var(--f-mono);color:var(--muted);flex:none}
 .s-blocked .st{color:var(--wait)}

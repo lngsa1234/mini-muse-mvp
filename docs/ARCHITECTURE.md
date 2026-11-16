@@ -52,11 +52,12 @@ public/
       errors.js              user-facing error messages
     workflow/              WORKFLOW
       approvals.js           human-in-the-loop approval cards
-      checkin.js             background check-in ("Let Muse work on your goals")
+      checkin.js             background check-in ("Let Muse work on your goals"), optional daily run
     features/
       chat/                  chat log + composer
       ideas/                 starter rules, personalized ideas, save_idea tool
       goals/                 plans + create_goal / update_step / track_application, targets & deadlines, application tracker, suggested goals
+      jobs/                  jobs_search (public Greenhouse/Lever/Ashby boards) + score_fit (rubric, keyword check)
       library/               documents, keyword RAG search, docs_* tools
       memory/                remember / forget tools, Settings → Memory
       connectors/            Connectors page + one file per connector (mail, calendar, contacts)
@@ -66,6 +67,7 @@ server/
   index.js                 Express: static hosting + /api/llm (local dev)
   proxy.js                 runtime-neutral request building (shared with api/)
   routing.js               ROUTING: tier → model
+  jobs.js                  job-board search handler (no keys; shared with api/jobs/)
 api/                       Vercel Edge Functions (deploy), reuse server/proxy.js
 test/                      `npm test` (server unit tests)
 docs/reference/            the original single-file prototype, for comparison

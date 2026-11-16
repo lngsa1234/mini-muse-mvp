@@ -20,6 +20,7 @@ import { handleList, handleCreate, handleDelete } from "./docs.js";
 import * as ideas from "./ideas.js";
 import * as goals from "./goals.js";
 import * as web from "./web.js";
+import * as jobs from "./jobs.js";
 import * as google from "./google.js";
 import * as trace from "./trace.js";
 import { withTrace } from "./trace-node.js";
@@ -63,6 +64,9 @@ wire("goals", goals);
 /* ---------- Web browsing (Tavily search + extract) ---------- */
 app.post("/api/web/search", route("POST /api/web/search", req => web.handleSearch(req.body, process.env)));
 app.post("/api/web/open", route("POST /api/web/open", req => web.handleOpen(req.body, process.env)));
+
+/* ---------- Job search (public Greenhouse / Lever / Ashby boards) ---------- */
+app.post("/api/jobs/search", route("POST /api/jobs/search", req => jobs.handleSearch(req.body, process.env)));
 
 /* ---------- Google connectors (OAuth, Gmail, Calendar) ---------- */
 const googleRoute = fn => async (req, res) => {

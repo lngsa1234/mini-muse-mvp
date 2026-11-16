@@ -101,6 +101,13 @@ export async function removeGoal(id) {
   await jcall("/api/goals/" + encodeURIComponent(id), { method: "DELETE" });
 }
 
+/* ---------- Job search (/api/jobs → public job boards) ---------- */
+// boards: ["greenhouse:stripe", "https://jobs.lever.co/palantir", ...]
+// Returns { searched, total, jobs: [{ source, company, title, location, remote, url, posted, snippet }], errors }.
+export async function jobsSearch({ boards, keywords, location, days }) {
+  return jpost("/api/jobs/search", { boards, keywords, location, days });
+}
+
 /* ---------- Web browsing (/api/web → Tavily) ---------- */
 // Returns an array of results ({ title, url, snippet }).
 export async function webSearch(query) {

@@ -174,6 +174,22 @@ export async function deleteIdea(userId, id) {
 }
 
 /* ---------- Goals ---------- */
+// Goal targets and the application tracker were added after the first release.
+// Add their columns once per process so existing databases upgrade themselves
+// without anyone re-running `npm run db:init`. Each statement is idempotent.
+let _goalColumns = null;
+function ensureGoalColumns() {
+  if (!_goalColumns) {
+    const s = sql();
+    _goalColumns = (async () => {
+      await s`alter table goals add column if not exists target jsonb`;
+      await s`alter table goals add column if not exists deadline date`;
+      await s`alter table goals add column if not exists applications jsonb not null default '[]'::jsonb`;
+    })().catch(e => { _goalColumns = null; throw e; });
+  }
+  return _goalColumns;
+}
+
 const toGoal = r => ({
   id: r.id,
   goal: r.goal,
@@ -187,6 +203,7 @@ const isoDay = d => (d instanceof Date ? d.toISOString() : String(d)).slice(0, 1
 
 export async function listGoals(userId) {
   const s = sql();
+  await ensureGoalColumns();
   const rows = await s`
     select * from goals
     where user_id = ${userId}
@@ -196,12 +213,14 @@ export async function listGoals(userId) {
 
 export async function getGoal(userId, id) {
   const s = sql();
+  await ensureGoalColumns();
   const rows = await s`select * from goals where user_id = ${userId} and id = ${id}`;
   return rows[0] ? toGoal(rows[0]) : null;
 }
 
 export async function createGoal(userId, d) {
   const s = sql();
+  await ensureGoalColumns();
   const id = newId("g");
   const steps = (Array.isArray(d.steps) ? d.steps : []).map(normStep);
   const rows = await s`
@@ -215,6 +234,7 @@ export async function createGoal(userId, d) {
 // Replace any of: goal text, steps, target, deadline, applications.
 export async function updateGoal(userId, id, patch) {
   const s = sql();
+  await ensureGoalColumns();
   const cur = (await s`select * from goals where user_id = ${userId} and id = ${id}`)[0];
   if (!cur) return null;
   const goal = "goal" in patch ? patch.goal : cur.goal;

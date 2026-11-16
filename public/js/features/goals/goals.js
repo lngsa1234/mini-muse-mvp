@@ -11,6 +11,7 @@ import { say } from "../../agent/run.js";
 import { createGoal, updateStep, removeGoal, updateIdea, saveApplication } from "../../core/api.js";
 import { APP_STATUSES, TARGET_METRICS, normTarget, deadlineIn, normApplication, findApplication, nextStatus, goalProgress } from "./model.js";
 import { renderGoalSuggs, maybeUpdateGoals, initGoalSuggestions } from "./suggestions.js";
+import { renderDaily } from "../../workflow/checkin.js";
 
 const STATUSES = ["todo", "doing", "done", "blocked"];
 // Tools that only record intent, not real work — they can't count as proof of
@@ -81,7 +82,7 @@ const approvedSubmit = h => h.turnActions().find(a => a.tool === "browser_click"
 defineFeature({
   id: "goals",
   nav: { el: "navGoals", badge: () => { const active = state.plans.filter(p => p.steps.some(s => s.status !== "done")).length; return state.plans.length ? `${active} active` : ""; } },
-  render() { renderGoals(); renderGoalSuggs(); },
+  render() { renderGoals(); renderGoalSuggs(); renderDaily(); },
   onShow: maybeUpdateGoals,
   guidance: "Goals: for a goal bigger than one step, or when asked to turn an idea into a goal, call create_goal with 3-6 concrete steps (pass idea_id if it came from an idea). New steps are todo. Mark a step doing or done only for the specific step a tool just did this turn, and pass evidence naming that tool; update_step refuses otherwise. One action (e.g. a web search) only advances the step it did — not other steps you merely intend to do or assume are done. If no tool can do a step, do not silently skip it: set that step to blocked and tell the user what you need from them (or offer an alternative). For a step about a document like a résumé or cover letter, never try to edit the user's files — use docs_search to check the Library: a suitable résumé is enough for a combined “résumé and cover letter” step unless the user explicitly requires a cover letter. If none exists, ask the user to add one or offer to draft one with docs_add. Never assume a document or result exists. If the user says they did a step themselves, tell them to click it — you cannot mark it for them. For a measurable goal like “land 3 interviews in 30 days”, also pass target_metric (interviews or applications), target_count, and days, so the Goals page can show progress against the target and the days left. For a job-search goal, track each job with track_application: saved when you find a posting worth applying to; drafted after you save a tailored résumé or cover letter with docs_add; applied only right after the user approved your browser_click on the Submit button; interview, offer, or rejected only after mail_search or mail_read found the employer's email this turn (interview and offer also need the user to confirm). Otherwise ask the user to click the application's status on the Goals page. Never count an interview you only expect.",
   tools: [

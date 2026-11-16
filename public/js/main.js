@@ -32,6 +32,7 @@ import "./features/hood/hood.js";
 import "./features/web/web.js";
 import "./features/browser/browser.js";
 import "./features/observability/observability.js";
+import "./features/jobs/jobs.js";
 import { initTracer } from "./core/trace.js";
 
 /* ---------- wire up the page ---------- */
