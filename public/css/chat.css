@@ -7,6 +7,8 @@
 .msg.assistant .bubble{background:var(--bg);border-radius:16px 16px 16px 4px}
 .bubble{padding:10px 14px;overflow-wrap:anywhere}
 .bubble:empty{display:none}
+.bubble a{color:var(--link);text-decoration:underline;text-underline-offset:2px}
+.msg.user .bubble a{color:inherit}
 .checkin{align-self:center;font:12px var(--f-mono);color:var(--muted);background:var(--sunk);padding:4px 10px;border-radius:999px}
 .who{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .acts{display:flex;flex-direction:column;gap:5px}
