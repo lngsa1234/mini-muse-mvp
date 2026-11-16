@@ -112,3 +112,18 @@ test("discover: searches the fixed sites with keywords and keeps postings only",
   assert.equal(out.json.jobs[0].remote, true);
   assert.equal((await handleSearch({ keywords: "analyst" }, {}, fake)).status, 503);
 });
+
+test("discover: Workday titles come from the posting URL, not the search result", async () => {
+  const { workdayTitle } = await import("../server/jobs.js");
+  const t = u => workdayTitle(u);
+  assert.equal(t("https://signetjewelers.wd1.myworkdayjobs.com/en-US/SignetCorporateCareers/job/IT-Project-Manager--Remote-_REQ_82873"), "IT Project Manager Remote");
+  assert.equal(t("https://onedigital.wd504.myworkdayjobs.com/OneDigital/job/Remote/Business-Analyst---Remote_R9450-1"), "Business Analyst – Remote");
+  assert.equal(t("https://martin.wd1.myworkdayjobs.com/en-US/MPHC/job/Portland-ME/Senior-Enterprise-Business-Analyst---Remote_REQ-2026-395"), "Senior Enterprise Business Analyst – Remote");
+  assert.equal(t("https://icf.wd5.myworkdayjobs.com/en-US/ICFExternal_Career_Site/job/Lead-Business-Analyst--Remote---US-_R2603588"), "Lead Business Analyst Remote – US");
+  assert.equal(t("https://caresource.wd1.myworkdayjobs.com/en-US/CareSource/job/Business-Analyst-IV_R13708"), "Business Analyst IV");
+  const fake = async () => ({ ok: true, status: 200, json: async () => ({ results: [
+    { title: "Technical Business Analyst", url: "https://signetjewelers.wd1.myworkdayjobs.com/en-US/SignetCorporateCareers/job/IT-Project-Manager--Remote-_REQ_82873", content: "x" }
+  ] }) });
+  const out = await handleSearch({ keywords: "business analyst" }, { TAVILY_API_KEY: "k" }, fake);
+  assert.equal(out.json.jobs[0].title, "IT Project Manager Remote");
+});

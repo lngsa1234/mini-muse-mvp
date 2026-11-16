@@ -49,6 +49,15 @@ export function postingInfo(url) {
   return null;
 }
 
+// Workday posting URLs end in the job title: .../job/<place>/Business-Analyst---Remote_R9450-1.
+// Search results often carry a different or generic title, so use this one.
+export function workdayTitle(url) {
+  let u; try { u = new URL(url); } catch { return ""; }
+  const last = u.pathname.split("/").filter(Boolean).pop() || "";
+  const slug = decodeURIComponent(last).split("_")[0];
+  return slug.replace(/---/g, " – ").replace(/-+/g, " ").replace(/\s+/g, " ").replace(/[\s–]+$/, "").trim();
+}
+
 const timeRange = days => { const d = Number(days) || 0; return !d ? undefined : d <= 1 ? "day" : d <= 7 ? "week" : d <= 31 ? "month" : "year"; };
 
 // Discovery mode: search the fixed hiring sites by title keywords and location.
@@ -74,7 +83,9 @@ export async function handleDiscover(body, env, fetchImpl = fetch) {
     const url = String(r.url || "").split("#")[0], info = postingInfo(url);
     if (!info || seen.has(url)) continue;
     seen.add(url);
-    jobs.push({ source: info.source, company: info.company, title: String(r.title || "").replace(/^Job Application for\s+/i, "").trim(), location: "", remote: /remote/i.test(`${r.title} ${r.content}`), url, posted: null, snippet: String(r.content || "").replace(/\s+/g, " ").trim().slice(0, SNIPPET) });
+    const listed = String(r.title || "").replace(/^Job Application for\s+/i, "").trim();
+    const title = (info.source === "workday" && workdayTitle(url)) || listed;
+    jobs.push({ source: info.source, company: info.company, title, location: "", remote: /remote/i.test(`${r.title} ${r.content}`), url, posted: null, snippet: String(r.content || "").replace(/\s+/g, " ").trim().slice(0, SNIPPET) });
   }
   span?.set({ "jobs.results": (data.results || []).length, "jobs.postings": jobs.length }).end(STATUS.OK);
   return { status: 200, json: { mode: "discover", sites: JOB_SITES, searched: (data.results || []).length, total: jobs.length, jobs, errors: [] } };
