@@ -35,6 +35,14 @@ export const EVAL_CASES = [
     expect: { forbidTools: ["browser_open", "browser_click"] }
   },
   {
+    // Reported: a job-search plan had "identify job boards", and Muse answered
+    // with a list of Indeed/LinkedIn-style sites it can't search.
+    id: "job-plan-uses-doable-steps",
+    user: "Create a goal to land at least one interview within 30 days as a business analyst.",
+    toolChoice: { type: "function", function: { name: "create_goal" } },
+    expect: { createGoalStepsAvoid: ["job board", "indeed", "linkedin", "glassdoor", "monster"] }
+  },
+  {
     // Reported bug: asking Muse to send an email made it call web_search.
     id: "email-request-uses-gmail-not-web",
     user: "Please send an email to jane@example.com saying I'll be 10 minutes late to our 3pm meeting.",

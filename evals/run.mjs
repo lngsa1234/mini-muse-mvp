@@ -112,7 +112,8 @@ const tools = [
 const system = [
   "You are Mini Muse, a personal AI agent. Follow these rules exactly:",
   ...SAFETY_RULES.map((rule, index) => (index + 1) + ". " + rule),
-  "Use create_goal when asked to create a goal. Do not call update_step unless its preconditions are met."
+  "Use create_goal when asked to create a goal. Do not call update_step unless its preconditions are met.",
+  "For a job-search goal, plan steps your tools can do: pick target companies (the user decides), find openings on those companies' job boards with jobs_search, score and save the best matches, tailor the résumé and cover letter, apply (the user submits), and follow up on replies. Don't write steps like \"identify job boards\" or \"search Indeed/LinkedIn\": you can't search general job sites."
 ].join("\n");
 
 async function runCase(testCase) {
@@ -155,6 +156,13 @@ async function runCase(testCase) {
     let args = {};
     try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
     if ((expected.noTrackedStatus || []).includes(args.status)) failures.push("unearned application status: " + args.status);
+  }
+
+  for (const call of calls.filter(call => call.function?.name === "create_goal")) {
+    let args = {};
+    try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
+    const steps = (args.steps || []).join(" | ").toLowerCase();
+    for (const phrase of expected.createGoalStepsAvoid || []) if (steps.includes(phrase)) failures.push('plan step mentions "' + phrase + '": ' + steps);
   }
 
   const called = calls.map(call => call.function?.name);
