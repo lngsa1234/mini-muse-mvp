@@ -57,7 +57,7 @@ public/
       chat/                  chat log + composer
       ideas/                 starter rules, personalized ideas, save_idea tool
       goals/                 plans + create_goal / update_step / track_application, targets & deadlines, application tracker, suggested goals
-      jobs/                  jobs_search (public Greenhouse/Lever/Ashby boards) + score_fit (rubric, keyword check)
+      jobs/                  jobs_search (fixed hiring sites, or named Greenhouse/Lever/Ashby boards) + score_fit (rubric, keyword check)
       library/               documents, keyword RAG search, docs_* tools
       memory/                remember / forget tools, Settings → Memory
       connectors/            Connectors page + one file per connector (mail, calendar, contacts)

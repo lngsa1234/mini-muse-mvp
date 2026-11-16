@@ -108,7 +108,8 @@ export async function removeGoal(id) {
 
 /* ---------- Job search (/api/jobs → public job boards) ---------- */
 // boards: ["greenhouse:stripe", "https://jobs.lever.co/palantir", ...]
-// Returns { searched, total, jobs: [{ source, company, title, location, remote, url, posted, snippet }], errors }.
+// Without boards it searches the fixed hiring sites by keywords and location.
+// Returns { mode, searched, total, jobs: [{ source, company, title, location, remote, url, posted, snippet }], errors }.
 export async function jobsSearch({ boards, keywords, location, days }) {
   return jpost("/api/jobs/search", { boards, keywords, location, days });
 }

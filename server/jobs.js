@@ -10,8 +10,75 @@
  *   Ashby       GET https://api.ashbyhq.com/posting-api/job-board/{name}
  * Each API lists one company's board, so the caller names the boards to search
  * (e.g. "greenhouse:stripe" or "https://jobs.lever.co/palantir").
+ *
+ * Without boards, it runs in discovery mode: a Tavily web search limited to a
+ * fixed list of employer hiring sites (JOB_SITES), keeping only results that
+ * are single job postings. That finds openings at companies the user didn't
+ * name, including Workday employers, and never returns aggregator pages.
  */
 import { traceChild, SPAN_KIND, STATUS } from "./trace-core.js";
+import { TAVILY_SEARCH_URL } from "./web.js";
+
+// Employer hiring sites searched in discovery mode. Edit this list to add or
+// remove sites; each needs a pattern in POSTING below.
+export const JOB_SITES = [
+  "boards.greenhouse.io", "job-boards.greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com",
+  "jobs.smartrecruiters.com", "apply.workable.com", "myworkdayjobs.com"
+];
+// Path shapes of a single posting (not a board home or search page) per site;
+// group 1 is the company.
+const POSTING = [
+  { site: "greenhouse", host: /(^|\.)greenhouse\.io$/, path: /^\/([\w.-]+)\/jobs\/\d+/ },
+  { site: "lever", host: /^jobs\.lever\.co$/, path: /^\/([\w.-]+)\/[0-9a-f-]{36}/i },
+  { site: "ashby", host: /^jobs\.ashbyhq\.com$/, path: /^\/([\w.%-]+)\/[0-9a-f-]{36}/i },
+  { site: "smartrecruiters", host: /^jobs\.smartrecruiters\.com$/, path: /^\/([\w.-]+)\/\d+/ },
+  { site: "workable", host: /^apply\.workable\.com$/, path: /^\/([\w.-]+)\/j\/[\w]+/ },
+  { site: "workday", host: /^([\w-]+)\.wd\d+\.myworkdayjobs\.com$/, path: /\/job\// }
+];
+
+// A posting URL -> { source, company }, or null for anything that isn't one job.
+export function postingInfo(url) {
+  let u; try { u = new URL(url); } catch { return null; }
+  const host = u.hostname.toLowerCase();
+  for (const p of POSTING) {
+    const h = host.match(p.host); if (!h) continue;
+    const m = u.pathname.match(p.path); if (!m) return null;
+    const company = p.site === "workday" ? h[1] : decodeURIComponent(m[1]);
+    return { source: p.site, company };
+  }
+  return null;
+}
+
+const timeRange = days => { const d = Number(days) || 0; return !d ? undefined : d <= 1 ? "day" : d <= 7 ? "week" : d <= 31 ? "month" : "year"; };
+
+// Discovery mode: search the fixed hiring sites by title keywords and location.
+export async function handleDiscover(body, env, fetchImpl = fetch) {
+  const keywords = String(body?.keywords || "").trim();
+  if (!keywords) return err(400, "bad_request", "keywords are required when no boards are given, e.g. \"business analyst\"");
+  if (!env.TAVILY_API_KEY) return err(503, "no_api_key", "TAVILY_API_KEY is not set on the server.");
+  const location = String(body?.location || "").trim();
+  const query = `${keywords.split(",")[0].trim()} job ${location}`.trim();
+  const payload = { query, max_results: 20, search_depth: "advanced", include_domains: JOB_SITES };
+  const range = timeRange(body?.days); if (range) payload.time_range = range;
+
+  const span = traceChild("jobs.discover", { kind: SPAN_KIND.HTTP });
+  span?.set({ "http.url": TAVILY_SEARCH_URL, "jobs.query": query });
+  let res;
+  try {
+    res = await fetchImpl(TAVILY_SEARCH_URL, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${env.TAVILY_API_KEY}` }, body: JSON.stringify(payload) });
+  } catch { span?.fail(new Error("upstream unreachable")); return err(502, "upstream_unreachable", "Could not reach the search provider."); }
+  if (!res.ok) { span?.set({ "http.response.status_code": res.status }).end(STATUS.ERROR, `search failed (${res.status})`); return err(res.status, "search_failed", `Search failed (${res.status}).`); }
+  const data = await res.json();
+  const seen = new Set(), jobs = [];
+  for (const r of Array.isArray(data.results) ? data.results : []) {
+    const url = String(r.url || "").split("#")[0], info = postingInfo(url);
+    if (!info || seen.has(url)) continue;
+    seen.add(url);
+    jobs.push({ source: info.source, company: info.company, title: String(r.title || "").replace(/^Job Application for\s+/i, "").trim(), location: "", remote: /remote/i.test(`${r.title} ${r.content}`), url, posted: null, snippet: String(r.content || "").replace(/\s+/g, " ").trim().slice(0, SNIPPET) });
+  }
+  span?.set({ "jobs.results": (data.results || []).length, "jobs.postings": jobs.length }).end(STATUS.OK);
+  return { status: 200, json: { mode: "discover", sites: JOB_SITES, searched: (data.results || []).length, total: jobs.length, jobs, errors: [] } };
+}
 
 export const SOURCES = ["greenhouse", "lever", "ashby"];
 const MAX_BOARDS = 15, MAX_RESULTS = 25, SNIPPET = 280;
@@ -89,11 +156,11 @@ export function filterJobs(jobs, { keywords = "", location = "", days = 0 } = {}
 
 const summary = j => ({ source: j.source, company: j.company, title: j.title, location: j.location, remote: j.remote, url: j.url, posted: j.posted ? j.posted.slice(0, 10) : null, snippet: j.text.slice(0, SNIPPET) });
 
-export async function handleSearch(body, _env, fetchImpl = fetch) {
-  const list = Array.isArray(body?.boards) ? body.boards : [];
+export async function handleSearch(body, env = {}, fetchImpl = fetch) {
+  const list = (Array.isArray(body?.boards) ? body.boards : []).filter(b => String(b || "").trim());
+  if (!list.length) return handleDiscover(body, env, fetchImpl);
   const boards = list.map(parseBoard);
   const bad = list.filter((_, i) => !boards[i]);
-  if (!list.length) return err(400, "bad_request", "boards is required, e.g. [\"greenhouse:stripe\", \"https://jobs.lever.co/palantir\"]");
   if (bad.length) return err(400, "bad_request", `Unrecognized board: ${bad.join(", ")}. Use greenhouse:<token>, lever:<site>, ashby:<name>, or the board's URL.`);
   if (boards.length > MAX_BOARDS) return err(400, "bad_request", `At most ${MAX_BOARDS} boards per search.`);
 
@@ -114,5 +181,5 @@ export async function handleSearch(body, _env, fetchImpl = fetch) {
   const all = fetched.flat();
   const matches = filterJobs(all, body);
   span?.set({ "jobs.total": all.length, "jobs.matches": matches.length }).end(STATUS.OK);
-  return { status: 200, json: { searched: all.length, total: matches.length, jobs: matches.slice(0, MAX_RESULTS).map(summary), errors } };
+  return { status: 200, json: { mode: "boards", searched: all.length, total: matches.length, jobs: matches.slice(0, MAX_RESULTS).map(summary), errors } };
 }

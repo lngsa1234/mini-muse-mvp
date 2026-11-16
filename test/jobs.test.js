@@ -1,7 +1,7 @@
 // Job search and fit scoring: `npm test` (no network, no API key).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseBoard, boardUrl, normalizeJobs, filterJobs, toText, handleSearch } from "../server/jobs.js";
+import { parseBoard, boardUrl, normalizeJobs, filterJobs, toText, handleSearch, postingInfo, JOB_SITES } from "../server/jobs.js";
 import { overallScore, verdict, keywordCoverage, buildFit } from "../public/js/features/jobs/fit.js";
 
 const GREENHOUSE = { jobs: [
@@ -73,4 +73,42 @@ test("fit: code computes the score, verdict, and keyword coverage", () => {
   const fit = buildFit({ scores: { role: 4, seniority: 4, skills: 3, domain: 5, logistics: 3 }, keywords: ["telematics"], dealbreakers: [] }, "telematics PM");
   assert.equal(fit.overall, 70);
   assert.equal(fit.verdict, "strong");
+});
+
+test("discover: only single postings on the fixed hiring sites count", () => {
+  assert.deepEqual(postingInfo("https://boards.greenhouse.io/acme/jobs/4012345"), { source: "greenhouse", company: "acme" });
+  assert.deepEqual(postingInfo("https://job-boards.greenhouse.io/acme/jobs/4012345?gh_src=x"), { source: "greenhouse", company: "acme" });
+  assert.deepEqual(postingInfo("https://jobs.lever.co/beta/0f7e1f3a-1b2c-4d5e-8f90-a1b2c3d4e5f6"), { source: "lever", company: "beta" });
+  assert.deepEqual(postingInfo("https://jobs.ashbyhq.com/gamma/0f7e1f3a-1b2c-4d5e-8f90-a1b2c3d4e5f6/application"), { source: "ashby", company: "gamma" });
+  assert.deepEqual(postingInfo("https://jobs.smartrecruiters.com/Bosch/744000012345678-business-analyst"), { source: "smartrecruiters", company: "Bosch" });
+  assert.deepEqual(postingInfo("https://apply.workable.com/delta/j/AB12CD34EF/"), { source: "workable", company: "delta" });
+  assert.deepEqual(postingInfo("https://ford.wd1.myworkdayjobs.com/en-US/FordCareers/job/Dearborn-MI/Business-Analyst_R123"), { source: "workday", company: "ford" });
+  // Board home pages, search pages, and other sites are not postings.
+  assert.equal(postingInfo("https://boards.greenhouse.io/acme"), null);
+  assert.equal(postingInfo("https://jobs.lever.co/beta"), null);
+  assert.equal(postingInfo("https://ford.wd1.myworkdayjobs.com/en-US/FordCareers"), null);
+  assert.equal(postingInfo("https://www.zippia.com/business-finance-analyst-jobs/jobs"), null);
+  assert.ok(!JOB_SITES.some(s => /handshake|linkedin|indeed/.test(s)));
+});
+
+test("discover: searches the fixed sites with keywords and keeps postings only", async () => {
+  let sent;
+  const fake = async (url, init) => {
+    sent = JSON.parse(init.body);
+    return { ok: true, status: 200, json: async () => ({ results: [
+      { title: "Job Application for Business Analyst at Acme", url: "https://boards.greenhouse.io/acme/jobs/1#app", content: "Remote friendly business analyst role." },
+      { title: "Acme careers", url: "https://boards.greenhouse.io/acme", content: "All jobs" },
+      { title: "Business Analyst", url: "https://ford.wd1.myworkdayjobs.com/en-US/FordCareers/job/Dearborn-MI/Business-Analyst_R1", content: "Dearborn" },
+      { title: "Business Analyst", url: "https://boards.greenhouse.io/acme/jobs/1", content: "duplicate" }
+    ] }) };
+  };
+  const out = await handleSearch({ keywords: "business analyst, data analyst", location: "Detroit, MI", days: 14 }, { TAVILY_API_KEY: "k" }, fake);
+  assert.equal(out.status, 200);
+  assert.equal(out.json.mode, "discover");
+  assert.equal(sent.query, "business analyst job Detroit, MI");
+  assert.deepEqual(sent.include_domains, JOB_SITES);
+  assert.equal(sent.time_range, "month");
+  assert.deepEqual(out.json.jobs.map(j => [j.source, j.company, j.title]), [["greenhouse", "acme", "Business Analyst at Acme"], ["workday", "ford", "Business Analyst"]]);
+  assert.equal(out.json.jobs[0].remote, true);
+  assert.equal((await handleSearch({ keywords: "analyst" }, {}, fake)).status, 503);
 });

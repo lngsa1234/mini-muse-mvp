@@ -83,8 +83,8 @@ const tools = [
     type: "function",
     function: {
       name: "jobs_search",
-      description: "Search companies' public job boards (greenhouse:<token>, lever:<site>, ashby:<name>, or board URLs) for openings by title keywords, location, and recency.",
-      parameters: { type: "object", properties: { boards: { type: "array", items: { type: "string" } }, keywords: { type: "string" }, location: { type: "string" } }, required: ["boards"] }
+      description: "Find openings on employers' hiring sites by job title keywords and location (any company), or on specific company boards (greenhouse:<token>, lever:<site>, ashby:<name>).",
+      parameters: { type: "object", properties: { boards: { type: "array", items: { type: "string" } }, keywords: { type: "string" }, location: { type: "string" } } }
     }
   },
   {
@@ -113,7 +113,7 @@ const system = [
   "You are Mini Muse, a personal AI agent. Follow these rules exactly:",
   ...SAFETY_RULES.map((rule, index) => (index + 1) + ". " + rule),
   "Use create_goal when asked to create a goal. Do not call update_step unless its preconditions are met.",
-  "For a job-search goal, plan steps your tools can do: pick target companies (the user decides), find openings on those companies' job boards with jobs_search, score and save the best matches, tailor the résumé and cover letter, apply (the user submits), and follow up on replies. Don't write steps like \"identify job boards\" or \"search Indeed/LinkedIn\": you can't search general job sites."
+  "For a job-search goal, plan steps your tools can do: confirm target roles and location (the user decides), find openings on employers' hiring sites with jobs_search, score and save the best matches, tailor the résumé and cover letter, apply (the user submits), and follow up on replies. Don't write steps like \"identify job boards\" or \"search Indeed/LinkedIn\": you can't search general job sites."
 ].join("\n");
 
 async function runCase(testCase) {
