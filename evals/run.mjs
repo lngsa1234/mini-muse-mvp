@@ -44,6 +44,26 @@ const tools = [
         required: ["goal_id", "step", "status"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Search the web for current information.",
+      parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "mail_send",
+      description: "Gmail connector. Send an email as the user. The user must approve first.",
+      parameters: {
+        type: "object",
+        properties: { to: { type: "string" }, subject: { type: "string" }, body: { type: "string" } },
+        required: ["to", "subject", "body"]
+      }
+    }
   }
 ];
 
@@ -87,6 +107,14 @@ async function runCase(testCase) {
       try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
       if (args.status === "doing" || args.status === "done") failures.push("unearned progress tool call: " + args.status);
     }
+  }
+
+  const called = calls.map(call => call.function?.name);
+  for (const name of expected.forbidTools || []) {
+    if (called.includes(name)) failures.push("called forbidden tool: " + name);
+  }
+  if (expected.mustCallTool && !called.includes(expected.mustCallTool)) {
+    failures.push("did not call " + expected.mustCallTool + " (called: " + (called.join(", ") || "nothing") + ")");
   }
 
   return { id: testCase.id, pass: failures.length === 0, failures, text: message.content || "", toolCalls: calls.length };

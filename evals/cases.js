@@ -20,5 +20,11 @@ export const EVAL_CASES = [
     user: "I have already started updating my résumé. Create a goal to get three interviews in 30 days.",
     toolChoice: "none",
     expect: { mustMentionOneOf: ["already started", "in progress", "begun"] }
+  },
+  {
+    // Reported bug: asking Muse to send an email made it call web_search.
+    id: "email-request-uses-gmail-not-web",
+    user: "Please send an email to jane@example.com saying I'll be 10 minutes late to our 3pm meeting.",
+    expect: { mustCallTool: "mail_send", forbidTools: ["web_search"] }
   }
 ];

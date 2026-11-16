@@ -13,7 +13,7 @@ import { CHECKIN } from "../workflow/checkin.js";
 import { SAFETY_RULES } from "./policy.js";
 
 const GENERAL_RULES = [
-  `Some actions need the user's approval. If they decline, accept it and ask what to change. Never claim something happened unless the tool result says it did. Emails are simulated in this demo: approved mail goes to "Sent mail", not the real world.`,
+  `Some actions need the user's approval. If they decline, accept it and ask what to change. Never claim something happened unless the tool result says it did. Approved Gmail messages are really sent from the user's account.`,
   ...SAFETY_RULES
 ];
 

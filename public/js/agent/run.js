@@ -11,6 +11,7 @@ import { buildInput } from "./prompt.js";
 import { makeTools } from "./tools.js";
 import { ERR } from "./errors.js";
 import { startTrace, setActive, flush } from "../core/trace.js";
+import { isEmailRequest } from "./intent.js";
 
 const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
 const COMPLETION_CLAIM = /\b(?:updated|finished|completed|done|marked|mark)\b/i;
@@ -19,12 +20,13 @@ const GOAL_PROGRESS_ACTION = /\b(?:forward|next|progress|update)\b/i;
 const GOAL_CONTINUATION = /\b(?:try again|again|continue|go ahead|proceed)\b/i;
 const JOB_RESEARCH_STEP = /\b(?:research|find|look for)\b.*\b(?:compan(?:y|ies)|jobs?|open positions?|roles?)\b/i;
 const APPLICATION_REQUEST = /\b(?:apply|application|submit)\b/i;
-const EXPLICIT_EMAIL_REQUEST = /\b(?:email|gmail|mail)\b/i;
 const APPLICATION_CONTINUATION = /\b(?:y|yes|ok|okay|send|submit|try again|again|continue)\b/i;
 const OPEN_APPLICATION_REQUEST = /\b(?:open|apply|application|submit|continue|y|yes|ok|okay)\b/i;
 
 function documentVerificationStep(text) {
   const message = String(text || "");
+  // An email request is not a request to verify goal documents.
+  if (isEmailRequest(message)) return null;
   const directCompletion = DOCUMENT_STEP.test(message) && COMPLETION_CLAIM.test(message);
   const moveGoalForward = (GOAL_PROGRESS_REQUEST.test(message) && GOAL_PROGRESS_ACTION.test(message)) || GOAL_CONTINUATION.test(message);
   if (!directCompletion && !moveGoalForward) return null;
@@ -35,6 +37,9 @@ function documentVerificationStep(text) {
 
 function jobResearchStep(text) {
   const message = String(text || "");
+  // "Go ahead and email the recruiter" must reach Gmail, not trigger a forced
+  // web_search just because a job-research goal step is pending.
+  if (isEmailRequest(message)) return null;
   if (!(GOAL_PROGRESS_REQUEST.test(message) && GOAL_PROGRESS_ACTION.test(message)) && !GOAL_CONTINUATION.test(message)) return null;
   return state.plans.flatMap(goal => goal.steps.map((step, index) => ({ goal, step, index })))
     .find(({ goal, step, index }) => step.status !== "done" && JOB_RESEARCH_STEP.test(step.text) && goal.steps.slice(0, index).every(previous => previous.status === "done")) || null;
@@ -70,7 +75,7 @@ async function inspectApplicationPage(text, tools, force = false) {
   const message = String(text || "");
   const recentAssistantText = state.chat.filter(item => item.role === "assistant").map(item => item.text || "").join("\n");
   const isContinuation = APPLICATION_CONTINUATION.test(message) && APPLICATION_REQUEST.test(recentAssistantText);
-  if (!force && (!(APPLICATION_REQUEST.test(message) || isContinuation) || EXPLICIT_EMAIL_REQUEST.test(message))) return null;
+  if (!force && (!(APPLICATION_REQUEST.test(message) || isContinuation) || isEmailRequest(message))) return null;
   const snapshot = tools.find(tool => tool.name === "browser_snapshot");
   if (!snapshot) return { error: "The Chrome Browser Bridge is not available." };
   try {
@@ -85,7 +90,7 @@ async function inspectApplicationPage(text, tools, force = false) {
 
 async function openRecentApplication(text, tools) {
   const message = String(text || "");
-  if (!OPEN_APPLICATION_REQUEST.test(message) || EXPLICIT_EMAIL_REQUEST.test(message)) return null;
+  if (!OPEN_APPLICATION_REQUEST.test(message) || isEmailRequest(message)) return null;
   // Scan the newest messages first (current message, then history newest→oldest)
   // so a freshly shared apply link wins over an older search/listing link, and
   // within a message prefer a real /apply page over a job-board search URL.
