@@ -63,3 +63,24 @@ test("goals: revise_plan keeps statuses and describes each change", async () => 
   assert.deepEqual(diffPlan(old.map(s => s.text), t2), [["Add", "“Run a mock interview”"], ["Remove", "“Research job openings”"]]);
   assert.deepEqual(diffPlan(["A"], ["a"]), []);
 });
+
+test("goals: prompt context shows target, deadline, and tracked applications", async () => {
+  const { goalContext } = await import("../public/js/features/goals/model.js");
+  const now = new Date(2026, 10, 16, 18);
+  const day = 86400000;
+  const g = {
+    id: "g1", goal: "Land 1 interview in 30 days", deadline: "2026-12-16",
+    target: { metric: "interviews", count: 1 },
+    steps: [{ text: "Find openings", status: "done" }, { text: "Apply", status: "todo" }],
+    applications: [
+      { company: "onedigital", role: "Business Analyst", status: "drafted", url: "https://onedigital.wd504.myworkdayjobs.com/x/job/y", t: now.getTime() - 4 * day },
+      { company: "icf", role: "Lead Business Analyst", status: "applied", t: now.getTime() - day }
+    ]
+  };
+  const text = goalContext(g, now);
+  assert.match(text, /^Goal g1: Land 1 interview in 30 days\n  1\. \[done\] Find openings/);
+  assert.match(text, /Target: 0\/1 interviews, deadline 2026-12-16 \(30 days left\)/);
+  assert.match(text, /- onedigital · Business Analyst \[drafted, updated 4d ago\] https:/);
+  assert.match(text, /- icf · Lead Business Analyst \[applied, updated 1d ago\]/);
+  assert.equal(goalContext({ id: "g2", goal: "Walk", steps: [] }), "Goal g2: Walk");
+});

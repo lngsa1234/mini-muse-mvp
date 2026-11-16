@@ -6,6 +6,7 @@
  * uses your feature's tools, edit your feature's guidance, not this file.
  */
 import { TZ } from "../core/dom.js";
+import { goalContext } from "../features/goals/model.js";
 import { state, isOn } from "../core/state.js";
 import { features, CONNECTORS } from "../core/registry.js";
 import { ideaTitle, ideaStatus } from "../features/ideas/model.js";
@@ -21,7 +22,7 @@ export function instructions() {
   const now = new Date();
   const mem = state.memory.map(f => "- " + f.fact).join("\n") || "(empty)";
   const ideas = state.ideas.filter(i => ideaStatus(i) !== "dismissed").map(i => `- ${i.id}: ${ideaTitle(i)} [${ideaStatus(i)}]${i.goalId ? " (became goal " + i.goalId + ")" : ""}`).join("\n") || "(none)";
-  const goals = state.plans.map(p => `Goal ${p.id}: ${p.goal}\n` + p.steps.map((s, i) => `  ${i + 1}. [${s.status}] ${s.text}`).join("\n")).join("\n") || "(none)";
+  const goals = state.plans.map(p => goalContext(p)).join("\n") || "(none)";
   const conns = Object.entries(CONNECTORS).map(([k, c]) => `- ${c.name}: ${isOn(k) ? "CONNECTED" + (c.readOnly ? " (read-only)" : state.connectors[k].writes === "ask" || c.lockAsk ? " (changes need the user's approval)" : " (changes allowed without asking)") : "not connected"}`).join("\n");
   const rules = [...features.flatMap(f => [].concat(f.guidance || [])), ...GENERAL_RULES].map((r, i) => `${i + 1}. ${r}`).join("\n");
   return `You are Mini Muse, a personal AI agent (a classroom replica of Meta's Muse). You don't just answer questions; you get things done using your tools.

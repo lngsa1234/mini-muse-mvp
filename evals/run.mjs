@@ -52,7 +52,7 @@ const tools = [
     type: "function",
     function: {
       name: "track_application",
-      description: "Track a job application on a goal. applied only after the user approved a Submit click; interview/offer only after an employer email was found and the user confirmed.",
+      description: "Track a job application on a goal. applied only after the user approved a Submit click or a confirmation email was found; interview/offer only after an employer email was found and the user confirmed.",
       parameters: {
         type: "object",
         properties: {

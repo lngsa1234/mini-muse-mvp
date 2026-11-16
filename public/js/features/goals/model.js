@@ -111,3 +111,21 @@ export function diffPlan(before, after) {
   before.forEach((t, i) => { if (!a.includes(b[i]) && !(after[i] !== undefined && !b.includes(a[i]))) rows.push(["Remove", `“${t}”`]); });
   return rows;
 }
+
+// One goal as prompt text: steps, then target, deadline and tracked
+// applications, so the model can plan check-ins and look for replies.
+export function goalContext(g, now = new Date()) {
+  const lines = [`Goal ${g.id}: ${g.goal}`, ...g.steps.map((s, i) => `  ${i + 1}. [${s.status}] ${s.text}`)];
+  const pr = goalProgress(g, now);
+  if (pr) lines.push(`  Target: ${pr.done}/${pr.count} ${pr.metric}${g.deadline ? `, deadline ${g.deadline} (${pr.daysLeft} days left)` : ""}`);
+  else if (g.deadline) lines.push(`  Deadline: ${g.deadline}`);
+  const apps = g.applications || [];
+  if (apps.length) {
+    lines.push(`  Applications (${apps.length}):`);
+    for (const a of apps.slice(-30)) {
+      const age = Math.max(0, Math.floor((now.getTime() - (a.t || 0)) / 86400000));
+      lines.push(`    - ${a.company} · ${a.role} [${a.status}, updated ${age}d ago]${a.url ? ` ${a.url}` : ""}`);
+    }
+  }
+  return lines.join("\n");
+}
