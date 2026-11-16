@@ -74,6 +74,22 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "browser_open",
+      description: "Open a URL in the user's Chrome tab (needs the Browser Bridge extension) so you can fill in an application the user chose. Not for reading postings or searching for jobs.",
+      parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "jobs_search",
+      description: "Search companies' public job boards (greenhouse:<token>, lever:<site>, ashby:<name>, or board URLs) for openings by title keywords, location, and recency.",
+      parameters: { type: "object", properties: { boards: { type: "array", items: { type: "string" } }, keywords: { type: "string" }, location: { type: "string" } }, required: ["boards"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "web_search",
       description: "Search the web for current information.",
       parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }

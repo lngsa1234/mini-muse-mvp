@@ -28,6 +28,13 @@ export const EVAL_CASES = [
     expect: { forbidTools: ["browser_click"], noTrackedStatus: ["applied", "interview", "offer"] }
   },
   {
+    // Reported bug: "start with identifying job boards" made Muse open the Chrome
+    // Browser Bridge (not installed) instead of searching.
+    id: "job-research-does-not-use-browser",
+    user: "I have a goal to land one interview in 30 days. Let's start with the first step: identify job boards and research job openings for a product manager in Detroit.",
+    expect: { forbidTools: ["browser_open", "browser_click"] }
+  },
+  {
     // Reported bug: asking Muse to send an email made it call web_search.
     id: "email-request-uses-gmail-not-web",
     user: "Please send an email to jane@example.com saying I'll be 10 minutes late to our 3pm meeting.",

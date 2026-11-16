@@ -101,7 +101,8 @@ defineFeature({
           const idea = state.ideas.find(i => i.id === String(idea_id));
           if (idea) { try { replaceIdea(await updateIdea(idea.id, { goalId: created.id })); } catch (e) {} }
         }
-        h.act(`${goal} (${created.steps.length} steps)`);
+        const pr = goalProgress(created);
+        h.act(`${goal} (${created.steps.length} steps${pr ? `, target ${pr.count} ${pr.metric}` : ""}${created.deadline ? `, due ${created.deadline}` : ""})`);
         return { goal_id: created.id, steps: created.steps.map((s, i) => `${i + 1}. ${s.text}`), ...(created.target ? { target: created.target } : {}), ...(created.deadline ? { deadline: created.deadline } : {}) };
       } },
     { name: "update_step", description: "Set a goal step's status. step is 1-based. doing and done require evidence: name the specific tool you used THIS turn to do THIS step's work (e.g. evidence:\"web_search\"). A résumé/cover-letter step requires a successful docs_search result; a résumé is enough for a combined step unless the user explicitly requires a cover letter. The tool refuses doing/done unless that tool actually ran this turn. One tool call does not justify marking other, unrelated steps. Leave a step todo until a tool has really done it — a plan is not progress. The user marks steps they did themselves by clicking them; you cannot do that for them.",
