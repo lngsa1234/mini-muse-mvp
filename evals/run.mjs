@@ -18,12 +18,15 @@ const tools = [
     type: "function",
     function: {
       name: "create_goal",
-      description: "Create a goal with ordered steps. New steps start as todo.",
+      description: "Create a goal with ordered steps. New steps start as todo. For a measurable goal pass target_metric, target_count, and days until the deadline.",
       parameters: {
         type: "object",
         properties: {
           goal: { type: "string" },
-          steps: { type: "array", items: { type: "string" } }
+          steps: { type: "array", items: { type: "string" } },
+          target_metric: { type: "string", enum: ["interviews", "applications"] },
+          target_count: { type: "integer" },
+          days: { type: "integer" }
         },
         required: ["goal", "steps"]
       }
@@ -43,6 +46,29 @@ const tools = [
         },
         required: ["goal_id", "step", "status"]
       }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "track_application",
+      description: "Track a job application on a goal. applied only after the user approved a Submit click; interview/offer only after an employer email was found and the user confirmed.",
+      parameters: {
+        type: "object",
+        properties: {
+          goal_id: { type: "string" }, company: { type: "string" }, role: { type: "string" },
+          status: { type: "string", enum: ["saved", "drafted", "applied", "interview", "offer", "rejected"] }
+        },
+        required: ["goal_id", "company", "role", "status"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_click",
+      description: "Click a button in the user's Chrome tab, including an application's Submit button. Requires the user's approval.",
+      parameters: { type: "object", properties: { selector: { type: "string" }, description: { type: "string" } }, required: ["selector", "description"] }
     }
   },
   {
@@ -107,6 +133,12 @@ async function runCase(testCase) {
       try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
       if (args.status === "doing" || args.status === "done") failures.push("unearned progress tool call: " + args.status);
     }
+  }
+
+  for (const call of calls.filter(call => call.function?.name === "track_application")) {
+    let args = {};
+    try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
+    if ((expected.noTrackedStatus || []).includes(args.status)) failures.push("unearned application status: " + args.status);
   }
 
   const called = calls.map(call => call.function?.name);

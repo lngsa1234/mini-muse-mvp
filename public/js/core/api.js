@@ -77,13 +77,19 @@ export async function removeIdea(id) {
 }
 
 /* ---------- Goals (/api/goals → Neon) ---------- */
-// Returns an array of goals ({ id, goal, steps: [{text,status}], t }).
+// Returns an array of goals ({ id, goal, steps: [{text,status}], target, deadline, applications, t }).
 export async function listGoals() {
   const data = await jcall("/api/goals");
   return (data && data.goals) || [];
 }
-export async function createGoal(goal, steps) {
-  const data = await jpost("/api/goals", { goal, steps });
+// extra: { target?: { metric, count }, deadline?: "YYYY-MM-DD" }
+export async function createGoal(goal, steps, extra = {}) {
+  const data = await jpost("/api/goals", { goal, steps, ...extra });
+  return data.goal;
+}
+// Add or update one tracked application ({ company, role, status, url?, note? }).
+export async function saveApplication(id, application) {
+  const data = await jpatch("/api/goals/" + encodeURIComponent(id), { application });
   return data.goal;
 }
 // step is 1-based.

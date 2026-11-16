@@ -56,7 +56,7 @@ public/
     features/
       chat/                  chat log + composer
       ideas/                 starter rules, personalized ideas, save_idea tool
-      goals/                 plans + create_goal / update_step, suggested goals
+      goals/                 plans + create_goal / update_step / track_application, targets & deadlines, application tracker, suggested goals
       library/               documents, keyword RAG search, docs_* tools
       memory/                remember / forget tools, Settings → Memory
       connectors/            Connectors page + one file per connector (mail, calendar, contacts)

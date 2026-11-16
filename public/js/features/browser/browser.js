@@ -31,7 +31,11 @@ defineFeature({
       return out;
     } },
     { name: "browser_click", writes: true, description: "Click a CSS-selected button or link in the selected Chrome tab. Use only after the user approves; this includes application submission buttons.", inputSchema: { type: "object", properties: { selector: S, description: S }, required: ["selector", "description"] }, run: async ({ selector, description }, context, h) => {
-      const ok = await h.ask("browser_click", { heading: "Muse wants to click a button in your Chrome tab. Allow it?", rows: [["Action", String(description)]], yes: "Click button", summary: String(description) }, context);
+      // A submit click sends something on the user's behalf (e.g. a job application), so its card says so plainly.
+      const submits = /submit|apply|send/i.test(String(description) + " " + String(selector));
+      const ok = await h.ask("browser_click", submits
+        ? { heading: "This will submit the form in your Chrome tab. Did you review every field?", rows: [["Action", String(description)], ["Check first", "Open the tab and confirm the filled answers are right"]], yes: "Submit it", summary: String(description) }
+        : { heading: "Muse wants to click a button in your Chrome tab. Allow it?", rows: [["Action", String(description)]], yes: "Click button", summary: String(description) }, context);
       if (ok !== true) return h.refusal(ok);
       return request({ type: "click", selector: String(selector) });
     } }

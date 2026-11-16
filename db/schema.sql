@@ -49,8 +49,16 @@ create table if not exists goals (
   user_id    text not null references users(id) on delete cascade,
   goal       text not null,
   steps      jsonb not null default '[]'::jsonb,  -- [{ text, status }]
+  target     jsonb,                                -- { metric: interviews|applications, count } or null
+  deadline   date,                                 -- e.g. 30 days after the goal was set
+  applications jsonb not null default '[]'::jsonb, -- [{ company, role, url, status, note, t }]
   created_at timestamptz not null default now()
 );
+
+-- Goal targets and the application tracker were added later; keep old databases in step.
+alter table goals add column if not exists target jsonb;
+alter table goals add column if not exists deadline date;
+alter table goals add column if not exists applications jsonb not null default '[]'::jsonb;
 
 create index if not exists goals_user_created
   on goals (user_id, created_at desc);

@@ -14,7 +14,7 @@ import { CONNECTORS } from "./registry.js";
 export const blank = () => ({
   memory: [],                 // features/memory   { id, fact, t }
   ideas: [],                  // features/ideas    { id, title, why, kind, basedOn, action, status, by, t, goalId?, ruleKey? }
-  plans: [],                  // features/goals    { id, goal, steps: [{ text, status }], t }
+  plans: [],                  // features/goals    { id, goal, steps: [{ text, status }], target?, deadline?, applications, t }
   goalSuggs: [], goalRuleDone: [], // features/goals suggestions
   docs: [],                   // features/library  { id, title, text, t, example? }
   inbox: [], outbox: [],      // connectors/mail

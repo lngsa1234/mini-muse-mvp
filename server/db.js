@@ -178,8 +178,12 @@ const toGoal = r => ({
   id: r.id,
   goal: r.goal,
   steps: Array.isArray(r.steps) ? r.steps : [],
+  target: r.target || null,
+  deadline: r.deadline ? isoDay(r.deadline) : null,
+  applications: Array.isArray(r.applications) ? r.applications : [],
   t: new Date(r.created_at).getTime()
 });
+const isoDay = d => (d instanceof Date ? d.toISOString() : String(d)).slice(0, 10);
 
 export async function listGoals(userId) {
   const s = sql();
@@ -201,21 +205,27 @@ export async function createGoal(userId, d) {
   const id = newId("g");
   const steps = (Array.isArray(d.steps) ? d.steps : []).map(normStep);
   const rows = await s`
-    insert into goals (id, user_id, goal, steps)
-    values (${id}, ${userId}, ${d.goal}, ${JSON.stringify(steps)}::jsonb)
+    insert into goals (id, user_id, goal, steps, target, deadline)
+    values (${id}, ${userId}, ${d.goal}, ${JSON.stringify(steps)}::jsonb,
+      ${d.target ? JSON.stringify(d.target) : null}::jsonb, ${d.deadline || null})
     returning *`;
   return toGoal(rows[0]);
 }
 
-// Replace the whole goal (goal text and/or steps array).
+// Replace any of: goal text, steps, target, deadline, applications.
 export async function updateGoal(userId, id, patch) {
   const s = sql();
   const cur = (await s`select * from goals where user_id = ${userId} and id = ${id}`)[0];
   if (!cur) return null;
   const goal = "goal" in patch ? patch.goal : cur.goal;
   const steps = ("steps" in patch ? patch.steps : cur.steps).map(normStep);
+  const target = "target" in patch ? patch.target : cur.target;
+  const deadline = "deadline" in patch ? patch.deadline : (cur.deadline ? isoDay(cur.deadline) : null);
+  const applications = "applications" in patch ? patch.applications : (cur.applications || []);
   const rows = await s`
-    update goals set goal = ${goal}, steps = ${JSON.stringify(steps)}::jsonb
+    update goals set goal = ${goal}, steps = ${JSON.stringify(steps)}::jsonb,
+      target = ${target ? JSON.stringify(target) : null}::jsonb, deadline = ${deadline || null},
+      applications = ${JSON.stringify(applications)}::jsonb
     where user_id = ${userId} and id = ${id}
     returning *`;
   return toGoal(rows[0]);

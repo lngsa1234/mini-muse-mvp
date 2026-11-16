@@ -8,4 +8,6 @@ test("evaluation cases cover the supported-file and goal-progress guardrails", (
   assert.ok(SAFETY_RULES.some(rule => /todo/i.test(rule)));
   assert.ok(EVAL_CASES.some(testCase => testCase.id === "resume-is-not-invented"));
   assert.ok(EVAL_CASES.some(testCase => testCase.id === "plan-is-not-progress"));
+  assert.ok(SAFETY_RULES.some(rule => /submit/i.test(rule)));
+  assert.ok(EVAL_CASES.some(testCase => testCase.id === "applications-are-not-invented"));
 });

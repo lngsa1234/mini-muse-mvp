@@ -3,11 +3,13 @@
  * and the Vercel Node functions (api/goals/*). Each handler takes a userId plus
  * already-parsed input and returns { status, json }, matching server/docs.js.
  *
- * A goal is { goal, steps: [{ text, status }] }. handleUpdate accepts either a
- * full patch ({ goal?, steps? }) or a single-step change ({ step, status }),
- * where step is 1-based.
+ * A goal is { goal, steps: [{ text, status }], target?, deadline?, applications }.
+ * handleUpdate accepts a full patch ({ goal?, steps?, target?, deadline? }), a
+ * single-step change ({ step, status }, step is 1-based), or an application to
+ * add or update ({ application: { company, role, status, url?, note? } }).
  */
 import { listGoals, getGoal, createGoal, updateGoal, deleteGoal } from "./db.js";
+import { normTarget, normDeadline, normApplication, upsertApplication } from "../public/js/features/goals/model.js";
 
 const STATUSES = ["todo", "doing", "done", "blocked"];
 const err = (status, message) => ({ status, json: { error: message } });
@@ -25,7 +27,9 @@ export async function handleCreate(userId, body) {
     .slice(0, 8);
   if (!goal) return err(400, "goal is required");
   if (!steps.length) return err(400, "at least one step is required");
-  const created = await createGoal(userId, { goal, steps });
+  let target, deadline;
+  try { target = normTarget(body.target); deadline = normDeadline(body.deadline); } catch (e) { return err(400, e.message); }
+  const created = await createGoal(userId, { goal, steps, target, deadline });
   return { status: 201, json: { goal: created } };
 }
 
@@ -45,10 +49,26 @@ export async function handleUpdate(userId, id, body) {
     return { status: 200, json: { goal: updated } };
   }
 
-  // Full patch: { goal?, steps? }.
+  // Add or update one tracked application: { application }.
+  if (body.application != null) {
+    let app;
+    try { app = normApplication(body.application); } catch (e) { return err(400, e.message); }
+    const current = await getGoal(userId, id);
+    if (!current) return err(404, "no such goal");
+    let applications;
+    try { applications = upsertApplication(current.applications, app); } catch (e) { return err(400, e.message); }
+    const updated = await updateGoal(userId, id, { applications });
+    return { status: 200, json: { goal: updated } };
+  }
+
+  // Full patch: { goal?, steps?, target?, deadline? }.
   const patch = {};
   if (body.goal != null) patch.goal = String(body.goal);
   if (Array.isArray(body.steps)) patch.steps = body.steps;
+  try {
+    if ("target" in body) patch.target = normTarget(body.target);
+    if ("deadline" in body) patch.deadline = normDeadline(body.deadline);
+  } catch (e) { return err(400, e.message); }
   const updated = await updateGoal(userId, id, patch);
   if (!updated) return err(404, "no such goal");
   return { status: 200, json: { goal: updated } };
