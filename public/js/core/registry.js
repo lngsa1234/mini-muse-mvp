@@ -4,7 +4,7 @@
  * Every area of the app (Ideas, Goals, Library, each connector, ...) registers
  * itself here instead of being wired into one big file. Core code only ever
  * loops over what's registered, so you can work on one feature without
- * touching the others. See docs/ARCHITECTURE.md for the full contract.
+ * touching the others. See CONTRIBUTING.md (the feature contract) for the full contract.
  *
  * defineFeature({
  *   id,                 // "ideas"
