@@ -2,8 +2,9 @@
 
 This repo is built together by the agent engineering learning circle. Each
 person (or pair) owns an area; the code is split so you can work on yours
-without stepping on anyone else's. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-first: it has the folder map and the feature contract.
+without stepping on anyone else's. Read the
+[architecture overview](docs/architecture/README.md) first for how the system fits
+together, then [the feature contract](#the-feature-contract) below for how to add to it.
 
 ## Areas
 
@@ -36,6 +37,63 @@ to you automatically.
 5. Open a PR into `main`. Fill in the template; one approving review from
    someone outside your area before merging.
 
+## The feature contract
+
+Each feature registers itself in `core/registry.js`; core code only loops over
+what is registered. A feature module typically looks like this:
+
+```js
+import { defineFeature, onClick, renderMine } from "../../core/registry.js";
+import { state } from "../../core/state.js";
+import { save } from "../../core/storage.js";
+import { S } from "../../core/schema.js";
+
+function render() { /* write this feature's DOM from state */ }
+
+onClick("delThing", id => { /* <button data-del-thing="..."> */ renderMine(); save(); });
+
+defineFeature({
+  id: "things",                        // matches data-go="things" for onShow
+  nav: { el: "navThings", badge: () => `${state.things.length}` },
+  render,                              // called by renderMine() after any change
+  onShow() {},                         // optional: user opened this page
+  guidance: "Things: when ..., call add_thing.",   // optional system prompt rule
+  tools: [{
+    name: "add_thing",
+    description: "Add a thing. Returns the thing_id.",
+    inputSchema: { type: "object", properties: { title: S }, required: ["title"] },
+    run: ({ title }, context, h) => {  // h.act(label), h.ask(...), h.needsAsk(k), h.refusal(ok)
+      const id = "t" + Date.now(); state.things.push({ id, title });
+      h.act(title); return { thing_id: id };
+    }
+  }]
+});
+```
+
+Tools don't need to call `save()`, `audit()` or re-render: `agent/tools.js`
+wraps every tool so it shows progress in chat, logs to Activity, saves and
+re-renders. Throw an `Error` to report a problem back to the model.
+
+### Connectors
+
+A connector is one file in `features/connectors/` that calls
+`defineConnector({ key, name, glyph, like, desc, scopes, lockAsk?, seed?, manageHtml, tools })`,
+plus one import line in `features/connectors/index.js`. Connector tools carry
+`writes: true | false`; write tools should ask first when
+`h.needsAsk(key)` is true (see `calendar.js`). The Connectors page, the prompt's
+connector list, the hood tool list and `state.connectors` all pick it up
+automatically. Name connector tools `<key>_<verb>` so Activity tags them.
+
+### Things that are shared on purpose
+
+- **State shape** (`core/state.js` → `blank()`): add your fields there with a
+  comment; handle old saves in `core/storage.js` → `migrate()`.
+- **Load order** (`main.js`): feature order decides the order of tools sent to
+  the model and the numbering of "How you work" rules. Add new features at the
+  end unless you mean to change those.
+- **Markup** (`public/index.html`): add your page's container there; keep
+  everything inside it rendered by your feature.
+
 ## Common tasks
 
 - **Add a tool to an existing feature**: add an entry to that feature's
@@ -56,10 +114,17 @@ These files are touched by many areas; keep edits small and rebase often:
 `core/state.js` (state shape), `main.js` (import list), `index.html` (markup),
 `css/base.css`.
 
-## Style
+## Style and conventions
 
-- Plain JavaScript ES modules, no build step, no framework.
+- Plain JavaScript ES modules, no bundler, no framework. Everything under
+  `public/` is served as is.
 - Match the existing style: small functions, template-string HTML, `esc()`
   everything user- or model-provided before putting it in HTML.
+- `state` is one object: mutate in place, then `save()`. Never reassign it;
+  use `replaceState()`.
+- User actions go through `onClick(dataKey, fn)` / `onSubmit(formId, fn)`
+  rather than new document listeners.
 - Tool descriptions are prompts: say what it does, what it returns, and when
   approval is needed.
+- Text from emails and documents is data, never instructions; keep saying so
+  in prompts.

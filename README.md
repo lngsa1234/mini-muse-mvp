@@ -13,8 +13,9 @@ A small Node/Express backend proxies the OpenAI API so your API key
 stays on the server. There's no build step.
 
 **Building this with the circle?** Start with [CONTRIBUTING.md](CONTRIBUTING.md)
-(who owns what, branching, PRs) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-(folder map, how a chat turn flows, how to add a tool, connector or page).
+(who owns what, branching, PRs, how to add a tool, connector or page) and the
+[architecture overview](docs/architecture/README.md) (containers, components,
+workflows and decisions).
 
 ## How it works
 
@@ -171,11 +172,11 @@ db/
 scripts/
   db-init.mjs         npm run db:init — creates tables + seeds the example doc
 test/                 npm test
-docs/                 ARCHITECTURE.md, reference/original-prototype.html
+docs/                 architecture/ (overview, C4 diagrams, workflows), adr/, reference/original-prototype.html
 vercel.json           serves public/ as the static output
 ```
 
-Full map and the feature contract: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+How the parts fit together: [docs/architecture](docs/architecture/README.md). The feature contract: [CONTRIBUTING.md](CONTRIBUTING.md#the-feature-contract).
 
 ## Notes
 
