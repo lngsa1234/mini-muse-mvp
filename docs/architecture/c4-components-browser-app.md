@@ -11,15 +11,12 @@ Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · 
 C4 level 3: the components inside Browser app, with the agent kept apart from each feature’s UI, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph app["Browser app"]
-    direction LR
     subgraph k_shell["App shell"]
-      direction TB
       shell["<b>App shell and registry</b><br/>Component: ES modules"]
     end
     subgraph k_feature["Feature UI"]
-      direction TB
       chat_feature["<b>Agent Chat feature</b><br/>Component: ES module"]
       library_feature["<b>Library feature</b><br/>Component: ES module"]
       ideas_feature["<b>Ideas feature</b><br/>Component: ES module"]
@@ -27,36 +24,29 @@ flowchart LR
       connectors_feature["<b>Connectors feature</b><br/>Component: ES module"]
     end
     subgraph k_agent["Agent"]
-      direction TB
       agent_loop["<b>Agent loop</b><br/>Component: JS, SSE"]
       approvals["<b>Approvals</b><br/>Component: JS"]
     end
     subgraph k_tools["Tools"]
-      direction TB
       tool_registry["<b>Tool registry</b><br/>Component: JS"]
       browser_bridge["<b>Browser bridge tools</b><br/>Component: postMessage"]
     end
     subgraph k_state["Client state"]
-      direction TB
       client_state["<b>State, memory and audit</b><br/>Component: localStorage, fetch"]
     end
   end
   subgraph others["Other containers"]
-    direction TB
     api_server["<b>API server</b><br/>Container: Express / Vercel functions"]
     chrome_extension["<b>Chrome Browser Bridge</b><br/>Container: Chrome extension"]
   end
   chat_feature -->|"Sends user message"| agent_loop
-  library_feature -->|"Registers docs tools"| tool_registry
-  ideas_feature -->|"Registers save_idea"| tool_registry
-  goals_feature -->|"Registers goal tools"| tool_registry
-  connectors_feature -->|"Registers connector tools"| tool_registry
+  k_feature -->|"Each registers its tools"| tool_registry
   browser_bridge -->|"Registers browser tools"| tool_registry
   ideas_feature -->|"Asks Muse to do or plan"| agent_loop
   goals_feature -->|"Asks Muse to advance goal"| agent_loop
   agent_loop -->|"Executes requested tools"| tool_registry
-  tool_registry -->|"Requests user approval"| approvals
-  approvals -->|"Renders approval card"| chat_feature
+  tool_registry -.->|"Requests user approval"| approvals
+  approvals -.->|"Renders approval card"| chat_feature
   agent_loop -->|"Streams completions"| api_server
   tool_registry -->|"Saves state and audit"| client_state
   client_state -->|"Syncs docs, ideas, goals"| api_server
