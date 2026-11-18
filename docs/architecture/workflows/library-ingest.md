@@ -17,14 +17,14 @@ sequenceDiagram
   autonumber
   actor user as User
   participant client as Client
-  participant server as Server
   participant data as Data
-  Note over user: Pastes text with a title or chooses a file such as a PDF, DOCX or TXT.
-  client->>server: POST /api/docs (title, text) or (filename, contentType, dataBase64)
-  Note over server: Pasted text needs a title and text and is cut to 60,000 characters. Files are de
-  Note over server: Extracts text from an uploaded file. The filename without its extension is the d
-  server->>data: createDoc(userId, title, text)
-  Note over client: Adds the document to the in-memory list so the page and the docs_search and docs
+  participant server as Server
+  user->>user: Pastes text
+  client->>server: POST /api/docs or
+  server->>server: Pasted text needs a title
+  server->>server: Extracts text from an uploaded file
+  server-->>data: Stores the document text for the…
+  client->>client: Adds the document to the…
 ```
 
 ## Steps

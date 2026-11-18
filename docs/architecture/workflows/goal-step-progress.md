@@ -18,18 +18,18 @@ sequenceDiagram
   actor user as User
   participant client as Client
   participant agent as Agent
-  participant server as Server
   participant data as Data
-  user->>client: say( New goal - … ) or say( Move my goal … forward )
-  agent->>client: create_goal(goal, steps, target_metric, target_count, days)
+  participant server as Server
+  user->>client: Submits a goal or a nudge
+  agent-->>client: Plans the goal
   client->>server: POST /api/goals
-  server->>data: createGoal(userId, goal, steps ≤ 8, target, deadline)
-  Note over client: For a résumé step the user wants moved forward, the pre-model shortcut searches 
-  agent->>client: docs_search, jobs_search or a browser tool, then update_step(goal_id, step, status, evidence)
-  Note over client: Refuses doing or done unless a non-bookkeeping tool ran this turn and matches th
-  client->>server: PATCH /api/goals/ -id step, status
-  server->>data: updateGoal(userId, id, steps)
-  agent->>client: track_application(goal_id, company, role, status)
+  server-->>data: Rejects a missing goal or steps
+  client->>client: For a résumé step the user wants…
+  agent-->>client: docs_search
+  client->>client: Refuses doing or done unless a…
+  client->>server: PATCH /api/goals/
+  server-->>data: Validates the status
+  agent-->>client: Records job applications
 ```
 
 ## Steps

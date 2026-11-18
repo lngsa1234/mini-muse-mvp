@@ -17,19 +17,19 @@ sequenceDiagram
   autonumber
   actor user as User
   participant client as Client
-  participant server as Server
-  participant external as External
   participant agent as Agent
   participant data as Data
-  user->>client: run(userMsg)
-  Note over client: Pushes the user message and a live assistant placeholder, disables the composer,
-  Note over client: Builds the tool list from features and connected connectors, then applies pre-mo
-  client->>server: POST /api/llm (tier, messages, tools, stream)
-  server->>external: POST chat completions (pinned model, server-held key)
-  external->>client: SSE text and tool_call deltas
-  Note over client: Parses the stream and updates the message text live.
-  Note over agent: Asks for tools. The loop runs each one locally and feeds the result back as a to
-  client->>data: save() chat state
+  participant server as Server
+  participant external as External
+  user->>client: Submits a message from the…
+  client->>client: Pushes the user message
+  client->>client: Builds the tool list from features
+  client->>server: POST /api/llm
+  server->>external: POST chat completions
+  external-->>client: SSE text
+  client->>client: Parses the stream
+  agent->>agent: Asks for tools
+  client->>data: Ends the turn
 ```
 
 ## Steps

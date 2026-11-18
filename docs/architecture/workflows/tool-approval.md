@@ -15,16 +15,16 @@ A tool that changes something pauses the turn and shows an approval card in chat
 ```mermaid
 sequenceDiagram
   autonumber
-  participant agent as Agent
-  participant client as Client
   actor user as User
+  participant client as Client
+  participant agent as Agent
   participant server as Server
-  agent->>client: tool.execute(input)
-  Note over client: Checks whether the connector needs approval. Gmail is always locked to ask, and 
-  client->>user: approval card (heading, rows, Allow / Don't allow)
+  agent-->>client: Requests a write tool during the…
+  client->>client: Checks whether the connector…
+  client-->>user: approval card
   user->>client: approve or decline click
-  Note over client: Records the answer as approved, declined or expired, and writes an audit entry.
-  client->>server: the approved write, such as the mail send route or goals API
+  client->>client: Records the answer as approved
+  client->>server: the approved write
   client->>agent: tool result
 ```
 

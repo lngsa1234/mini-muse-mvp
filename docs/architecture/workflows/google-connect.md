@@ -19,13 +19,13 @@ sequenceDiagram
   participant client as Client
   participant server as Server
   participant external as External
-  Note over user: Clicks Connect and reads the consent panel listing what Muse can do.
+  user->>user: Clicks Connect
   client->>server: GET /api/google/authorize
   server->>external: redirect to Google consent
-  external->>server: redirect to /api/google/callback (code)
-  server->>client: Set-Cookie (HttpOnly tokens) and redirect
+  external-->>server: redirect to /api/google/callback
+  server-->>client: Set-Cookie
   client->>server: GET /api/google/status
-  client->>server: /api/google/mail/* and /api/google/calendar/*
+  client->>server: /api/google/mail/*
   client->>server: disconnect endpoint
 ```
 
