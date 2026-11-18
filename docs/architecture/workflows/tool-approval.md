@@ -1,60 +1,49 @@
 ---
-title: How sensitive actions get approved
+title: How sensitive actions get approval
 type: Workflow
 owner: Alex (Technical Lead)
 ---
 
-# How sensitive actions get approved
+# How sensitive actions get approval
 
 Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code
 
-A tool that changes something outside the app pauses the turn and shows an approval card in chat. It continues only after the user answers.
+A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.
 
-**Starts when:** The model calls a write tool, such as mail_send or revise_plan, or a tool that asks to count an interview or offer.
+**Starts when:** The model calls a tool that asks for approval, such as mail_send, a write on Calendar or Contacts with Ask me first, revise_plan, or marking an interview or offer.
 
 ```mermaid
-flowchart TB
-  start(["The model calls a write tool, such as mail_send or revise_plan, or a tool that asks to count an interview or offer."])
-  s1["1. Agent<br/>Calls a tool that needs approval."]
-  s2["2. Client<br/>The tool wrapper hands it an ask helper and records a trace span. For connector tools it checks whether the connector needs approval. Gmail always does."]
-  s3["3. Client<br/>The tool shows an approval card. It lists what will change, such as the recipient, subject and body of an email or the before and after of a plan."]
-  s4["4. Client<br/>Pauses the turn in a waiting state and shows a pending card in chat."]
-  s5["5. User<br/>Clicks Allow or Don't allow."]
-  s6["6. Client<br/>Resolves the pause as approved, declined or no answer (if the turn is cancelled or ends) and records the choice in the activity audit."]
-  s7["7. Client<br/>If approved, the tool performs the action, for example calling the backend mail send route or updating the goal's steps. Otherwise it returns a message saying nothing was changed."]
-  start --> s1
-  s1 --> s2
-  s2 --> s3
-  s3 --> s4
-  s4 --> s5
-  s5 --> s6
-  s6 --> s7
-  classDef user fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
-  classDef agent fill:#EEEDFE,stroke:#534AB7,color:#26215C
-  classDef client fill:#E1F5FE,stroke:#0E7490,color:#164E63
-  classDef server fill:#E1F5EE,stroke:#0F6E56,color:#04342C
-  classDef data fill:#F3E8FF,stroke:#7E22CE,color:#3B0764
-  classDef external fill:#FAEEDA,stroke:#854F0B,color:#412402
-  class s1 agent
-  class s2 client
-  class s3 client
-  class s4 client
-  class s5 user
-  class s6 client
-  class s7 client
+sequenceDiagram
+  autonumber
+  participant agent as Agent
+  participant client as Client
+  actor user as User
+  participant server as Server
+  agent->>client: tool.execute(input)
+  Note over client: Checks whether the connector needs approval. Gmail is always locked to ask, and 
+  client->>user: approval card (heading, rows, Allow / Don't allow)
+  user->>client: approve or decline click
+  Note over client: Records the answer as approved, declined or expired, and writes an audit entry.
+  client->>server: the approved write, such as the mail send route or goals API
+  client->>agent: tool result
 ```
 
 ## Steps
 
-| # | Who | What happens | Code |
-|---|---|---|---|
-| 1 | Agent | Calls a tool that needs approval. | `public/js/agent/loop.js` |
-| 2 | Client | The tool wrapper hands it an ask helper and records a trace span. For connector tools it checks whether the connector needs approval. Gmail always does. | `public/js/agent/tools.js` |
-| 3 | Client | The tool shows an approval card. It lists what will change, such as the recipient, subject and body of an email or the before and after of a plan. | `public/js/features/connectors/mail.js`, `public/js/features/goals/goals.js` |
-| 4 | Client | Pauses the turn in a waiting state and shows a pending card in chat. | `public/js/workflow/approvals.js` |
-| 5 | User | Clicks Allow or Don't allow. |  |
-| 6 | Client | Resolves the pause as approved, declined or no answer (if the turn is cancelled or ends) and records the choice in the activity audit. | `public/js/workflow/approvals.js` |
-| 7 | Client | If approved, the tool performs the action, for example calling the backend mail send route or updating the goal's steps. Otherwise it returns a message saying nothing was changed. | `public/js/features/connectors/mail.js`, `public/js/features/goals/goals.js` |
+| # | Who | What happens | Hands to | Code |
+|---|---|---|---|---|
+| 1 | Agent | Requests a write tool during the loop. The tool is wrapped to log activity, trace it and show progress. | Client: `tool.execute(input)` | `public/js/agent/loop.js`, `public/js/agent/tools.js` |
+| 2 | Client | Checks whether the connector needs approval. Gmail is always locked to ask, and others follow the user's Ask or Allow setting. |  | `public/js/agent/tools.js` |
+| 3 | Client | Switches to chat, shows a pending approval card, and waits. | User: `approval card (heading, rows, Allow / Don't allow)` | `public/js/workflow/approvals.js` |
+| 4 | User | Allows or declines the action. | Client: `approve or decline click` |  |
+| 5 | Client | Records the answer as approved, declined or expired, and writes an audit entry. |  | `public/js/workflow/approvals.js` |
+| 6 | Client | Performs the change only if the answer was approved. | Server: `the approved write, such as the mail send route or goals API` | `public/js/features/goals/goals.js`, `server/google-route.js` |
+| 7 | Client | Returns the result to the model, or 'Nothing was changed' if declined or unanswered. | Agent: `tool result` | `public/js/agent/tools.js` |
+
+## When it goes wrong
+
+- A decline returns 'The user declined. Nothing was changed.' to the model.
+- If the user does not answer before the turn ends, or presses Stop, the approval resolves as no answer and returns 'The user did not answer. Nothing was changed.'
 
 ## Use cases it carries out
 

@@ -8,16 +8,16 @@ owner: Alex (Technical Lead)
 
 How the product works at runtime, flow by flow. Mapped by Alex from the code on 2026-11-18; every step's code is checked against the repository.
 
-- [How a chat turn runs](chat-turn.md) — A user message goes through a few built-in shortcuts, then through a model-and-tools loop that runs in the browser. The model's reply streams back into the chat.
-- [How sensitive actions get approved](tool-approval.md) — A tool that changes something outside the app pauses the turn and shows an approval card in chat. It continues only after the user answers.
-- [How a goal step advances](goal-step-progress.md) — Muse creates a goal with steps and may mark a step doing or done only when a tool did that step's work in the same turn. Job applications are tracked with the same kind of proof.
-- [How Google connectors sign in](google-connect.md) — Gmail and Calendar share one Google sign-in. The server keeps the tokens in a cookie, and the browser only learns whether Google is connected.
-- [How documents enter the Library](library-ingest.md) — A user pastes text or uploads a file. The server keeps only the extracted text, and the agent can then search and cite it.
+- [How a chat turn runs](chat-turn.md) — A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.
+- [How sensitive actions get approval](tool-approval.md) — A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.
+- [How a goal step advances](goal-step-progress.md) — Muse creates a goal with a plan and moves a step to doing or done only when a tool did that step's work in the same turn. Application statuses are checked against proof in the same way.
+- [How Google connectors sign in](google-connect.md) — Gmail and Calendar share one Google sign-in. The server keeps the tokens in an HttpOnly cookie, and the browser only learns whether Google is connected.
+- [How documents enter the Library](library-ingest.md) — A user pastes text or uploads a file. The server stores only the extracted text, and the agent can then search and cite it.
 
 ## Not confirmed
 
-- Not read: the Chrome extension, the application-form fill flow, and the Ideas and jobs_search tools.
-- Not read: the server Google handlers, so the OAuth redirect, callback and cookie handling are inferred from the route adapter and the connectors page.
-- Not read: the client API module, the goals server handlers and database, and the tracing backend. Their steps are described only at the level the callers show.
-- Not read: the prompt builder and intent regexes, which I treated as black boxes.
-- I did not confirm the server-side model routing details.
+- I did not read the Library UI code, server/db.js, server/extract.js, server/google.js, the API route wrappers or server/index.js. Those steps rely on the handler code I read and on the existing workflow docs.
+- I did not read server/routing.js or api/llm.js. The tier-to-model mapping comes from the proxy and the agent-chat spec.
+- The calls the mail, calendar and contacts tools make, and the Google OAuth details, are described only at route level.
+- The Ideas flows, web and job search tools, daily check-in and the Chrome bridge extension are not mapped as flows. I saw them only where run.js calls the browser tools.
+- I did not read the prompt and intent code, so the shortcut triggers are described only at the level visible in run.js.
