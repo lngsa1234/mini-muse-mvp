@@ -13,27 +13,22 @@ C4 level 2: the deployable parts and data stores, how they talk, and the people 
 Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend. The tool-use agent loop runs in the browser. It streams model calls through a server proxy to OpenAI and runs feature tools locally. Those tools call the backend for Neon Postgres storage (documents, ideas, goals, traces), Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms.
 
 ```mermaid
-flowchart LR
+flowchart TB
   p_user(["<b>User</b><br/>Person"])
   subgraph system["Mini Muse"]
-    direction LR
     subgraph client["Client"]
-      direction TB
       browser_app["<b>Browser app</b><br/>Container: ES modules"]
       chrome_extension["<b>Chrome Browser Bridge</b><br/>Container: Chrome extension"]
     end
     subgraph server["Server"]
-      direction TB
       api_server["<b>API server</b><br/>Container: Express / Vercel functions"]
     end
     subgraph data["Data"]
-      direction TB
       local_storage[("<b>Browser storage</b><br/>Container: localStorage")]
       neon_postgres[("<b>Neon Postgres</b><br/>Container: Postgres")]
     end
   end
   subgraph external["External systems"]
-    direction TB
     openai["<b>OpenAI API</b><br/>Software system"]
     google_apis["<b>Google Gmail and Calendar</b><br/>Software system"]
     tavily["<b>Tavily web search</b><br/>Software system"]
@@ -46,6 +41,7 @@ flowchart LR
   api_server -->|"Searches mail, manages events"| google_apis
   api_server -->|"Searches and extracts pages"| tavily
   browser_app -->|"Sends browser commands"| chrome_extension
+  local_storage ~~~ google_apis
   classDef person fill:#08427b,stroke:#052e56,color:#ffffff
   classDef container fill:#1168bd,stroke:#0b4884,color:#ffffff
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#0b2545
