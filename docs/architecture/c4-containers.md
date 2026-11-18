@@ -13,27 +13,49 @@ C4 level 2: the deployable parts and data stores, how they talk, and the people 
 Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend. The tool-use agent loop runs in the browser. It streams model calls through a server proxy to OpenAI and runs feature tools locally. Those tools call the backend for Neon Postgres storage (documents, ideas, goals, traces), Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms.
 
 ```mermaid
-C4Container
-  title Containers of Mini Muse
-  Person(user, "User", "Person using Muse as a personal agent")
-  System_Boundary(system, "Mini Muse") {
-    Container(browser_app, "Browser app", "ES modules", "Plain ES-module UI with pages for chat, ideas, goals, library, connectors and settings, pl")
-    Container(chrome_extension, "Chrome Browser Bridge", "Chrome extension", "Optional extension that opens, reads, fills and clicks in a job application tab on request")
-    ContainerDb(local_storage, "Browser storage", "localStorage", "Holds chat, memory, preferences, contacts and a cache of state in the browser.")
-    Container(api_server, "API server", "Express / Vercel functions", "Serves static files and the handlers for the LLM proxy, docs, ideas, goals, web search/ope")
-    ContainerDb(neon_postgres, "Neon Postgres", "Postgres", "Stores Library documents, ideas, goals (steps, applications) and observability traces per ")
-  }
-  System_Ext(openai, "OpenAI API", "Model that answers agent turns and one-shot JSON completions, selected by tier.")
-  System_Ext(google_apis, "Google Gmail and Calendar", "User's real Gmail inbox and primary calendar, reached with a token kept in an encrypted Ht")
-  System_Ext(tavily, "Tavily web search", "Web search and page extraction used by web_search and web_open.")
-  Rel(user, browser_app, "Chats with Muse, manages ideas, goals and documents, approves actions")
-  Rel(browser_app, api_server, "Streams model completions", "HTTPS/SSE /api/llm")
-  Rel(api_server, openai, "Proxies completions with key", "HTTPS/SSE")
-  Rel(api_server, neon_postgres, "Reads and writes records", "SQL")
-  Rel(browser_app, local_storage, "Saves chat, memory, prefs", "localStorage")
-  Rel(api_server, google_apis, "Searches mail, manages events", "OAuth 2.0/HTTPS")
-  Rel(api_server, tavily, "Searches and extracts pages", "HTTPS")
-  Rel(browser_app, chrome_extension, "Sends browser commands", "window.postMessage")
+flowchart LR
+  p_user(["<b>User</b><br/>Person"])
+  subgraph system["Mini Muse"]
+    direction LR
+    subgraph client["Client"]
+      direction TB
+      browser_app["<b>Browser app</b><br/>Container: ES modules"]
+      chrome_extension["<b>Chrome Browser Bridge</b><br/>Container: Chrome extension"]
+    end
+    subgraph server["Server"]
+      direction TB
+      api_server["<b>API server</b><br/>Container: Express / Vercel functions"]
+    end
+    subgraph data["Data"]
+      direction TB
+      local_storage[("<b>Browser storage</b><br/>Container: localStorage")]
+      neon_postgres[("<b>Neon Postgres</b><br/>Container: Postgres")]
+    end
+  end
+  subgraph external["External systems"]
+    direction TB
+    openai["<b>OpenAI API</b><br/>Software system"]
+    google_apis["<b>Google Gmail and Calendar</b><br/>Software system"]
+    tavily["<b>Tavily web search</b><br/>Software system"]
+  end
+  p_user -->|"Chats with Muse, manages ideas, goals and documents, approves actions"| browser_app
+  browser_app -->|"Streams model completions"| api_server
+  api_server -->|"Proxies completions with key"| openai
+  api_server -->|"Reads and writes records"| neon_postgres
+  browser_app -->|"Saves chat, memory, prefs"| local_storage
+  api_server -->|"Searches mail, manages events"| google_apis
+  api_server -->|"Searches and extracts pages"| tavily
+  browser_app -->|"Sends browser commands"| chrome_extension
+  classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+  classDef container fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef component fill:#85bbf0,stroke:#5d82a8,color:#0b2545
+  classDef agent fill:#c2185b,stroke:#880e4f,color:#ffffff
+  classDef external fill:#8a8a8a,stroke:#6b6b6b,color:#ffffff
+  classDef boundary fill:none,stroke:#888888,stroke-dasharray:6 4,color:#555555
+  class p_user person
+  class browser_app,chrome_extension,api_server,local_storage,neon_postgres container
+  class openai,google_apis,tavily external
+  class system,client,server,data,external boundary
 ```
 
 ## People

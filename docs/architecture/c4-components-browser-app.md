@@ -11,39 +11,67 @@ Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · 
 C4 level 3: the components inside Browser app, with the agent kept apart from each feature’s UI, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).
 
 ```mermaid
-C4Component
-  title Components of Browser app
-  Container_Boundary(browser_app_b, "Browser app") {
-    Component(shell, "App shell and registry", "ES modules", "Boots all features, routes clicks and submits, and renders pages from registered")
-    Component(agent_loop, "Agent loop", "JS, SSE", "Runs a chat turn: builds the prompt, streams from /api/llm, executes requested t")
-    Component(tool_registry, "Tool registry", "JS", "Collects tools from features and connected connectors and wraps each to show pro")
-    Component(approvals, "Approvals", "JS", "Shows approval cards in chat and resolves the tool's ask when the user allows or")
-    Component(client_state, "State, memory and audit", "localStorage, fetch", "Holds app state, activity audit, traces and the API client that syncs with the s")
-    Component(chat_feature, "Agent Chat feature", "ES module", "Chat log, composer and approval cards; sends messages to the agent.")
-    Component(library_feature, "Library feature", "ES module", "Document list, upload and keyword search, with docs_* tools.")
-    Component(ideas_feature, "Ideas feature", "ES module", "Starter and Muse-generated ideas, with the save_idea tool.")
-    Component(goals_feature, "Goals feature", "ES module", "Goal plans, targets, application tracker and evidence-gated goal tools; also che")
-    Component(connectors_feature, "Connectors feature", "ES module", "Connectors page and Gmail, Calendar and Contacts tools.")
-    Component(browser_bridge, "Browser bridge tools", "postMessage", "browser_* tools that relay requests to the Chrome extension.")
-  }
-  Container(api_server, "API server", "Express / Vercel functions", "Serves static files and the handlers for the LLM proxy, docs, ideas, goals, web ")
-  Container(chrome_extension, "Chrome Browser Bridge", "Chrome extension", "Optional extension that opens, reads, fills and clicks in a job application tab ")
-  Rel(chat_feature, agent_loop, "Sends user message", "function call")
-  Rel(library_feature, tool_registry, "Registers docs tools", "defineFeature")
-  Rel(ideas_feature, tool_registry, "Registers save_idea", "defineFeature")
-  Rel(goals_feature, tool_registry, "Registers goal tools", "defineFeature")
-  Rel(connectors_feature, tool_registry, "Registers connector tools", "defineConnector")
-  Rel(browser_bridge, tool_registry, "Registers browser tools", "defineFeature")
-  Rel(ideas_feature, agent_loop, "Asks Muse to do or plan", "function call")
-  Rel(goals_feature, agent_loop, "Asks Muse to advance goal", "function call")
-  Rel(agent_loop, tool_registry, "Executes requested tools", "function call")
-  Rel(tool_registry, approvals, "Requests user approval", "promise")
-  Rel(approvals, chat_feature, "Renders approval card", "state render")
-  Rel(agent_loop, api_server, "Streams completions", "HTTPS/SSE")
-  Rel(tool_registry, client_state, "Saves state and audit", "function call")
-  Rel(client_state, api_server, "Syncs docs, ideas, goals", "HTTPS/JSON")
-  Rel(browser_bridge, chrome_extension, "Sends browser commands", "window.postMessage")
-  Rel(shell, chat_feature, "Renders registered pages", "function call")
+flowchart LR
+  subgraph app["Browser app"]
+    direction LR
+    subgraph k_shell["App shell"]
+      direction TB
+      shell["<b>App shell and registry</b><br/>Component: ES modules"]
+    end
+    subgraph k_feature["Feature UI"]
+      direction TB
+      chat_feature["<b>Agent Chat feature</b><br/>Component: ES module"]
+      library_feature["<b>Library feature</b><br/>Component: ES module"]
+      ideas_feature["<b>Ideas feature</b><br/>Component: ES module"]
+      goals_feature["<b>Goals feature</b><br/>Component: ES module"]
+      connectors_feature["<b>Connectors feature</b><br/>Component: ES module"]
+    end
+    subgraph k_agent["Agent"]
+      direction TB
+      agent_loop["<b>Agent loop</b><br/>Component: JS, SSE"]
+      approvals["<b>Approvals</b><br/>Component: JS"]
+    end
+    subgraph k_tools["Tools"]
+      direction TB
+      tool_registry["<b>Tool registry</b><br/>Component: JS"]
+      browser_bridge["<b>Browser bridge tools</b><br/>Component: postMessage"]
+    end
+    subgraph k_state["Client state"]
+      direction TB
+      client_state["<b>State, memory and audit</b><br/>Component: localStorage, fetch"]
+    end
+  end
+  subgraph others["Other containers"]
+    direction TB
+    api_server["<b>API server</b><br/>Container: Express / Vercel functions"]
+    chrome_extension["<b>Chrome Browser Bridge</b><br/>Container: Chrome extension"]
+  end
+  chat_feature -->|"Sends user message"| agent_loop
+  library_feature -->|"Registers docs tools"| tool_registry
+  ideas_feature -->|"Registers save_idea"| tool_registry
+  goals_feature -->|"Registers goal tools"| tool_registry
+  connectors_feature -->|"Registers connector tools"| tool_registry
+  browser_bridge -->|"Registers browser tools"| tool_registry
+  ideas_feature -->|"Asks Muse to do or plan"| agent_loop
+  goals_feature -->|"Asks Muse to advance goal"| agent_loop
+  agent_loop -->|"Executes requested tools"| tool_registry
+  tool_registry -->|"Requests user approval"| approvals
+  approvals -->|"Renders approval card"| chat_feature
+  agent_loop -->|"Streams completions"| api_server
+  tool_registry -->|"Saves state and audit"| client_state
+  client_state -->|"Syncs docs, ideas, goals"| api_server
+  browser_bridge -->|"Sends browser commands"| chrome_extension
+  shell -->|"Renders registered pages"| chat_feature
+  classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+  classDef container fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef component fill:#85bbf0,stroke:#5d82a8,color:#0b2545
+  classDef agent fill:#c2185b,stroke:#880e4f,color:#ffffff
+  classDef external fill:#8a8a8a,stroke:#6b6b6b,color:#ffffff
+  classDef boundary fill:none,stroke:#888888,stroke-dasharray:6 4,color:#555555
+  class shell,tool_registry,client_state,chat_feature,library_feature,ideas_feature,goals_feature,connectors_feature,browser_bridge component
+  class agent_loop,approvals agent
+  class api_server,chrome_extension container
+  class app,k_shell,k_feature,k_agent,k_tools,k_state,others boundary
 ```
 
 ## Components
