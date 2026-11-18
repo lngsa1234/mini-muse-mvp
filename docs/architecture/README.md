@@ -15,8 +15,7 @@ This page is deliberately thin. The detail lives in the decision records, which 
 
 Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend. The tool-use agent loop runs in the browser. It streams model calls through a server proxy to OpenAI and runs feature tools locally. Those tools call the backend for Neon Postgres storage (documents, ideas, goals, traces), Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms.
 
-- [System context](c4-context.md) — who uses it and what it depends on (C4 level 1)
-- [Containers](c4-containers.md) — its deployable parts and how they talk (C4 level 2)
+- [Containers](c4-containers.md) — its deployable parts, how they talk, and who and what is around them (C4 level 2)
 - [Components](c4-components-browser-app.md) — inside the browser app: the agent, each feature, and how they work together (C4 level 3)
 - [Workflows](workflows/README.md) — a chat turn runs; sensitive actions get approval; a goal step advances; google connectors sign in; documents enter the library
 

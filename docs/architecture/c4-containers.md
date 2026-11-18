@@ -8,7 +8,7 @@ owner: Alex (Technical Lead)
 
 Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code (C4 model)
 
-C4 level 2: the deployable parts and data stores, and how they talk. The surrounding people and systems are in [System context](c4-context.md); the inside of the browser app, and how each feature works with the agent, is in [Components](c4-components-browser-app.md); how requests flow step by step is in [Workflows](workflows/README.md).
+C4 level 2: the deployable parts and data stores, how they talk, and the people and outside systems around them. The inside of the browser app, and how each feature works with the agent, is in [Components](c4-components-browser-app.md). How requests flow step by step is in [Workflows](workflows/README.md).
 
 Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend. The tool-use agent loop runs in the browser. It streams model calls through a server proxy to OpenAI and runs feature tools locally. Those tools call the backend for Neon Postgres storage (documents, ideas, goals, traces), Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms.
 
@@ -35,6 +35,16 @@ C4Container
   Rel(api_server, tavily, "Searches and extracts pages", "HTTPS")
   Rel(browser_app, chrome_extension, "Sends browser commands", "window.postMessage")
 ```
+
+## People
+
+- **User** — Person using Muse as a personal agent: chats with Muse, manages ideas, goals and documents, approves actions
+
+## External systems
+
+- **OpenAI API** (Chat Completions): Model that answers agent turns and one-shot JSON completions, selected by tier.
+- **Google Gmail and Calendar** (Google OAuth 2.0): User's real Gmail inbox and primary calendar, reached with a token kept in an encrypted HttpOnly cookie.
+- **Tavily web search** (Tavily API): Web search and page extraction used by web_search and web_open.
 
 ## Containers
 
