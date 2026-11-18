@@ -13,23 +13,23 @@ C4 level 1: who uses the system and which outside systems it depends on. The par
 ```mermaid
 C4Context
   title System context for Mini Muse
-  Person(user, "User", "Person chatting with Muse and managing goals")
-  System(system, "Mini Muse", "Mini Muse is a no-build browser app whose chat agent loop runs client-side")
-  System_Ext(openai, "OpenAI API", "Generates the streamed model replies and tool calls.")
-  System_Ext(google, "Google APIs", "Provides Gmail and Calendar access after the user's consent.")
-  System_Ext(web_services, "Web search and job boards", "Provide web search, page extraction and job listings.")
-  Rel(user, system, "Chats with Muse, manages goals, ideas, documents and connectors")
-  Rel(system, openai, "Forwards completions with API key", "HTTPS/SSE")
-  Rel(system, google, "Reads mail and calendar", "OAuth 2.0/HTTPS")
-  Rel(system, web_services, "Searches web and jobs", "HTTPS")
+  Person(user, "User", "Person using Muse as a personal agent")
+  System(system, "Mini Muse", "Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend")
+  System_Ext(openai, "OpenAI API", "Model that answers agent turns and one-shot JSON completions, selected by tier.")
+  System_Ext(google_apis, "Google Gmail and Calendar", "User's real Gmail inbox and primary calendar, reached with a token kept in an encrypted Ht")
+  System_Ext(tavily, "Tavily web search", "Web search and page extraction used by web_search and web_open.")
+  Rel(user, system, "Chats with Muse, manages ideas, goals and documents, approves actions")
+  Rel(system, openai, "Proxies completions with key", "HTTPS/SSE")
+  Rel(system, google_apis, "Searches mail, manages events", "OAuth 2.0/HTTPS")
+  Rel(system, tavily, "Searches and extracts pages", "HTTPS")
 ```
 
 ## People
 
-- **User** — Person chatting with Muse and managing goals chats with Muse, manages goals, ideas, documents and connectors.
+- **User** — Person using Muse as a personal agent chats with Muse, manages ideas, goals and documents, approves actions.
 
 ## External systems
 
-- **OpenAI API** (Chat Completions): Generates the streamed model replies and tool calls.
-- **Google APIs** (OAuth 2.0, Gmail, Calendar): Provides Gmail and Calendar access after the user's consent.
-- **Web search and job boards** (Tavily, Greenhouse/Lever/Ashby): Provide web search, page extraction and job listings.
+- **OpenAI API** (Chat Completions): Model that answers agent turns and one-shot JSON completions, selected by tier.
+- **Google Gmail and Calendar** (Google OAuth 2.0): User's real Gmail inbox and primary calendar, reached with a token kept in an encrypted HttpOnly cookie.
+- **Tavily web search** (Tavily API): Web search and page extraction used by web_search and web_open.

@@ -13,22 +13,23 @@ This page is deliberately thin. The detail lives in the decision records, which 
 
 ## System today
 
-Mini Muse is a no-build browser app whose chat agent loop runs client-side. A Node/Express server (or Vercel functions) provides the REST APIs and an LLM proxy. A chat turn goes from the browser to the proxy, which adds the API key and streams OpenAI's reply back. The browser then runs tools locally, and those tools call the server APIs for goals, ideas, documents, web search, jobs and Google. The server reads and writes Postgres.
+Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend. The tool-use agent loop runs in the browser. It streams model calls through a server proxy to OpenAI and runs feature tools locally. Those tools call the backend for Neon Postgres storage (documents, ideas, goals, traces), Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms.
 
 - [System context](c4-context.md) — who uses it and what it depends on (C4 level 1)
 - [Containers](c4-containers.md) — its deployable parts and how they talk (C4 level 2)
+- [Components](c4-components-browser-app.md) — inside the browser app: the agent, each feature, and how they work together (C4 level 3)
 - [Workflows](workflows/README.md) — a chat turn runs; sensitive actions get approval; a goal step advances; google connectors sign in; documents enter the library
 
 | Part | Layer | Technology | Governed by |
 |---|---|---|---|
-| Browser app and agent | client | ES modules | [ADR-0001](../adr/0001-run-the-agent-loop-in-the-browser-not-on-the-server.md), [ADR-0007](../adr/0007-gate-agent-actions-on-approvals-and-tool-evidence.md) |
+| Browser app | client | ES modules | [ADR-0001](../adr/0001-run-the-agent-loop-in-the-browser-not-on-the-server.md), [ADR-0007](../adr/0007-gate-agent-actions-on-approvals-and-tool-evidence.md) |
+| Chrome Browser Bridge | client | Chrome extension | — |
 | Browser storage | data | localStorage | [ADR-0001](../adr/0001-run-the-agent-loop-in-the-browser-not-on-the-server.md), [ADR-0004](../adr/0004-store-documents-goals-ideas-and-traces-in-neon-postgres-scop.md) |
 | API server | server | Express / Vercel functions | [ADR-0001](../adr/0001-run-the-agent-loop-in-the-browser-not-on-the-server.md), [ADR-0002](../adr/0002-proxy-llm-calls-server-side-with-a-pinned-model-and-a-tier.md), [ADR-0003](../adr/0003-share-request-handlers-between-express-and-vercel-functions.md), [ADR-0006](../adr/0006-keep-google-oauth-tokens-in-an-httponly-cookie-with-one-cons.md) |
-| Postgres database | data | Neon Postgres | [ADR-0004](../adr/0004-store-documents-goals-ideas-and-traces-in-neon-postgres-scop.md) |
+| Neon Postgres | data | Postgres | [ADR-0004](../adr/0004-store-documents-goals-ideas-and-traces-in-neon-postgres-scop.md) |
 | OpenAI API | external | Chat Completions | — |
-| Google APIs | external | OAuth 2.0, Gmail, Calendar | [ADR-0006](../adr/0006-keep-google-oauth-tokens-in-an-httponly-cookie-with-one-cons.md) |
-| Web search and job boards | external | Tavily, Greenhouse/Lever/Ashby | — |
-| Chrome bridge extension | client | Chrome extension | — |
+| Google Gmail and Calendar | external | Google OAuth 2.0 | [ADR-0006](../adr/0006-keep-google-oauth-tokens-in-an-httponly-cookie-with-one-cons.md) |
+| Tavily web search | external | Tavily API | — |
 
 ## Where we are vs. where we are going
 

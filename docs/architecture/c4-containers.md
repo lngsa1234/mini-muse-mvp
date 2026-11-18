@@ -8,58 +8,61 @@ owner: Alex (Technical Lead)
 
 Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code (C4 model)
 
-C4 level 2: the deployable parts and data stores, and how they talk. The surrounding people and systems are in [System context](c4-context.md); how requests flow step by step is in [Workflows](workflows/README.md).
+C4 level 2: the deployable parts and data stores, and how they talk. The surrounding people and systems are in [System context](c4-context.md); the inside of the browser app, and how each feature works with the agent, is in [Components](c4-components-browser-app.md); how requests flow step by step is in [Workflows](workflows/README.md).
 
-Mini Muse is a no-build browser app whose chat agent loop runs client-side. A Node/Express server (or Vercel functions) provides the REST APIs and an LLM proxy. A chat turn goes from the browser to the proxy, which adds the API key and streams OpenAI's reply back. The browser then runs tools locally, and those tools call the server APIs for goals, ideas, documents, web search, jobs and Google. The server reads and writes Postgres.
+Mini Muse is a no-build browser app with a small Node/Express (or Vercel function) backend. The tool-use agent loop runs in the browser. It streams model calls through a server proxy to OpenAI and runs feature tools locally. Those tools call the backend for Neon Postgres storage (documents, ideas, goals, traces), Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms.
 
 ```mermaid
 C4Container
   title Containers of Mini Muse
-  Person(user, "User", "Person chatting with Muse and managing goals")
+  Person(user, "User", "Person using Muse as a personal agent")
   System_Boundary(system, "Mini Muse") {
-    Container(browser_app, "Browser app and agent", "ES modules", "Renders the Chat, Goals, Ideas, Library and Connectors pages, and runs the agent loop that")
-    ContainerDb(browser_storage, "Browser storage", "localStorage", "Holds chat, memory, preferences and connector state in the browser.")
-    Container(api_server, "API server", "Express / Vercel functions", "Serves the static front end and the REST routes for docs, goals, ideas, web, jobs, Google ")
-    ContainerDb(postgres, "Postgres database", "Neon Postgres", "Stores per-user documents, goals, ideas and trace data.")
-    Container(chrome_extension, "Chrome bridge extension", "Chrome extension", "A development extension that lets the app work with job pages in the user's Chrome.")
+    Container(browser_app, "Browser app", "ES modules", "Plain ES-module UI with pages for chat, ideas, goals, library, connectors and settings, pl")
+    Container(chrome_extension, "Chrome Browser Bridge", "Chrome extension", "Optional extension that opens, reads, fills and clicks in a job application tab on request")
+    ContainerDb(local_storage, "Browser storage", "localStorage", "Holds chat, memory, preferences, contacts and a cache of state in the browser.")
+    Container(api_server, "API server", "Express / Vercel functions", "Serves static files and the handlers for the LLM proxy, docs, ideas, goals, web search/ope")
+    ContainerDb(neon_postgres, "Neon Postgres", "Postgres", "Stores Library documents, ideas, goals (steps, applications) and observability traces per ")
   }
-  System_Ext(openai, "OpenAI API", "Generates the streamed model replies and tool calls.")
-  System_Ext(google, "Google APIs", "Provides Gmail and Calendar access after the user's consent.")
-  System_Ext(web_services, "Web search and job boards", "Provide web search, page extraction and job listings.")
-  Rel(user, browser_app, "Chats with Muse, manages goals, ideas, documents and connectors")
-  Rel(browser_app, browser_storage, "Persists local state", "localStorage")
-  Rel(browser_app, api_server, "Streams LLM requests and calls APIs", "HTTPS/SSE, JSON")
-  Rel(api_server, openai, "Forwards completions with API key", "HTTPS/SSE")
-  Rel(api_server, postgres, "Reads and writes records", "SQL")
-  Rel(api_server, google, "Reads mail and calendar", "OAuth 2.0/HTTPS")
-  Rel(api_server, web_services, "Searches web and jobs", "HTTPS")
+  System_Ext(openai, "OpenAI API", "Model that answers agent turns and one-shot JSON completions, selected by tier.")
+  System_Ext(google_apis, "Google Gmail and Calendar", "User's real Gmail inbox and primary calendar, reached with a token kept in an encrypted Ht")
+  System_Ext(tavily, "Tavily web search", "Web search and page extraction used by web_search and web_open.")
+  Rel(user, browser_app, "Chats with Muse, manages ideas, goals and documents, approves actions")
+  Rel(browser_app, api_server, "Streams model completions", "HTTPS/SSE /api/llm")
+  Rel(api_server, openai, "Proxies completions with key", "HTTPS/SSE")
+  Rel(api_server, neon_postgres, "Reads and writes records", "SQL")
+  Rel(browser_app, local_storage, "Saves chat, memory, prefs", "localStorage")
+  Rel(api_server, google_apis, "Searches mail, manages events", "OAuth 2.0/HTTPS")
+  Rel(api_server, tavily, "Searches and extracts pages", "HTTPS")
+  Rel(browser_app, chrome_extension, "Sends browser commands", "window.postMessage")
 ```
 
 ## Containers
 
 | Container | Layer | Technology | What it does | Code |
 |---|---|---|---|---|
-| Browser app and agent | Client | ES modules | Renders the Chat, Goals, Ideas, Library and Connectors pages, and runs the agent loop that streams model replies and executes tools locally with approvals. | `public/js/agent`, `public/js/features`, `public/js/workflow`, `public/js/main.js` |
-| Browser storage | Data | localStorage | Holds chat, memory, preferences and connector state in the browser. | `public/js/core/storage.js`, `public/js/core/state.js` |
-| API server | Server | Express / Vercel functions | Serves the static front end and the REST routes for docs, goals, ideas, web, jobs, Google and traces, and proxies LLM calls with a server-held key. | `server/index.js`, `server/proxy.js`, `server/google.js`, `api` |
-| Postgres database | Data | Neon Postgres | Stores per-user documents, goals, ideas and trace data. | `server/db.js`, `db/schema.sql` |
-| OpenAI API | External services | Chat Completions | Generates the streamed model replies and tool calls. |  |
-| Google APIs | External services | OAuth 2.0, Gmail, Calendar | Provides Gmail and Calendar access after the user's consent. |  |
-| Web search and job boards | External services | Tavily, Greenhouse/Lever/Ashby | Provide web search, page extraction and job listings. |  |
-| Chrome bridge extension | Client | Chrome extension | A development extension that lets the app work with job pages in the user's Chrome. | `chrome-extension` |
+| Browser app | Client | ES modules | Plain ES-module UI with pages for chat, ideas, goals, library, connectors and settings, plus the in-browser agent loop, tools and approvals. | `public/index.html`, `public/js/main.js`, `public/js/agent`, `public/js/features` |
+| Chrome Browser Bridge | Client | Chrome extension | Optional extension that opens, reads, fills and clicks in a job application tab on request of the page. | `chrome-extension/background.js`, `chrome-extension/muse-bridge.js`, `chrome-extension/target.js`, `chrome-extension/manifest.json` |
+| Browser storage | Data | localStorage | Holds chat, memory, preferences, contacts and a cache of state in the browser. | `public/js/core/storage.js`, `public/js/core/state.js` |
+| API server | Server | Express / Vercel functions | Serves static files and the handlers for the LLM proxy, docs, ideas, goals, web search/open, job search, Google OAuth/Gmail/Calendar and traces, shared between Express and Vercel functions. | `server/index.js`, `server/proxy.js`, `server/google.js`, `api` |
+| Neon Postgres | Data | Postgres | Stores Library documents, ideas, goals (steps, applications) and observability traces per user. | `db/schema.sql`, `server/db.js` |
+| OpenAI API | External services | Chat Completions | Model that answers agent turns and one-shot JSON completions, selected by tier. |  |
+| Google Gmail and Calendar | External services | Google OAuth 2.0 | User's real Gmail inbox and primary calendar, reached with a token kept in an encrypted HttpOnly cookie. |  |
+| Tavily web search | External services | Tavily API | Web search and page extraction used by web_search and web_open. |  |
 
 ## Relationships
 
-- Browser app and agent → Browser storage: Persists local state (localStorage)
-- Browser app and agent → API server: Streams LLM requests and calls APIs (HTTPS/SSE, JSON)
-- API server → OpenAI API: Forwards completions with API key (HTTPS/SSE)
-- API server → Postgres database: Reads and writes records (SQL)
-- API server → Google APIs: Reads mail and calendar (OAuth 2.0/HTTPS)
-- API server → Web search and job boards: Searches web and jobs (HTTPS)
+- Browser app → API server: Streams model completions (HTTPS/SSE /api/llm)
+- API server → OpenAI API: Proxies completions with key (HTTPS/SSE)
+- API server → Neon Postgres: Reads and writes records (SQL)
+- Browser app → Browser storage: Saves chat, memory, prefs (localStorage)
+- API server → Google Gmail and Calendar: Searches mail, manages events (OAuth 2.0/HTTPS)
+- API server → Tavily web search: Searches and extracts pages (HTTPS)
+- Browser app → Chrome Browser Bridge: Sends browser commands (window.postMessage)
 
 ## Not confirmed
 
-- I did not read server/google.js, web.js, jobs.js or the chrome-extension code, so the Tavily and job board details come from comments and docs.
-- The browser app's link to the Chrome extension is not shown because I did not confirm the mechanism.
-- The README says goals and ideas use localStorage, but the server wires them to Neon. I followed the server code.
-- I did not read server/db.js, so the trace tables in Postgres are unconfirmed.
+- Did not read agent/loop.js, tools.js, approvals.js or core/api.js in full; the approval and transport flow is inferred from the architecture doc and tool code.
+- Did not read server/db.js, trace code or the Chrome extension source, and did not confirm the memory, web_search, web_open, jobs_search or score_fit tool definitions.
+- Contacts tools names and approval behavior were not confirmed beyond the file header.
+- Job-board APIs (Greenhouse, Lever, Ashby) were not shown as a component; the server reaches them through its job search handler.
+- Not all tool needsApproval flags were verified in the agent policy code, and docs_add has no approval in the code I read.
