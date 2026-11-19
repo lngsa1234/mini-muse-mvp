@@ -19,7 +19,7 @@ const MAX_APPS = 200;
 const clip = (v, n) => String(v ?? "").trim().slice(0, n);
 
 // Goal-step selection for "move my goal forward" requests.
-export const DOCUMENT_STEP = /\b(?:résumé|resume|cv|cover letter)\b/i;
+export const DOCUMENT_STEP = /(?<![\p{L}\p{N}])(?:résumé|resume|cv|cover letter)(?![\p{L}\p{N}])/iu;
 export const JOB_RESEARCH_STEP = /\b(?:research|find|look for|identify|search)\b.*\b(?:compan(?:y|ies)|jobs?|job boards?|openings?|open positions?|roles?)\b/i;
 
 const STOP = new Set(("the and for with that this these those you your our can could would will like please get got make want "
