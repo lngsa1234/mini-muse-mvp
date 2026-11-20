@@ -165,13 +165,14 @@ server/
   docs.js             document request handlers (shared with api/docs/)
   agent/              the agent: runtime.js (one turn), loop.js, prompt.js, llm.js, tools/, http.js
   userdata.js         chat, user state and agent waits in Postgres
-  state.js            /api/state handlers (shared with api/state.js)
+  state.js            /api/state handlers (shared with api/agent.js)
 api/
   llm.js              Vercel Edge Function: LLM proxy, used when deployed
   healthz.js          Vercel Edge Function: key-configured check
   docs/               Vercel Node functions: list/create (index.js) + delete ([id].js)
   agent.js            Vercel Node function: /api/agent/* (turn stream, answer, cancel, tools)
-  state.js            Vercel Node function: /api/state/* (state, chat, activity log)
+                      and /api/state/* (state, chat, activity log) — one function, since
+                      the Hobby plan allows at most 12 serverless functions
 db/
   schema.sql          Postgres tables (documents, ideas, goals, traces, user_state, chat_messages, agent_waits)
 scripts/

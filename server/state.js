@@ -1,7 +1,7 @@
 /*
  * User state + chat history request handlers (ADR-0008).
  * Shared by the Express server (server/index.js) and the Vercel function
- * (api/state.js). Each handler returns { status, json }.
+ * (api/agent.js, ?scope=state). Each handler returns { status, json }.
  *
  *   GET    /api/state          -> { state, chat }   everything the app needs at boot
  *   PATCH  /api/state          -> { ok }            body: { key: value, ... } (top-level keys)
