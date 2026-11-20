@@ -1,7 +1,7 @@
 /* Shared Vercel adapter for the Google OAuth, Gmail, and Calendar endpoints. */
 import * as google from "./google.js";
 
-const handlers = {
+export const handlers = {
   status: (req, body, env) => google.handleGoogleStatus(req, env),
   authorize: (req, body, env) => google.handleGoogleAuthorize(req, env),
   callback: (req, body, env) => google.handleGoogleCallback(req, env),

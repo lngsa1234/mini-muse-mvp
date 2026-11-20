@@ -1,30 +1,25 @@
 /*
- * Human-in-the-loop approvals: a tool pauses, an approval card appears in
- * chat, and the tool resumes with the user's answer.
- * Resolves true (approved), false (declined) or null (no answer / cancelled).
+ * Human-in-the-loop approvals. The server agent pauses a tool and saves an
+ * approval card in the chat message (server/agent/runtime.js). The buttons
+ * answer through /api/agent/answer, so a card can be approved from any device
+ * showing the chat. The turn resumes on the server with the answer.
  */
 import { onClick } from "../core/registry.js";
-import { audit, setPhase } from "../core/activity.js";
-import { go } from "../core/nav.js";
+import { state } from "../core/state.js";
+import { answerAgent } from "../core/api.js";
 import { updateMsg } from "../features/chat/chat.js";
 
-const approvals = new Map(); // act id -> resolve
-
-// card: { heading, rows: [[label, value]], body?, yes?, summary }
-export async function requestApproval(msg, act, tool, card, context) {
-  setPhase("waiting"); msg.status = "Waiting for your approval…"; go("chat");
-  const a = act(tool, "", { approval: "pending", card });
-  const ok = await new Promise(res => { approvals.set(a.id, res); context?.signal?.addEventListener("abort", () => res(null), { once: true }); });
-  approvals.delete(a.id);
-  a.approval = ok === true ? "approved" : ok === null ? "expired" : "declined";
-  a.label = (ok === true ? "Approved: " : ok === null ? "No answer: " : "Declined: ") + card.summary;
-  audit("approval", { [tool]: card.summary }, a.approval, "you");
-  setPhase("tool"); updateMsg(msg);
-  return ok;
+function answer(id, ok) {
+  const msg = state.chat.find(m => (m.acts || []).some(a => a.id === id));
+  const a = msg?.acts.find(x => x.id === id);
+  if (!a || a.approval !== "pending") return;
+  a.approval = ok ? "approved" : "declined";   // optimistic; the server sends the real state
+  a.label = (ok ? "Approved: " : "Declined: ") + (a.card?.summary || "");
+  updateMsg(msg);
+  answerAgent(id, { answer: ok }).catch(() => {
+    a.approval = "expired"; a.label = "No answer: " + (a.card?.summary || ""); updateMsg(msg);
+  });
 }
 
-// End of a turn: anything still waiting gets "no answer".
-export function expireApprovals() { for (const [, res] of approvals) res(null); }
-
-onClick("approve", id => approvals.get(id)?.(true));
-onClick("decline", id => approvals.get(id)?.(false));
+onClick("approve", id => answer(id, true));
+onClick("decline", id => answer(id, false));

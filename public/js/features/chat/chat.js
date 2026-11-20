@@ -3,7 +3,7 @@ import { $, esc } from "../../core/dom.js";
 import { clock, rich } from "../../core/format.js";
 import { state, rt, isOn } from "../../core/state.js";
 import { defineFeature, onClick, CONNECTORS, isConnTool } from "../../core/registry.js";
-import { say } from "../../agent/run.js";
+import { say, stopTurn } from "../../agent/run.js";
 
 const EXAMPLES = [
   "I'm vegetarian and usually free on Monday evenings. Remember that.",
@@ -13,7 +13,7 @@ const EXAMPLES = [
   "Help me host our agent engineering meetup next Wednesday at 7pm."
 ];
 
-export const noteText = () => "Enter to send · Shift+Enter for a new line. Connectors use sample data; nothing leaves this page.";
+export const noteText = () => "Enter to send · Shift+Enter for a new line. Your chat is saved to your account, so it's the same on every device.";
 
 function actHtml(a) {
   if (a.approval === "pending" && a.card) {
@@ -43,7 +43,7 @@ export function renderChat() {
       <div class="chips">${EXAMPLES.map(e => `<button class="chip" data-example="${esc(e)}">${esc(e)}</button>`).join("")}</div></div>`;
     return;
   }
-  log.innerHTML = state.chat.map(msgHtml).join("");
+  log.innerHTML = state.chat.filter(m => !m.hidden).map(msgHtml).join("");
   log.scrollTop = log.scrollHeight;
 }
 // Re-render one message in place (cheap; used while streaming).
@@ -66,7 +66,7 @@ export function initChat() {
   });
   $("box").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); } });
   $("box").addEventListener("input", autosize);
-  $("stop").addEventListener("click", () => rt.ctl?.abort());
+  $("stop").addEventListener("click", stopTurn);
 }
 onClick("example", ex => { $("box").value = ex; autosize(); if (rt.sample && !rt.busy) $("form").requestSubmit(); });
 

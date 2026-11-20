@@ -14,7 +14,7 @@ _Written by Maya from the code on 2026-11-17. It describes the feature as built.
 
 Agent Chat lets a user type a request to the Muse assistant. The assistant answers with streamed text and runs tools (Library, goals, connectors, browser bridge) on the user's behalf. Sensitive actions show as approval cards.
 
-The Chat page has a message log, an examples welcome screen, and a composer. Submitting a message calls run() in public/js/agent/run.js. run() pushes the user message and a live assistant placeholder, starts a trace, builds the tools and prompt, and calls the agent loop. Before the model is called, run() applies deterministic shortcuts: Library verification for document goal steps, a job-research nudge, and opening an application link in Chrome. The loop in agent/loop.js POSTs the conversation and tool definitions to /api/llm through transport.js. It streams the SSE reply into the message, executes any requested tools locally, feeds the results back, and repeats up to 12 steps. The server proxy (server/proxy.js) injects the API key and maps the tier (Fast = quick, Thorough = default) to a model, so the browser never names a model. Errors map to user-facing messages. This spec describes the code as read; QA has not verified it.
+The Chat page has a message log, an examples welcome screen, and a composer. Submitting a message calls run() in public/js/agent/run.js, which POSTs it to /api/agent/turn and renders the events the server streams back. The server agent (server/agent/runtime.js, ADR-0009) saves the user message and a live assistant message, builds the tools and prompt, applies the deterministic shortcuts (Library verification for document goal steps, a job-research nudge, opening an application link in Chrome), and runs the tool loop.
 
 ## User stories
 
@@ -65,8 +65,8 @@ The Chat page has a message log, an examples welcome screen, and a composer. Sub
   - `public/js/features/chat/chat.js:69`: `rt.ctl?.abort()`
   - `public/js/agent/run.js:174`: `if (e?.code !== "cancelled")`
 - **AC3** ✓ (web): Given The model replies with tool calls, when A turn runs, then Each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached..
-  - `public/js/agent/loop.js:8`: `export const MAX_STEPS = 12;`
-  - `public/js/agent/loop.js:102`: `const out = await tool.execute(tu.input, { signal });`
+  - `server/agent/loop.js:6`: `export const MAX_STEPS = 12; // safety cap on tool-use loop iterations`
+  - `server/agent/loop.js:33`: `const out = await tool.execute(tu.input);`
 - **AC4** ✓ (API): Given The server has no OPENAI_API_KEY, when The browser calls /api/llm, then The server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…"..
   - `server/proxy.js:16`: `status: 503, body: { code: "no_api_key"`
   - `public/js/agent/transport.js:27`: `if (serverCode === "no_api_key") code = "sampling_disabled";`
@@ -93,7 +93,7 @@ The Chat page has a message log, an examples welcome screen, and a composer. Sub
 - run.js uses regex intent heuristics (affirmations, 'again', 'continue') to force deterministic paths, and these may misfire on ordinary messages.
 - The 12-step cap ends a turn with whatever text exists, and the user gets no specific notice.
 - The composer note says 'Connectors use sample data; nothing leaves this page', which may contradict the real Gmail/Google connectors and the server-side LLM calls.
-- Chat history is persisted client-side via save(). I did not check how large it can grow or how it is protected.
+- Chat history is saved on the server by the agent runtime (ADR-0008, ADR-0009), one row per message in chat_messages; the page loads the newest 40.
 - No test or QA evidence for this feature was reviewed, so it is shipped but unverified.
 
 ## Open questions

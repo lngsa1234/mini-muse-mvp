@@ -1,12 +1,12 @@
 /*
- * Transport: talks to our backend at /api/llm (never to the provider
- * directly; the server holds the API key and picks the model, see
- * server/routing.js). Parses the SSE stream into text + tool calls.
+ * Transport: one-shot JSON generations (Ideas / Goals suggestions) through our
+ * backend at /api/llm (never the provider directly; the server holds the API
+ * key and picks the model, see server/routing.js). Chat turns no longer come
+ * through here: the agent loop runs on the server (agent/run.js, ADR-0009).
  */
 import { cap, activeTraceparent, startTrace, setActive, flush } from "../core/trace.js";
 
 export const API_URL = "/api/llm";
-export const MAX_TOKENS = 2048;
 
 // Build request headers, attaching the active span's traceparent so the
 // server's openai.chat span joins this turn's trace.
@@ -36,104 +36,6 @@ export async function apiError(res) {
 }
 
 export function cancelled() { const e = new Error("cancelled"); e.code = "cancelled"; return e; }
-
-/* ---------- stream one model turn, parsing the SSE event stream ---------- */
-// `span` (optional) is this step's gen_ai.chat span; when present we record the
-// request shape, token usage and finish_reason on it.
-export async function streamTurn(body, signal, onText, span) {
-  span?.set({
-    "gen_ai.request.tier": body.tier || "default",
-    "gen_ai.request.message_count": Array.isArray(body.messages) ? body.messages.length : 0,
-    "gen_ai.request.tool_count": Array.isArray(body.tools) ? body.tools.length : 0
-  });
-  let res;
-  try {
-    res = await fetch(API_URL, {
-      method: "POST",
-      headers: llmHeaders(span),
-      body: JSON.stringify(Object.assign(
-        { stream: true, stream_options: { include_usage: true }, max_tokens: MAX_TOKENS },
-        body
-      )),
-      signal
-    });
-  } catch (e) {
-    if (e && e.name === "AbortError") { span?.fail(cancelled()); throw cancelled(); }
-    const err = new Error("Could not reach the server."); span?.fail(err); throw err;
-  }
-  if (!res.ok || !res.body) { const e = await apiError(res); span?.fail(e); throw e; }
-
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = "";
-  let text = "";
-  let stopReason = null;
-  let usage = null;
-  const toolCalls = [];
-
-  const handle = evt => {
-    if (evt.error) throw new Error(evt.error.message || "stream error");
-    if (evt.usage) usage = evt.usage; // final include_usage chunk (choices empty)
-    const choice = evt.choices && evt.choices[0];
-    if (!choice) return;
-    const delta = choice.delta || {};
-    if (delta.content) {
-      text += delta.content;
-      if (onText) try { onText({ text }); } catch (_) {}
-    }
-    for (const call of delta.tool_calls || []) {
-      const current = toolCalls[call.index] ||= { id: "", name: "", arguments: "" };
-      if (call.id) current.id = call.id;
-      if (call.function?.name) current.name = call.function.name;
-      if (call.function?.arguments) current.arguments += call.function.arguments;
-    }
-    if (choice.finish_reason) stopReason = choice.finish_reason;
-  };
-
-  while (true) {
-    let chunk;
-    try { chunk = await reader.read(); }
-    catch (e) { if (e && e.name === "AbortError") throw cancelled(); throw e; }
-    if (chunk.done) break;
-    buf += dec.decode(chunk.value, { stream: true });
-    let sep;
-    while ((sep = buf.indexOf("\n\n")) >= 0) {
-      const raw = buf.slice(0, sep); buf = buf.slice(sep + 2);
-      const dataLine = raw.split("\n").find(l => l.startsWith("data:"));
-      if (!dataLine) continue;
-      const data = dataLine.slice(5).trim();
-      if (!data || data === "[DONE]") continue;
-      let evt; try { evt = JSON.parse(data); } catch (_) { continue; }
-      handle(evt);
-    }
-  }
-
-  const ordered = toolCalls.filter(Boolean);
-  const toolUses = ordered.map(call => {
-    let input = {};
-    try { input = call.arguments ? JSON.parse(call.arguments) : {}; } catch (_) {}
-    return { id: call.id, name: call.name, input };
-  });
-  const assistantMessage = {
-    role: "assistant",
-    content: text || null,
-    ...(ordered.length ? { tool_calls: ordered.map(call => ({ id: call.id, type: "function", function: { name: call.name, arguments: call.arguments } })) } : {})
-  };
-  if (span) {
-    span.set({
-      "gen_ai.response.finish_reason": stopReason || null,
-      "gen_ai.response.tool_call_count": toolUses.length,
-      "gen_ai.response.content": cap(text),
-      ...(usage ? {
-        "gen_ai.usage.input_tokens": usage.prompt_tokens,
-        "gen_ai.usage.output_tokens": usage.completion_tokens,
-        "gen_ai.usage.total_tokens": usage.total_tokens
-      } : {})
-    });
-    if (toolUses.length) span.event("tool_calls", { names: toolUses.map(t => t.name) });
-  }
-  return { text, toolUses, assistantMessage, stopReason };
-}
 
 /* ---------- one-shot JSON generation (Ideas / Goals personalization) ---------- */
 // Each call is its own root trace (gen_ai.generate): the server's openai.chat
