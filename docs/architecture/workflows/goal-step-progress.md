@@ -55,11 +55,7 @@ sequenceDiagram
 - If the Library has no résumé, the shortcut replies that it could not verify the step and asks the user to add one or click the step.
 - If the user declines or does not answer an approval for interview or offer, nothing is saved.
 
-## Use cases it carries out
+## Features it serves
 
-- [goals/UC-1](../../use-cases/goals/uc-1-capture-a-goal-and-have-muse-plan-it.md)
-- [goals/UC-2](../../use-cases/goals/uc-2-muse-works-through-goal-steps.md)
-- [goals/UC-3](../../use-cases/goals/uc-3-verify-step-progress-with-tool-evidence.md)
-- [goals/UC-4](../../use-cases/goals/uc-4-set-a-measurable-target-and-deadline.md)
-- [goals/UC-5](../../use-cases/goals/uc-5-track-job-applications-with-proof.md)
-- [goals/UC-6](../../use-cases/goals/uc-6-revise-a-plan-with-approval.md)
+- [Goals](../../specs/goals.md)
+- [Approvals](../../specs/tool-approvals.md)

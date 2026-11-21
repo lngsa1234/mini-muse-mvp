@@ -45,6 +45,7 @@ sequenceDiagram
 - A file with no extractable text returns 422.
 - Delete returns 404 for an unknown document. Unsupported methods return 405.
 
-## Use cases it carries out
+## Features it serves
 
-- [goals/UC-3](../../use-cases/goals/uc-3-verify-step-progress-with-tool-evidence.md)
+- [Library](../../specs/library.md)
+- [Goals](../../specs/goals.md)

@@ -45,6 +45,7 @@ sequenceDiagram
 - A decline returns 'The user declined. Nothing was changed.' to the model.
 - If the user does not answer before the turn ends, or presses Stop, the approval resolves as no answer and returns 'The user did not answer. Nothing was changed.'
 
-## Use cases it carries out
+## Features it serves
 
-- [goals/UC-6](../../use-cases/goals/uc-6-revise-a-plan-with-approval.md)
+- [Approvals](../../specs/tool-approvals.md)
+- [Goals](../../specs/goals.md)
