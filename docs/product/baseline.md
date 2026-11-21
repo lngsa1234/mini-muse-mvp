@@ -59,16 +59,16 @@ flowchart LR
   end
   subgraph agent_lane["Mini Muse"]
     direction LR
-    s2["2. Plans goal, target, deadline<br/><i>Goals</i>"]
-    s3["3. Finds and scores jobs<br/><i>Goals</i>"]
-    s4["4. Tailors the résumé<br/><i>Library</i>"]
-    s5["5. Fills the application<br/><i>Browser bridge</i>"]
+    s2["2. Plans goal,<br/>target, deadline<br/><i>Goals</i>"]
+    s3["3. Finds and<br/>scores jobs<br/><i>Goals</i>"]
+    s4["4. Tailors the<br/>résumé<br/><i>Library</i>"]
+    s5["5. Fills the<br/>application<br/><i>Browser bridge</i>"]
     s8["8. Clicks Submit<br/><i>Browser bridge</i>"]
-    s9["9. Confirms in Gmail<br/><i>Connectors</i>"]
+    s9["9. Confirms in<br/>Gmail<br/><i>Connectors</i>"]
   end
   subgraph system_lane["System"]
     direction LR
-    s6["6. Shows approval card<br/><i>Approvals</i>"]
+    s6["6. Shows approval<br/>card<br/><i>Approvals</i>"]
   end
   s1 --> s2
   s2 --> s3
@@ -78,7 +78,7 @@ flowchart LR
   s6 --> s7
   s7 --> s8
   s8 --> s9
-  done(["✅ The goal shows applications and interviews against the target, with the days left."])
+  done(["✅ The goal shows<br/>applications and<br/>interviews against the<br/>target, with the days<br/>left."])
   s9 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
@@ -117,14 +117,14 @@ flowchart LR
   end
   subgraph agent_lane["Mini Muse"]
     direction LR
-    s2["2. Searches hiring sites<br/><i>Goals</i>"]
-    s3["3. Scores fit with résumé<br/><i>Library</i>"]
-    s4["4. Lists the best fits<br/><i>Agent chat</i>"]
+    s2["2. Searches hiring<br/>sites<br/><i>Goals</i>"]
+    s3["3. Scores fit with<br/>résumé<br/><i>Library</i>"]
+    s4["4. Lists the best<br/>fits<br/><i>Agent chat</i>"]
   end
   s1 --> s2
   s2 --> s3
   s3 --> s4
-  done(["✅ A short list of fits with honest scores the user can turn it into a goal."])
+  done(["✅ A short list of fits<br/>with honest scores the<br/>user can turn it into<br/>a goal."])
   s4 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
@@ -152,18 +152,18 @@ flowchart LR
 flowchart LR
   subgraph agent_lane["Mini Muse"]
     direction LR
-    s2["2. Checks Gmail for replies<br/><i>Connectors</i>"]
-    s3["3. Updates applications<br/><i>Goals</i>"]
-    s4["4. Leaves a progress brief<br/><i>Agent chat</i>"]
+    s2["2. Checks Gmail<br/>for replies<br/><i>Connectors</i>"]
+    s3["3. Updates<br/>applications<br/><i>Goals</i>"]
+    s4["4. Leaves a<br/>progress brief<br/><i>Agent chat</i>"]
   end
   subgraph system_lane["System"]
     direction LR
-    s1["1. Starts daily check-in<br/><i>Daily check-in</i>"]
+    s1["1. Starts daily<br/>check-in<br/><i>Daily check-in</i>"]
   end
   s1 --> s2
   s2 --> s3
   s3 --> s4
-  done(["✅ Goals are current and the user has a short brief when they return."])
+  done(["✅ Goals are current<br/>and the user has a<br/>short brief when they<br/>return."])
   s4 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
@@ -191,18 +191,18 @@ flowchart LR
 flowchart LR
   subgraph user_lane["Busy professional"]
     direction LR
-    s1["1. Uploads a document<br/><i>Library</i>"]
+    s1["1. Uploads a<br/>document<br/><i>Library</i>"]
     s2["2. Asks a question<br/><i>Agent chat</i>"]
   end
   subgraph agent_lane["Mini Muse"]
     direction LR
-    s3["3. Searches the Library<br/><i>Library</i>"]
-    s4["4. Answers with source<br/><i>Agent chat</i>"]
+    s3["3. Searches the<br/>Library<br/><i>Library</i>"]
+    s4["4. Answers with<br/>source<br/><i>Agent chat</i>"]
   end
   s1 --> s2
   s2 --> s3
   s3 --> s4
-  done(["✅ An answer that cites which document it came from."])
+  done(["✅ An answer that cites<br/>which document it came<br/>from."])
   s4 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
@@ -226,23 +226,23 @@ flowchart LR
 flowchart LR
   subgraph user_lane["Busy professional"]
     direction LR
-    s1["1. Asks to email someone<br/><i>Agent chat</i>"]
+    s1["1. Asks to email<br/>someone<br/><i>Agent chat</i>"]
     s4(["4. ✋ Approves"])
   end
   subgraph agent_lane["Mini Muse"]
     direction LR
-    s2["2. Looks up the contact<br/><i>Connectors</i>"]
+    s2["2. Looks up the<br/>contact<br/><i>Connectors</i>"]
     s5["5. Sends the email<br/><i>Connectors</i>"]
   end
   subgraph system_lane["System"]
     direction LR
-    s3["3. Shows approval card<br/><i>Approvals</i>"]
+    s3["3. Shows approval<br/>card<br/><i>Approvals</i>"]
   end
   s1 --> s2
   s2 --> s3
   s3 --> s4
   s4 --> s5
-  done(["✅ The email is sent only with approval, and appears in the activity audit."])
+  done(["✅ The email is sent<br/>only with approval,<br/>and appears in the<br/>activity audit."])
   s5 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
@@ -272,16 +272,16 @@ flowchart LR
 flowchart LR
   subgraph user_lane["Job seeker"]
     direction LR
-    s2["2. Turns it into a goal<br/><i>Ideas</i>"]
+    s2["2. Turns it into a<br/>goal<br/><i>Ideas</i>"]
   end
   subgraph agent_lane["Mini Muse"]
     direction LR
     s1["1. Saves an idea<br/><i>Ideas</i>"]
-    s3["3. Creates the linked goal<br/><i>Goals</i>"]
+    s3["3. Creates the<br/>linked goal<br/><i>Goals</i>"]
   end
   s1 --> s2
   s2 --> s3
-  done(["✅ The idea shows as a goal, and the goal has a plan."])
+  done(["✅ The idea shows as a<br/>goal, and the goal has<br/>a plan."])
   s3 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
