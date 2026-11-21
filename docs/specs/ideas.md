@@ -8,13 +8,15 @@ owner: Product Manager (Maya)
 
 # Ideas
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**10 of 10** acceptance criteria checked against the code · 6 risks · 4 open questions
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-The Ideas feature gives a user a page of suggested and saved ideas, backed by a per-user ideas API. Users can save, act on, promote to goals, or dismiss ideas. Muse can also add ideas through chat.
+**Gives the user a page of ideas, some suggested by Muse and some they saved, that they can act on, keep, turn into a goal or dismiss.**
 
-The API has GET and POST on /api/ideas, and PATCH and DELETE on /api/ideas/:id. Both share handlers in server/ideas.js, which store ideas per user. In the browser, the Ideas page shows rule-based starter ideas until Muse generates personalised ideas (status 'new') through the LLM. Cards are grouped as New or Starter, Saved, and Acted on. The user can press Do it, Save, Make it a goal, or Not for me. Chat uses a save_idea tool to store ideas the user shares or Muse suggests.
+Until Muse has learned enough to suggest ideas of its own, the page shows starter ideas. Ideas are grouped as new or starter, saved, and acted on. Each card offers Do it, Save, Make it a goal, or Not for me. In chat, Muse can save an idea the user mentions or one it suggests. Ideas are kept per user, so they follow the user across devices.
 
 ## User stories
 
@@ -57,29 +59,20 @@ The API has GET and POST on /api/ideas, and PATCH and DELETE on /api/ideas/:id. 
 
 ## Acceptance criteria
 
-- **AC1** ✓ (API): Given An API client, when it POSTs /api/ideas with a blank or missing title, then the response is 400 with 'title is required'..
-  - `server/ideas.js:19`: `if (!title) return err(400, "title is required");`
-- **AC2** ✓ (API): Given An API client, when it POSTs a valid idea, then the response is 201 with the created idea, and the title is capped at 200 characters..
-  - `server/ideas.js:21`: `title: title.slice(0, TITLE_CAP),`
-- **AC3** ✓ (API): Given An idea id that does not exist for the user, when the client sends PATCH or DELETE, then the response is 404 'no such idea'..
-  - `server/ideas.js:38`: `if (!idea) return err(404, "no such idea");`
-  - `server/ideas.js:44`: `if (!removed) return err(404, "no such idea");`
-- **AC4** ✓ (API): Given An unsupported HTTP method on /api/ideas, when the request is made, then the response is 405 'method not allowed'..
-  - `api/ideas/index.js:23`: `return send(res, { status: 405, json: { error: "method not allowed" } });`
-- **AC5** ✓ (web): Given A user opens the Ideas page and has no 'new' ideas, when the page renders, then rule-based starter ideas appear under 'Starter ideas'..
-  - `public/js/features/ideas/ideas.js:51`: `Starter ideas <span>${gen.busy ? "Muse is personalizing these…" : "from simple rules"}</span>`
-- **AC6** ✓ (web): Given A user with an active LLM session, when they press 'Update with Muse', then Muse creates ideas with status 'new', and the page shows them under 'New from Muse'..
-  - `public/js/features/ideas/ideas.js:93`: `status: "new", by: "muse" }));`
-  - `public/js/features/ideas/ideas.js:50`: `'New from Muse <span>updated`
-- **AC7** ✓ (web): Given A stored idea, when the user presses Save, then its status is set to 'saved' and it moves to the Saved group..
-  - `public/js/features/ideas/ideas.js:131`: `replaceIdea(i = await updateIdea(i.id, { status: "saved" }))`
-- **AC8** ✓ (web): Given An idea card, when the user presses 'Not for me' on a stored idea, then its status becomes dismissed and the card disappears..
-  - `public/js/features/ideas/ideas.js:137`: `replaceIdea(await updateIdea(i.id, { status: "dismissed" }))`
-  - `public/js/features/ideas/ideas.js:47`: `filter(i => ideaStatus(i) !== "dismissed")`
-- **AC9** ✓ (web): Given An idea card, when the user presses 'Do it', then the idea is marked done and Muse is sent a message to carry it out..
-  - `public/js/features/ideas/ideas.js:120`: `updateIdea(i.id, { status: "done" })`
-- **AC10** ✓ (web): Given A chat where the user shares an idea, when Muse calls save_idea with a title already on the page, then nothing is created and the tool replies 'Already on the Ideas page.'..
-  - `public/js/features/ideas/ideas.js:158`: `return "Already on the Ideas page.";`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | an API client | it POSTs /api/ideas with a blank or missing title | the response is 400 with 'title is required' | API | ✓ |
+| AC2 | an API client | it POSTs a valid idea | the response is 201 with the created idea, and the title is capped at 200 characters | API | ✓ |
+| AC3 | an idea id that does not exist for the user | the client sends PATCH or DELETE | the response is 404 'no such idea' | API | ✓ |
+| AC4 | an unsupported HTTP method on /api/ideas | the request is made | the response is 405 'method not allowed' | API | ✓ |
+| AC5 | a user opens the Ideas page and has no 'new' ideas | the page renders | rule-based starter ideas appear under 'Starter ideas' | web | ✓ |
+| AC6 | a user with an active LLM session | they press 'Update with Muse' | muse creates ideas with status 'new', and the page shows them under 'New from Muse' | web | ✓ |
+| AC7 | a stored idea | the user presses Save | its status is set to 'saved' and it moves to the Saved group | web | ✓ |
+| AC8 | an idea card | the user presses 'Not for me' on a stored idea | its status becomes dismissed and the card disappears | web | ✓ |
+| AC9 | an idea card | the user presses 'Do it' | the idea is marked done and Muse is sent a message to carry it out | web | ✓ |
+| AC10 | a chat where the user shares an idea | muse calls save_idea with a title already on the page | nothing is created and the tool replies 'Already on the Ideas page.' | web | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Risks
 
@@ -96,6 +89,30 @@ The API has GET and POST on /api/ideas, and PATCH and DELETE on /api/ideas/:id. 
 - How does currentUserId identify users when there is no login?
 - Should dismissed ideas be permanently removed, or do they still feed the 'avoid ideas like this' behavior?
 - Is a QA verification pass wanted? There is no QA evidence in the repository, so a QA Engineer task to verify these criteria is recommended.
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+server/ideas.js holds the handlers for GET/POST /api/ideas and PATCH/DELETE /api/ideas/:id, shared by the Vercel functions and the local Express server, scoped by user id. The Ideas page renders rule-based starters until Muse generates personalised ideas (status 'new') through the model. Chat uses the save_idea tool.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `server/ideas.js:19` | `if (!title) return err(400, "title is required");` |
+| AC2 | `server/ideas.js:21` | `title: title.slice(0, TITLE_CAP),` |
+| AC3 | `server/ideas.js:38` | `if (!idea) return err(404, "no such idea");` |
+|  | `server/ideas.js:44` | `if (!removed) return err(404, "no such idea");` |
+| AC4 | `api/ideas/index.js:23` | `return send(res, { status: 405, json: { error: "method not allowed" } });` |
+| AC5 | `public/js/features/ideas/ideas.js:51` | `Starter ideas <span>${gen.busy ? "Muse is personalizing these…" : "from simple rules"}</span>` |
+| AC6 | `public/js/features/ideas/ideas.js:93` | `status: "new", by: "muse" }));` |
+|  | `public/js/features/ideas/ideas.js:50` | `'New from Muse <span>updated` |
+| AC7 | `public/js/features/ideas/ideas.js:131` | `replaceIdea(i = await updateIdea(i.id, { status: "saved" }))` |
+| AC8 | `public/js/features/ideas/ideas.js:137` | `replaceIdea(await updateIdea(i.id, { status: "dismissed" }))` |
+|  | `public/js/features/ideas/ideas.js:47` | `filter(i => ideaStatus(i) !== "dismissed")` |
+| AC9 | `public/js/features/ideas/ideas.js:120` | `updateIdea(i.id, { status: "done" })` |
+| AC10 | `public/js/features/ideas/ideas.js:158` | `return "Already on the Ideas page.";` |
 
 ## Not confirmed from the code
 

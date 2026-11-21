@@ -30,8 +30,8 @@
           "AC10: Given A reply stops because of the token limit, when The turn finishes, then The message shows 'The reply was cut short. Ask for less at once.'.."
         ],
         "document": {
-          "objective": "Agent Chat lets a user type a request to the Muse assistant. The assistant answers with streamed text and runs tools (Library, goals, connectors, browser bridge) on the user's behalf. Sensitive actions show as approval cards.",
-          "summary": "The Chat page has a message log, an examples welcome screen, and a composer. Submitting a message calls run() in public/js/agent/run.js. run() pushes the user message and a live assistant placeholder, starts a trace, builds the tools and prompt, and calls the agent loop. Before the model is called, run() applies deterministic shortcuts: Library verification for document goal steps, a job-research nudge, and opening an application link in Chrome. The loop in agent/loop.js POSTs the conversation and tool definitions to /api/llm through transport.js. It streams the SSE reply into the message, executes any requested tools locally, feeds the results back, and repeats up to 12 steps. The server proxy (server/proxy.js) injects the API key and maps the tier (Fast = quick, Thorough = default) to a model, so the browser never names a model. Errors map to user-facing messages. This spec describes the code as read; QA has not verified it.",
+          "objective": "Lets a user ask Muse for something in plain words and watch it answer and act, using tools for goals, documents, connected services and the browser, with risky actions held for approval.",
+          "summary": "Replies stream in as Muse writes them, and the user can stop a reply at any time. Muse can take up to 12 steps of tool use in one turn. Fast gives replies in seconds; Thorough uses a stronger model that can take up to a minute. When the assistant is unavailable or hits a usage limit, the chat says so in plain words. When the user asks to apply for a job, Muse can't use email in that turn.",
           "userStories": [
             "As a user, I want to send a message and see Muse's reply stream in, so that I get answers without waiting for the full response.",
             "As a user, I want to stop a response in progress, so that I can cancel a turn I no longer want.",
@@ -273,14 +273,15 @@
             "The clickable-link rendering (core/format.js rich) was not read.",
             "No tests were read, so nothing here is verified by QA.",
             "The quotes were copied from the numbered lines I read, but I did not run the app."
-          ]
+          ],
+          "howItWorks": "The Chat page (features/chat/chat.js) submits to run() in agent/run.js, which records the message, starts a trace, applies a few deterministic shortcuts (document-step checks, a job-research nudge, opening an application link), then calls the loop in agent/loop.js. The loop posts the conversation and tool definitions to /api/llm via transport.js, streams the reply, runs requested tools in the browser and repeats up to MAX_STEPS = 12. server/proxy.js adds the API key and server/routing.js maps the tier to a model, so the browser never names one. agent/errors.js maps error codes to messages."
         },
         "problems": [],
         "counts": {
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -435,14 +436,15 @@
           ],
           "risks": [],
           "openQuestions": [],
-          "limitations": []
+          "limitations": [],
+          "howItWorks": "Tools that change something call the approval helper in workflow/approvals.js, which adds a pending card to the assistant message and waits for Allow or Don't allow; a refusal goes back to the model as the tool result."
         },
         "problems": [],
         "counts": {
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -473,8 +475,8 @@
           "AC9: Given a goal exists, when Muse calls revise_plan with changed steps, then the user sees a before/after card and nothing changes unless they approve."
         ],
         "document": {
-          "objective": "Lets a user set a goal that Muse turns into a plan of steps and works through, marking a step in progress or done only when a tool it ran this turn did that step's work. Job-search goals add tools to find postings and score fit, and track applications against a measurable target and deadline.",
-          "summary": "A goal is created through chat: the Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. For job-search goals, jobs_search finds postings on employers' hiring sites and score_fit rates the Library résumé against a posting; track_application records each job with a status that needs proof from this turn, and interview or offer also asks the user to confirm. revise_plan changes steps only after the user approves.",
+          "objective": "Lets a user set a goal, such as getting an interview within 30 days, that Muse turns into a plan of steps and works through, marking a step done only when it actually did the work.",
+          "summary": "The user creates a goal from the Goals page or in chat. Muse only marks a step in progress or done when a tool it ran in that turn did the work. For job searches it finds postings on employers' own hiring pages, scores the user's résumé against each one, and tracks applications against a target and deadline. Recording an interview or offer asks the user to confirm, and changing the plan needs the user's approval.",
           "userStories": [
             "As a job seeker, I want to state a goal and get a concrete plan so that I know the next steps.",
             "As a user, I want Muse to mark progress only when it really did the work so that the plan stays honest.",
@@ -694,14 +696,15 @@
           "openQuestions": [],
           "limitations": [
             "Carried over from the previous spec at docs/specs/goals.md (API layer); its server-side behaviour is not re-cited here."
-          ]
+          ],
+          "howItWorks": "The Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. Job tools: jobs_search and score_fit (features/jobs/jobs.js, with server/jobs.js) for postings on public Greenhouse, Lever and Ashby boards and for scoring the Library résumé, track_application with status proof from the same turn. revise_plan goes through an approval card."
         },
         "problems": [],
         "counts": {
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -874,14 +877,15 @@
           "openQuestions": [
             "Is a server-side scheduler planned so check-ins run with the app closed?"
           ],
-          "limitations": []
+          "limitations": [],
+          "howItWorks": "workflow/checkin.js holds the check-in prompt. maybeDailyCheckin() runs every five minutes and 20 seconds after load, and runCheckin() records lastCheckin and sends the prompt through the normal agent run."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -910,8 +914,8 @@
           "AC10: Given A chat where the user shares an idea, when Muse calls save_idea with a title already on the page, then nothing is created and the tool replies 'Already on the Ideas page.'.."
         ],
         "document": {
-          "objective": "The Ideas feature gives a user a page of suggested and saved ideas, backed by a per-user ideas API. Users can save, act on, promote to goals, or dismiss ideas. Muse can also add ideas through chat.",
-          "summary": "The API has GET and POST on /api/ideas, and PATCH and DELETE on /api/ideas/:id. Both share handlers in server/ideas.js, which store ideas per user. In the browser, the Ideas page shows rule-based starter ideas until Muse generates personalised ideas (status 'new') through the LLM. Cards are grouped as New or Starter, Saved, and Acted on. The user can press Do it, Save, Make it a goal, or Not for me. Chat uses a save_idea tool to store ideas the user shares or Muse suggests.",
+          "objective": "Gives the user a page of ideas, some suggested by Muse and some they saved, that they can act on, keep, turn into a goal or dismiss.",
+          "summary": "Until Muse has learned enough to suggest ideas of its own, the page shows starter ideas. Ideas are grouped as new or starter, saved, and acted on. Each card offers Do it, Save, Make it a goal, or Not for me. In chat, Muse can save an idea the user mentions or one it suggests. Ideas are kept per user, so they follow the user across devices.",
           "userStories": [
             "As a user, I want to see suggested ideas so that I get prompts for things I could do soon.",
             "As a user, I want to save or dismiss ideas so that the list reflects what I care about.",
@@ -1122,14 +1126,15 @@
             "I did not read rules.js, context.js, server/db.js, db/schema.sql, core/api.js, or the tests.",
             "The Express route wiring in server/index.js was not verified, so local server behavior is assumed to match the Vercel handlers.",
             "Nothing was run, so all criteria are static code observations and not verified behavior."
-          ]
+          ],
+          "howItWorks": "server/ideas.js holds the handlers for GET/POST /api/ideas and PATCH/DELETE /api/ideas/:id, shared by the Vercel functions and the local Express server, scoped by user id. The Ideas page renders rule-based starters until Muse generates personalised ideas (status 'new') through the model. Chat uses the save_idea tool."
         },
         "problems": [],
         "counts": {
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -1157,8 +1162,8 @@
           "AC8: Given An unsupported HTTP method, when The client sends it to /api/docs/:id, then The response is 405.."
         ],
         "document": {
-          "objective": "The Library lets a user store documents (pasted text or uploaded files such as a résumé) through the /api/docs endpoints. The agent can then search and cite those documents.",
-          "summary": "The Library API is exposed as Vercel Node functions: GET and POST /api/docs, and DELETE /api/docs/:id. The local Express server shares the same handlers in server/docs.js. Each request is scoped to a user id. Pasted text needs a title and text, and the text is capped at 60,000 characters. Uploaded files arrive base64-encoded, are limited to 3MB, and have their text extracted. Only the extracted text is stored in Postgres, and the original file is not kept. I read only the API layer and server/docs.js, so the UI and agent search tools are not described here.",
+          "objective": "Lets a user keep documents, such as a résumé, pasted as text or uploaded as a file, so Muse can search and cite them.",
+          "summary": "The user pastes text with a title or uploads a file of up to 3 MB. Only the text is kept, up to 60,000 characters; the original file isn't stored. Documents belong to the signed-in user, who can delete any of them. Muse uses them for things like scoring the résumé against a job posting.",
           "userStories": [
             "As a user I want to paste or upload a document so that the agent can use it.",
             "As a user I want to list my documents so that I can see what is stored.",
@@ -1319,14 +1324,15 @@
             "I did not read server/db.js, server/extract.js, server/auth.js, the client code in public/js, or the Library feature's search and read tools.",
             "Supported file types and the database schema were not confirmed.",
             "No tests were reviewed, so nothing is verified by QA evidence."
-          ]
+          ],
+          "howItWorks": "The API is GET/POST /api/docs and DELETE /api/docs/:id, as Vercel Node functions sharing handlers in server/docs.js with the local Express server. Uploads arrive base64-encoded and server/extract.js pulls out the text, which is stored in Postgres per user id."
         },
         "problems": [],
         "counts": {
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -1354,8 +1360,8 @@
           "AC8: Given The Google routes are served, when The client requests Gmail search, then POST /api/google/mail/search is handled by the Google module.."
         ],
         "document": {
-          "objective": "Let a user connect Gmail, Google Calendar and a local Contacts list to Mini Muse, control what Muse may change, and give the chat agent tools to read and act on those services with approval.",
-          "summary": "The Connectors page (public/js/features/connectors) lists three connectors: Gmail, Google Calendar and Contacts. Gmail and Calendar share one Google OAuth consent. The browser is sent to /api/google/authorize, and the server keeps the tokens in an HttpOnly cookie. At boot and after the redirect, initConnectors reads /api/google/status and turns both Google connectors on or off together. Each connector adds tools to the agent. Reads run directly. Writes go through an approval card unless the user has set that connector to Allow. Gmail send always asks. Contacts are stored in app state, seeded with two example contacts, and the user can add or remove them on the page. The server exposes /api/google/* routes for status, authorize, callback, disconnect, mail and calendar. The folders named in the request, api/web and chrome-extension, are adjacent: web search/open endpoints and a development Chrome browser bridge. I only read their READMEs and entry points, not the extension's code.",
+          "objective": "Lets a user connect Gmail, Google Calendar and a contacts list, decide what Muse may change in each, and give Muse tools to read and act on them.",
+          "summary": "Gmail and Calendar connect together with one Google sign-in. Muse can read from a connected service at any time. Changes, such as creating an event, show an approval card unless the user set that connector to allow them, and sending an email always asks. Contacts live in the app, start with two examples, and the user can add or remove them.",
           "userStories": [
             "As a user, I want to connect my Google account so that Muse can read my Gmail and Calendar instead of guessing.",
             "As a user, I want to see what access I am granting before I continue so that I can consent knowingly.",
@@ -1523,14 +1529,15 @@
             "I did not run the app or tests, so no behavior has been verified.",
             "I did not read api/web/search.js or server/web.js. I read api/web/open.js, which only forwards to handleOpen.",
             "I did not read the Vercel api/google handlers."
-          ]
+          ],
+          "howItWorks": "The Connectors page (features/connectors) sends the browser to /api/google/authorize; the server keeps the tokens in an HttpOnly cookie. initConnectors reads /api/google/status at boot and after the redirect and switches both Google connectors together. The server's /api/google/* routes cover status, authorize, callback, disconnect, mail and calendar. Each connector adds its tools to the agent; write tools go through the approval flow."
         },
         "problems": [],
         "counts": {
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -1661,14 +1668,15 @@
             "forget deletes every fact containing the keyword, so a short keyword can remove more than intended."
           ],
           "openQuestions": [],
-          "limitations": []
+          "limitations": [],
+          "howItWorks": "features/memory/memory.js defines the remember and forget tools and renders Settings → Memory. Facts live in state.memory; deletions are written to the audit log."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -1801,14 +1809,15 @@
             "Page text is untrusted input to the model."
           ],
           "openQuestions": [],
-          "limitations": []
+          "limitations": [],
+          "howItWorks": "features/web/web.js defines web_search and web_open, which call /api/web. server/web.js forwards to Tavily's search and extract APIs with TAVILY_API_KEY, keeps five results and caps page text at TEXT_CAP = 20000."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -1971,14 +1980,15 @@
           "openQuestions": [],
           "limitations": [
             "Did not read the extension's click and fill handlers in full."
-          ]
+          ],
+          "howItWorks": "features/browser/browser.js talks to the Chrome extension with window.postMessage, checking the message origin. chrome-extension/target.js reads and fills fields in the user's tab and skips fields matching its SENSITIVE pattern. Clicks go through the approval flow."
         },
         "problems": [],
         "counts": {
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -2114,14 +2124,15 @@
           ],
           "limitations": [
             "Did not check what blank() resets beyond local state."
-          ]
+          ],
+          "howItWorks": "features/settings/settings.js renders the page and stores choices in state.prefs. The style switch sets rt.mode (quick or default), which server/routing.js maps to a model. Erase everything replaces state with blank() and keeps prefs."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -2250,14 +2261,15 @@
           "scenarios": [],
           "risks": [],
           "openQuestions": [],
-          "limitations": []
+          "limitations": [],
+          "howItWorks": "features/hood/hood.js listens for phase and audit events from core/activity.js, highlights the loop phase, lists coreToolNames() plus tools of connected connectors, and renders the audit log."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     },
     {
@@ -2286,8 +2298,8 @@
           "AC8: Given an unknown trace id is requested, when the server reads it, then it returns 404."
         ],
         "document": {
-          "objective": "Lets the builder see each agent turn as a trace: a list of recent traces and a timing waterfall of spans with prompts, responses, token use and tool inputs and outputs, to catch problems such as Muse claiming work no tool did.",
-          "summary": "The browser and server send spans and logs to /api/trace, which stores them in Postgres (Neon). The Observability page lists the 50 latest traces and, for one trace, shows a waterfall, whether any tool ran, and each span's attributes. Env flags turn tracing off, stop content capture (keeping only lengths), and set sampling and retention. Captured text is capped at 10,000 characters.",
+          "objective": "Lets the builder replay any agent turn: what the model was sent, what it answered, which tools ran and how long each step took, to catch problems such as Muse claiming work it didn't do.",
+          "summary": "The Observability page lists the 50 latest traces. Opening one shows a timeline of its steps, whether any tool ran, and the prompts, replies and tool inputs and outputs. Tracing can be turned off, or set to keep only the size of prompts and replies rather than their text. Captured text is cut at 10,000 characters.",
           "userStories": [
             "As the builder, I want to see what the model was sent and what tools ran in a turn, so that I can debug wrong answers."
           ],
@@ -2430,14 +2442,15 @@
           ],
           "limitations": [
             "Did not check whether retentionDays is enforced anywhere."
-          ]
+          ],
+          "howItWorks": "The browser tracer (core/trace.js) and the server send spans and logs to /api/trace (api/trace.js → server/trace.js dispatch), stored in Postgres (Neon) by server/trace-store.js. OBS_ENABLED, OBS_CAPTURE_CONTENT, OBS_SAMPLE_RATE and OBS_RETENTION_DAYS control it; capContent in server/trace-core.js applies the 10,000-character cap. The page (features/observability) draws the waterfall from the spans."
         },
         "problems": [],
         "counts": {
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-21T21:46:15.239Z"
+        "checkedAt": "2026-11-21T22:06:29.251Z"
       }
     }
   ]

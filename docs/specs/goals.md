@@ -8,13 +8,15 @@ owner: Product Manager (Maya)
 
 # Goals
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**9 of 9** acceptance criteria checked against the code · 1 risk
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-Lets a user set a goal that Muse turns into a plan of steps and works through, marking a step in progress or done only when a tool it ran this turn did that step's work. Job-search goals add tools to find postings and score fit, and track applications against a measurable target and deadline.
+**Lets a user set a goal, such as getting an interview within 30 days, that Muse turns into a plan of steps and works through, marking a step done only when it actually did the work.**
 
-A goal is created through chat: the Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. For job-search goals, jobs_search finds postings on employers' hiring sites and score_fit rates the Library résumé against a posting; track_application records each job with a status that needs proof from this turn, and interview or offer also asks the user to confirm. revise_plan changes steps only after the user approves.
+The user creates a goal from the Goals page or in chat. Muse only marks a step in progress or done when a tool it ran in that turn did the work. For job searches it finds postings on employers' own hiring pages, scores the user's résumé against each one, and tracks applications against a target and deadline. Recording an interview or offer asks the user to confirm, and changing the plan needs the user's approval.
 
 ## User stories
 
@@ -51,24 +53,19 @@ A goal is created through chat: the Goals form sends Muse a prompt and Muse call
 
 ## Acceptance criteria
 
-- **AC1** ✓ (web): Given Muse is connected and not busy, when the user submits a goal in the Goals form, then Muse is asked to plan it with every step left as todo.
-  - `public/js/features/goals/goals.js:57`: `say("New goal: " + t + ". Make a plan for it.`
-- **AC2** ✓ (web): Given Muse calls create_goal, when it passes more than 8 steps or none, then at most 8 steps are kept, and a goal with no steps is refused.
-  - `public/js/features/goals/goals.js:93`: `.map(String).filter(Boolean).slice(0, 8);`
-- **AC3** ✓ (web): Given only bookkeeping tools ran this turn, when Muse calls update_step with status done, then the tool refuses because no tool did any work this turn.
-  - `public/js/features/goals/goals.js:119`: `no tool did any work this turn`
-- **AC4** ✓ (web): Given a web_search ran this turn, when Muse marks a step done citing a different tool, then the tool refuses and lists the tools that did run.
-  - `public/js/features/goals/goals.js:125`: `set "evidence" to the tool you used this turn for THIS step`
-- **AC5** ✓ (web): Given Muse calls jobs_search, when it passes neither keywords nor company boards, then the tool refuses and asks for a job title or boards.
-  - `public/js/features/jobs/jobs.js:29`: `give keywords (the job title) to search the hiring sites, or name company boards`
-- **AC6** ✓ (web): Given the Library has no résumé, when Muse calls score_fit for a posting, then the tool refuses and asks the user to add a résumé.
-  - `public/js/features/jobs/jobs.js:40`: `No résumé in the Library.`
-- **AC7** ✓ (web): Given a tracked job is drafted, when Muse marks it applied with no approved Submit click and no confirmation email this turn, then the tool refuses and points to Gmail or the Goals page.
-  - `public/js/features/goals/goals.js:164`: `there's no proof it was submitted this turn`
-- **AC8** ✓ (web): Given Muse found the employer's email this turn, when it marks a job as interview, then the user is asked to confirm before it counts.
-  - `public/js/features/goals/goals.js:170`: `Count this as ${app.status === "offer" ? "an offer" : "an interview"}?`
-- **AC9** ✓ (web): Given a goal exists, when Muse calls revise_plan with changed steps, then the user sees a before/after card and nothing changes unless they approve.
-  - `public/js/features/goals/goals.js:141`: `yes: "Update plan"`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | muse is connected and not busy | the user submits a goal in the Goals form | muse is asked to plan it with every step left as todo | web | ✓ |
+| AC2 | muse calls create_goal | it passes more than 8 steps or none | at most 8 steps are kept, and a goal with no steps is refused | web | ✓ |
+| AC3 | only bookkeeping tools ran this turn | muse calls update_step with status done | the tool refuses because no tool did any work this turn | web | ✓ |
+| AC4 | a web_search ran this turn | muse marks a step done citing a different tool | the tool refuses and lists the tools that did run | web | ✓ |
+| AC5 | muse calls jobs_search | it passes neither keywords nor company boards | the tool refuses and asks for a job title or boards | web | ✓ |
+| AC6 | the Library has no résumé | muse calls score_fit for a posting | the tool refuses and asks the user to add a résumé | web | ✓ |
+| AC7 | a tracked job is drafted | muse marks it applied with no approved Submit click and no confirmation email this turn | the tool refuses and points to Gmail or the Goals page | web | ✓ |
+| AC8 | muse found the employer's email this turn | it marks a job as interview | the user is asked to confirm before it counts | web | ✓ |
+| AC9 | a goal exists | muse calls revise_plan with changed steps | the user sees a before/after card and nothing changes unless they approve | web | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Scenarios
 
@@ -92,6 +89,26 @@ A goal is created through chat: the Goals form sends Muse a prompt and Muse call
 ## Risks
 
 - The tool description and guidance say 3-6 steps, but create_goal keeps up to 8; the model and the code disagree on the limit.
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+The Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. Job tools: jobs_search and score_fit (features/jobs/jobs.js, with server/jobs.js) for postings on public Greenhouse, Lever and Ashby boards and for scoring the Library résumé, track_application with status proof from the same turn. revise_plan goes through an approval card.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `public/js/features/goals/goals.js:57` | `say("New goal: " + t + ". Make a plan for it.` |
+| AC2 | `public/js/features/goals/goals.js:93` | `.map(String).filter(Boolean).slice(0, 8);` |
+| AC3 | `public/js/features/goals/goals.js:119` | `no tool did any work this turn` |
+| AC4 | `public/js/features/goals/goals.js:125` | `set "evidence" to the tool you used this turn for THIS step` |
+| AC5 | `public/js/features/jobs/jobs.js:29` | `give keywords (the job title) to search the hiring sites, or name company boards` |
+| AC6 | `public/js/features/jobs/jobs.js:40` | `No résumé in the Library.` |
+| AC7 | `public/js/features/goals/goals.js:164` | `there's no proof it was submitted this turn` |
+| AC8 | `public/js/features/goals/goals.js:170` | `Count this as ${app.status === "offer" ? "an offer" : "an interview"}?` |
+| AC9 | `public/js/features/goals/goals.js:141` | `yes: "Update plan"` |
 
 ## Not confirmed from the code
 

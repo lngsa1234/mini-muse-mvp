@@ -8,11 +8,13 @@ owner: Product Manager (Maya)
 
 # Browser bridge
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**5 of 5** acceptance criteria checked against the code · 1 risk
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-Lets Muse fill in a job application in the user's own Chrome tab through an optional extension, and submit it only after the user has reviewed it and approved.
+**Lets Muse fill in a job application in the user's own Chrome tab through an optional extension, and submit it only after the user has reviewed it and approved.**
 
 The page talks to the Mini Muse Browser Bridge extension by window messages. Muse can open an application URL, read the tab's text and form fields, fill fields from the Library résumé, and click; every click needs approval, and a submit click gets a card that asks whether every field was reviewed. The extension never fills passwords, SSNs, card or account numbers. Without the extension, requests time out with a message pointing to web_open.
 
@@ -43,16 +45,15 @@ The page talks to the Mini Muse Browser Bridge extension by window messages. Mus
 
 ## Acceptance criteria
 
-- **AC1** ✓ (web): Given the extension isn't installed, when Muse calls a browser tool, then it fails with a message that the bridge did not respond.
-  - `public/js/features/browser/browser.js:8`: `Mini Muse Browser Bridge did not respond: the Chrome extension isn't installed or enabled.`
-- **AC2** ✓ (web): Given Muse calls browser_fill, when with no fields, then the tool refuses.
-  - `public/js/features/browser/browser.js:27`: `if (!list.length) throw new Error("No fields to fill.");`
-- **AC3** ✓ (web): Given Muse wants to click a Submit or Apply button, when it calls browser_click, then the user is asked whether they reviewed every field before it submits.
-  - `public/js/features/browser/browser.js:37`: `heading: "This will submit the form in your Chrome tab. Did you review every field?"`
-- **AC4** ✓ (web): Given an approval card is showing for a click, when the user does not approve, then nothing is clicked.
-  - `public/js/features/browser/browser.js:39`: `if (ok !== true) return h.refusal(ok);`
-- **AC5** ✓ (extension): Given a form has a password, SSN or card number field, when the extension reads the fields, then those fields are marked sensitive and not filled.
-  - `chrome-extension/target.js:8`: `const SENSITIVE = /password|passwd|ssn|social.?security|card.?number|cvv|cvc|routing|account.?number/i;`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | the extension isn't installed | muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ |
+| AC2 | muse calls browser_fill | with no fields | the tool refuses | web | ✓ |
+| AC3 | muse wants to click a Submit or Apply button | it calls browser_click | the user is asked whether they reviewed every field before it submits | web | ✓ |
+| AC4 | an approval card is showing for a click | the user does not approve | nothing is clicked | web | ✓ |
+| AC5 | a form has a password, SSN or card number field | the extension reads the fields | those fields are marked sensitive and not filled | extension | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Scenarios
 
@@ -71,6 +72,22 @@ The page talks to the Mini Muse Browser Bridge extension by window messages. Mus
 ## Risks
 
 - Only the last non–Mini Muse Chrome tab is controlled; the wrong tab can be targeted if the user switches.
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+features/browser/browser.js talks to the Chrome extension with window.postMessage, checking the message origin. chrome-extension/target.js reads and fills fields in the user's tab and skips fields matching its SENSITIVE pattern. Clicks go through the approval flow.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `public/js/features/browser/browser.js:8` | `Mini Muse Browser Bridge did not respond: the Chrome extension isn't installed or enabled.` |
+| AC2 | `public/js/features/browser/browser.js:27` | `if (!list.length) throw new Error("No fields to fill.");` |
+| AC3 | `public/js/features/browser/browser.js:37` | `heading: "This will submit the form in your Chrome tab. Did you review every field?"` |
+| AC4 | `public/js/features/browser/browser.js:39` | `if (ok !== true) return h.refusal(ok);` |
+| AC5 | `chrome-extension/target.js:8` | `const SENSITIVE = /password\|passwd\|ssn\|social.?security\|card.?number\|cvv\|cvc\|routing\|account.?number/i;` |
 
 ## Not confirmed from the code
 

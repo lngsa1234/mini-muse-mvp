@@ -8,13 +8,15 @@ owner: Product Manager (Maya)
 
 # Library
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**8 of 8** acceptance criteria checked against the code · 4 risks · 2 open questions
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-The Library lets a user store documents (pasted text or uploaded files such as a résumé) through the /api/docs endpoints. The agent can then search and cite those documents.
+**Lets a user keep documents, such as a résumé, pasted as text or uploaded as a file, so Muse can search and cite them.**
 
-The Library API is exposed as Vercel Node functions: GET and POST /api/docs, and DELETE /api/docs/:id. The local Express server shares the same handlers in server/docs.js. Each request is scoped to a user id. Pasted text needs a title and text, and the text is capped at 60,000 characters. Uploaded files arrive base64-encoded, are limited to 3MB, and have their text extracted. Only the extracted text is stored in Postgres, and the original file is not kept. I read only the API layer and server/docs.js, so the UI and agent search tools are not described here.
+The user pastes text with a title or uploads a file of up to 3 MB. Only the text is kept, up to 60,000 characters; the original file isn't stored. Documents belong to the signed-in user, who can delete any of them. Muse uses them for things like scoring the résumé against a job posting.
 
 ## User stories
 
@@ -57,22 +59,18 @@ The Library API is exposed as Vercel Node functions: GET and POST /api/docs, and
 
 ## Acceptance criteria
 
-- **AC1** ✓ (API): Given A signed-in user with stored documents, when The client sends GET /api/docs, then The response is 200 with { docs: [...] }..
-  - `server/docs.js:22`: `return { status: 200, json: { docs: await listDocs(userId) } };`
-- **AC2** ✓ (API): Given A pasted-text request with title and text, when The client sends POST /api/docs, then The document is created and the response is 201 with { doc }..
-  - `server/docs.js:34`: `const doc = await createDoc(userId, { title, text: text.slice(0, TEXT_CAP) });`
-- **AC3** ✓ (API): Given A POST without a title, when The client sends it without a file, then The response is 400 "title is required"..
-  - `server/docs.js:32`: `if (!title) return err(400, "title is required");`
-- **AC4** ✓ (API): Given An uploaded file larger than 3MB, when The client sends POST /api/docs, then The response is 413 "file is too large (max 3MB)"..
-  - `server/docs.js:43`: `return err(413, "file is too large (max 3MB)");`
-- **AC5** ✓ (API): Given An uploaded file that yields no text, when The client sends POST /api/docs, then The response is 422 "no readable text could be extracted from this file"..
-  - `server/docs.js:51`: `no readable text could be extracted from this file`
-- **AC6** ✓ (API): Given An uploaded file with no title, when The client sends POST /api/docs, then The title defaults to the filename without its extension..
-  - `server/docs.js:47`: `const fileTitle = title || filename.replace(/\.[^.]+$/, "") || filename;`
-- **AC7** ✓ (API): Given A document id that does not exist for the user, when The client sends DELETE /api/docs/:id, then The response is 404 "no such document"..
-  - `server/docs.js:64`: `if (!removed) return err(404, "no such document");`
-- **AC8** ✓ (API): Given An unsupported HTTP method, when The client sends it to /api/docs/:id, then The response is 405..
-  - `api/docs/[id].js:12`: `if (req.method !== "DELETE") return res.status(405).json({ error: "method not allowed" });`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | a signed-in user with stored documents | the client sends GET /api/docs | the response is 200 with { docs: [...] } | API | ✓ |
+| AC2 | a pasted-text request with title and text | the client sends POST /api/docs | the document is created and the response is 201 with { doc } | API | ✓ |
+| AC3 | a POST without a title | the client sends it without a file | the response is 400 "title is required" | API | ✓ |
+| AC4 | an uploaded file larger than 3MB | the client sends POST /api/docs | the response is 413 "file is too large (max 3MB)" | API | ✓ |
+| AC5 | an uploaded file that yields no text | the client sends POST /api/docs | the response is 422 "no readable text could be extracted from this file" | API | ✓ |
+| AC6 | an uploaded file with no title | the client sends POST /api/docs | the title defaults to the filename without its extension | API | ✓ |
+| AC7 | a document id that does not exist for the user | the client sends DELETE /api/docs/:id | the response is 404 "no such document" | API | ✓ |
+| AC8 | an unsupported HTTP method | the client sends it to /api/docs/:id | the response is 405 | API | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Risks
 
@@ -85,6 +83,25 @@ The Library API is exposed as Vercel Node functions: GET and POST /api/docs, and
 
 - Should users be told when pasted text is truncated?
 - How does currentUserId identify users, and is there real authentication?
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+The API is GET/POST /api/docs and DELETE /api/docs/:id, as Vercel Node functions sharing handlers in server/docs.js with the local Express server. Uploads arrive base64-encoded and server/extract.js pulls out the text, which is stored in Postgres per user id.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `server/docs.js:22` | `return { status: 200, json: { docs: await listDocs(userId) } };` |
+| AC2 | `server/docs.js:34` | `const doc = await createDoc(userId, { title, text: text.slice(0, TEXT_CAP) });` |
+| AC3 | `server/docs.js:32` | `if (!title) return err(400, "title is required");` |
+| AC4 | `server/docs.js:43` | `return err(413, "file is too large (max 3MB)");` |
+| AC5 | `server/docs.js:51` | `no readable text could be extracted from this file` |
+| AC6 | `server/docs.js:47` | `const fileTitle = title \|\| filename.replace(/\.[^.]+$/, "") \|\| filename;` |
+| AC7 | `server/docs.js:64` | `if (!removed) return err(404, "no such document");` |
+| AC8 | `api/docs/[id].js:12` | `if (req.method !== "DELETE") return res.status(405).json({ error: "method not allowed" });` |
 
 ## Not confirmed from the code
 

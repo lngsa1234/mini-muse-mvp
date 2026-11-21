@@ -8,13 +8,15 @@ owner: Product Manager (Maya)
 
 # Agent chat
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**10 of 10** acceptance criteria checked against the code · 5 risks · 3 open questions
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-Agent Chat lets a user type a request to the Muse assistant. The assistant answers with streamed text and runs tools (Library, goals, connectors, browser bridge) on the user's behalf. Sensitive actions show as approval cards.
+**Lets a user ask Muse for something in plain words and watch it answer and act, using tools for goals, documents, connected services and the browser, with risky actions held for approval.**
 
-The Chat page has a message log, an examples welcome screen, and a composer. Submitting a message calls run() in public/js/agent/run.js. run() pushes the user message and a live assistant placeholder, starts a trace, builds the tools and prompt, and calls the agent loop. Before the model is called, run() applies deterministic shortcuts: Library verification for document goal steps, a job-research nudge, and opening an application link in Chrome. The loop in agent/loop.js POSTs the conversation and tool definitions to /api/llm through transport.js. It streams the SSE reply into the message, executes any requested tools locally, feeds the results back, and repeats up to 12 steps. The server proxy (server/proxy.js) injects the API key and maps the tier (Fast = quick, Thorough = default) to a model, so the browser never names a model. Errors map to user-facing messages. This spec describes the code as read; QA has not verified it.
+Replies stream in as Muse writes them, and the user can stop a reply at any time. Muse can take up to 12 steps of tool use in one turn. Fast gives replies in seconds; Thorough uses a stronger model that can take up to a minute. When the assistant is unavailable or hits a usage limit, the chat says so in plain words. When the user asks to apply for a job, Muse can't use email in that turn.
 
 ## User stories
 
@@ -59,34 +61,20 @@ The Chat page has a message log, an examples welcome screen, and a composer. Sub
 
 ## Acceptance criteria
 
-- **AC1** ✓ (web): Given The chat composer is focused with text entered, when The user presses Enter without Shift, then The form is submitted and the message is sent; Shift+Enter does not send..
-  - `public/js/features/chat/chat.js:67`: `e.key === "Enter" && !e.shiftKey && !e.isComposing`
-- **AC2** ✓ (web): Given A turn is in progress, when The user clicks Stop, then The request is aborted. No error banner is shown for the cancellation..
-  - `public/js/features/chat/chat.js:69`: `rt.ctl?.abort()`
-  - `public/js/agent/run.js:174`: `if (e?.code !== "cancelled")`
-- **AC3** ✓ (web): Given The model replies with tool calls, when A turn runs, then Each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached..
-  - `public/js/agent/loop.js:8`: `export const MAX_STEPS = 12;`
-  - `public/js/agent/loop.js:102`: `const out = await tool.execute(tu.input, { signal });`
-- **AC4** ✓ (API): Given The server has no OPENAI_API_KEY, when The browser calls /api/llm, then The server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…"..
-  - `server/proxy.js:16`: `status: 503, body: { code: "no_api_key"`
-  - `public/js/agent/transport.js:27`: `if (serverCode === "no_api_key") code = "sampling_disabled";`
-  - `public/js/agent/run.js:175`: `disableChat(ERR[e.code])`
-- **AC5** ✓ (API): Given A request carries tier "default" or any other value, when The proxy builds the upstream request, then "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored..
-  - `server/routing.js:31`: `const tier = body && body.tier === "default" ? "default" : "quick";`
-  - `server/proxy.js:19`: `Strip our 'tier' field and any client-sent model`
-- **AC6** ✓ (web): Given The provider returns HTTP 429, when A turn runs, then The assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.'..
-  - `public/js/agent/transport.js:30`: `res.status === 429) code = "rate_limited"`
-  - `public/js/agent/errors.js:5`: `Muse hit a usage limit. Wait a minute, then send again.`
-- **AC7** ✓ (web): Given The chat is empty, when The Chat page renders, then A welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle..
-  - `public/js/features/chat/chat.js:40`: `Tell Muse what you want done`
-  - `public/js/features/chat/chat.js:71`: `if (rt.sample && !rt.busy) $("form").requestSubmit();`
-- **AC8** ✓ (web): Given A tool action needs approval, when The assistant message renders, then A card with the heading, detail rows, and Allow / Don't allow buttons is shown..
-  - `public/js/features/chat/chat.js:19`: `a.approval === "pending" && a.card`
-  - `public/js/features/chat/chat.js:23`: `Don't allow</button>`
-- **AC9** ✓ (web): Given The user asks to apply for a job and the message is not an email request, when The model is called, then mail_search and mail_send are removed from the tools offered for that turn..
-  - `public/js/agent/run.js:160`: `tool.name !== "mail_search" && tool.name !== "mail_send"`
-- **AC10** ✓ (web): Given A reply stops because of the token limit, when The turn finishes, then The message shows 'The reply was cut short. Ask for less at once.'..
-  - `public/js/agent/run.js:169`: `The reply was cut short. Ask for less at once.`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | the chat composer is focused with text entered | the user presses Enter without Shift | the form is submitted and the message is sent; Shift+Enter does not send | web | ✓ |
+| AC2 | a turn is in progress | the user clicks Stop | the request is aborted. No error banner is shown for the cancellation | web | ✓ |
+| AC3 | the model replies with tool calls | a turn runs | each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ |
+| AC4 | the server has no OPENAI_API_KEY | the browser calls /api/llm | the server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…" | API | ✓ |
+| AC5 | a request carries tier "default" or any other value | the proxy builds the upstream request | "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored | API | ✓ |
+| AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ |
+| AC7 | the chat is empty | the Chat page renders | a welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle | web | ✓ |
+| AC8 | a tool action needs approval | the assistant message renders | a card with the heading, detail rows, and Allow / Don't allow buttons is shown | web | ✓ |
+| AC9 | the user asks to apply for a job and the message is not an email request | the model is called | mail_search and mail_send are removed from the tools offered for that turn | web | ✓ |
+| AC10 | a reply stops because of the token limit | the turn finishes | the message shows 'The reply was cut short. Ask for less at once.' | web | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Risks
 
@@ -101,6 +89,35 @@ The Chat page has a message log, an examples welcome screen, and a composer. Sub
 - Is the 'Connectors use sample data' note still accurate now that Google OAuth connectors exist?
 - Should the user be told when the 12-step cap is reached?
 - Is /api/llm protected by authentication or rate limiting? server/auth.js was not read.
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+The Chat page (features/chat/chat.js) submits to run() in agent/run.js, which records the message, starts a trace, applies a few deterministic shortcuts (document-step checks, a job-research nudge, opening an application link), then calls the loop in agent/loop.js. The loop posts the conversation and tool definitions to /api/llm via transport.js, streams the reply, runs requested tools in the browser and repeats up to MAX_STEPS = 12. server/proxy.js adds the API key and server/routing.js maps the tier to a model, so the browser never names one. agent/errors.js maps error codes to messages.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `public/js/features/chat/chat.js:67` | `e.key === "Enter" && !e.shiftKey && !e.isComposing` |
+| AC2 | `public/js/features/chat/chat.js:69` | `rt.ctl?.abort()` |
+|  | `public/js/agent/run.js:174` | `if (e?.code !== "cancelled")` |
+| AC3 | `public/js/agent/loop.js:8` | `export const MAX_STEPS = 12;` |
+|  | `public/js/agent/loop.js:102` | `const out = await tool.execute(tu.input, { signal });` |
+| AC4 | `server/proxy.js:16` | `status: 503, body: { code: "no_api_key"` |
+|  | `public/js/agent/transport.js:27` | `if (serverCode === "no_api_key") code = "sampling_disabled";` |
+|  | `public/js/agent/run.js:175` | `disableChat(ERR[e.code])` |
+| AC5 | `server/routing.js:31` | `const tier = body && body.tier === "default" ? "default" : "quick";` |
+|  | `server/proxy.js:19` | `Strip our 'tier' field and any client-sent model` |
+| AC6 | `public/js/agent/transport.js:30` | `res.status === 429) code = "rate_limited"` |
+|  | `public/js/agent/errors.js:5` | `Muse hit a usage limit. Wait a minute, then send again.` |
+| AC7 | `public/js/features/chat/chat.js:40` | `Tell Muse what you want done` |
+|  | `public/js/features/chat/chat.js:71` | `if (rt.sample && !rt.busy) $("form").requestSubmit();` |
+| AC8 | `public/js/features/chat/chat.js:19` | `a.approval === "pending" && a.card` |
+|  | `public/js/features/chat/chat.js:23` | `Don't allow</button>` |
+| AC9 | `public/js/agent/run.js:160` | `tool.name !== "mail_search" && tool.name !== "mail_send"` |
+| AC10 | `public/js/agent/run.js:169` | `The reply was cut short. Ask for less at once.` |
 
 ## Not confirmed from the code
 

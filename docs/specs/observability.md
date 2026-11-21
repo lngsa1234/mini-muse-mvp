@@ -8,13 +8,15 @@ owner: Product Manager (Maya)
 
 # Observability
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**8 of 8** acceptance criteria checked against the code · 3 risks · 1 open question
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-Lets the builder see each agent turn as a trace: a list of recent traces and a timing waterfall of spans with prompts, responses, token use and tool inputs and outputs, to catch problems such as Muse claiming work no tool did.
+**Lets the builder replay any agent turn: what the model was sent, what it answered, which tools ran and how long each step took, to catch problems such as Muse claiming work it didn't do.**
 
-The browser and server send spans and logs to /api/trace, which stores them in Postgres (Neon). The Observability page lists the 50 latest traces and, for one trace, shows a waterfall, whether any tool ran, and each span's attributes. Env flags turn tracing off, stop content capture (keeping only lengths), and set sampling and retention. Captured text is capped at 10,000 characters.
+The Observability page lists the 50 latest traces. Opening one shows a timeline of its steps, whether any tool ran, and the prompts, replies and tool inputs and outputs. Tracing can be turned off, or set to keep only the size of prompts and replies rather than their text. Captured text is cut at 10,000 characters.
 
 ## User stories
 
@@ -43,22 +45,18 @@ The browser and server send spans and logs to /api/trace, which stores them in P
 
 ## Acceptance criteria
 
-- **AC1** ✓ (API): Given OBS_ENABLED is off, when a batch is posted, then nothing is written and the reply says disabled.
-  - `server/trace.js:62`: `if (!enabled) return { status: 202, json: { written: { traces: 0, spans: 0, logs: 0 }, disabled: true } };`
-- **AC2** ✓ (API): Given a signed-in user posts traces, when the server ingests them, then each trace carries the server's user id, not the browser's.
-  - `server/trace.js:64`: `const traces = asArray(body && body.traces).map(t => ({ ...t, user_id: userId || t.user_id || null }));`
-- **AC3** ✓ (API): Given a post has no traces, spans or logs, when the server ingests it, then it returns 400.
-  - `server/trace.js:68`: `return { status: 400, json: { error: "no traces, spans or logs in body" } };`
-- **AC4** ✓ (API): Given content capture is off, when a prompt is recorded, then only its length is stored.
-  - `server/trace-core.js:66`: `if (!capture) return { redacted: true, length: str.length };`
-- **AC5** ✓ (API): Given a captured string is longer than the cap, when it is stored, then it is cut to 10,000 characters with a truncated marker.
-  - `server/trace-core.js:28`: `export const CONTENT_CAP = 10000;`
-- **AC6** ✓ (web): Given a trace is open, when its spans load, then the header says whether any tool ran.
-  - `public/js/features/observability/observability.js:105`: `<div class="obs-flags">${statusDot(trace.status)} ${spans.length} spans · ${hasTools ? "ran tools" : "no tool calls"}</d`
-- **AC7** ✓ (web): Given no traces exist yet, when the page loads, then it says to send a chat message and refresh.
-  - `public/js/features/observability/observability.js:53`: `'<p class="empty">No traces yet. Send a chat message, then refresh.</p>';`
-- **AC8** ✓ (API): Given an unknown trace id is requested, when the server reads it, then it returns 404.
-  - `server/trace.js:95`: `if (!trace) return { status: 404, json: { error: "trace not found" } };`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | OBS_ENABLED is off | a batch is posted | nothing is written and the reply says disabled | API | ✓ |
+| AC2 | a signed-in user posts traces | the server ingests them | each trace carries the server's user id, not the browser's | API | ✓ |
+| AC3 | a post has no traces, spans or logs | the server ingests it | it returns 400 | API | ✓ |
+| AC4 | content capture is off | a prompt is recorded | only its length is stored | API | ✓ |
+| AC5 | a captured string is longer than the cap | it is stored | it is cut to 10,000 characters with a truncated marker | API | ✓ |
+| AC6 | a trace is open | its spans load | the header says whether any tool ran | web | ✓ |
+| AC7 | no traces exist yet | the page loads | it says to send a chat message and refresh | web | ✓ |
+| AC8 | an unknown trace id is requested | the server reads it | it returns 404 | API | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Risks
 
@@ -69,6 +67,25 @@ The browser and server send spans and logs to /api/trace, which stores them in P
 ## Open questions
 
 - Is the Observability page meant only for the builder, and if so should /api/trace reads be restricted?
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+The browser tracer (core/trace.js) and the server send spans and logs to /api/trace (api/trace.js → server/trace.js dispatch), stored in Postgres (Neon) by server/trace-store.js. OBS_ENABLED, OBS_CAPTURE_CONTENT, OBS_SAMPLE_RATE and OBS_RETENTION_DAYS control it; capContent in server/trace-core.js applies the 10,000-character cap. The page (features/observability) draws the waterfall from the spans.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `server/trace.js:62` | `if (!enabled) return { status: 202, json: { written: { traces: 0, spans: 0, logs: 0 }, disabled: true } };` |
+| AC2 | `server/trace.js:64` | `const traces = asArray(body && body.traces).map(t => ({ ...t, user_id: userId \|\| t.user_id \|\| null }));` |
+| AC3 | `server/trace.js:68` | `return { status: 400, json: { error: "no traces, spans or logs in body" } };` |
+| AC4 | `server/trace-core.js:66` | `if (!capture) return { redacted: true, length: str.length };` |
+| AC5 | `server/trace-core.js:28` | `export const CONTENT_CAP = 10000;` |
+| AC6 | `public/js/features/observability/observability.js:105` | `<div class="obs-flags">${statusDot(trace.status)} ${spans.length} spans · ${hasTools ? "ran tools" : "no tool calls"}</d` |
+| AC7 | `public/js/features/observability/observability.js:53` | `'<p class="empty">No traces yet. Send a chat message, then refresh.</p>';` |
+| AC8 | `server/trace.js:95` | `if (!trace) return { status: 404, json: { error: "trace not found" } };` |
 
 ## Not confirmed from the code
 

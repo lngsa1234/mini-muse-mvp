@@ -8,13 +8,15 @@ owner: Product Manager (Maya)
 
 # Connectors
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built._
+**8 of 8** acceptance criteria checked against the code · 6 risks · 4 open questions
+
+_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
 
 ## Summary
 
-Let a user connect Gmail, Google Calendar and a local Contacts list to Mini Muse, control what Muse may change, and give the chat agent tools to read and act on those services with approval.
+**Lets a user connect Gmail, Google Calendar and a contacts list, decide what Muse may change in each, and give Muse tools to read and act on them.**
 
-The Connectors page (public/js/features/connectors) lists three connectors: Gmail, Google Calendar and Contacts. Gmail and Calendar share one Google OAuth consent. The browser is sent to /api/google/authorize, and the server keeps the tokens in an HttpOnly cookie. At boot and after the redirect, initConnectors reads /api/google/status and turns both Google connectors on or off together. Each connector adds tools to the agent. Reads run directly. Writes go through an approval card unless the user has set that connector to Allow. Gmail send always asks. Contacts are stored in app state, seeded with two example contacts, and the user can add or remove them on the page. The server exposes /api/google/* routes for status, authorize, callback, disconnect, mail and calendar. The folders named in the request, api/web and chrome-extension, are adjacent: web search/open endpoints and a development Chrome browser bridge. I only read their READMEs and entry points, not the extension's code.
+Gmail and Calendar connect together with one Google sign-in. Muse can read from a connected service at any time. Changes, such as creating an event, show an approval card unless the user set that connector to allow them, and sending an email always asks. Contacts live in the app, start with two examples, and the user can add or remove them.
 
 ## User stories
 
@@ -59,22 +61,18 @@ The Connectors page (public/js/features/connectors) lists three connectors: Gmai
 
 ## Acceptance criteria
 
-- **AC1** ✓ (web): Given A connector is not connected, when The user clicks Continue with Google in the consent panel, then The browser navigates to /api/google/authorize..
-  - `public/js/features/connectors/index.js:51`: `window.location.assign("/api/google/authorize")`
-- **AC2** ✓ (web): Given The Gmail connector is connected, when The user views its permission controls, then The Allow button is disabled with the note that sending email always needs approval..
-  - `public/js/features/connectors/index.js:37`: `Sending email always needs your approval.`
-- **AC3** ✓ (web): Given The Google status endpoint reports connected, when initConnectors runs at boot or after the redirect, then Both Gmail and Calendar are marked on together..
-  - `public/js/features/connectors/index.js:77`: `for (const key of ["mail", "calendar"]) state.connectors[key].on = on;`
-- **AC4** ✓ (web): Given Google is connected, when The user clicks Disconnect Google, then Gmail and Calendar are turned off and the disconnect is audited..
-  - `public/js/features/connectors/index.js:55`: `Disconnected Gmail and Google Calendar · tools removed`
-- **AC5** ✓ (web): Given Gmail is connected and Muse calls mail_send, when The tool runs, then An approval card asks the user to allow the send, and the message is sent only after approval..
-  - `public/js/features/connectors/mail.js:13`: `Muse wants to send this Gmail message. Allow it?`
-- **AC6** ✓ (web): Given Calendar permission is Ask me first, when Muse calls calendar_add, then An approval card shows the event and time before the event is added..
-  - `public/js/features/connectors/calendar.js:13`: `Muse wants to add this to Google Calendar. Allow it?`
-- **AC7** ✓ (web): Given Contacts include the two seeded example contacts, when Muse calls contacts_lookup with a name that matches nobody, then The tool returns 'No contact found.'..
-  - `public/js/features/connectors/contacts.js:40`: `"No contact found."`
-- **AC8** ✓ (API): Given The Google routes are served, when The client requests Gmail search, then POST /api/google/mail/search is handled by the Google module..
-  - `server/index.js:88`: `app.post("/api/google/mail/search"`
+| # | Given | When | Then | Where | In code |
+|---|---|---|---|---|---|
+| AC1 | a connector is not connected | the user clicks Continue with Google in the consent panel | the browser navigates to /api/google/authorize | web | ✓ |
+| AC2 | the Gmail connector is connected | the user views its permission controls | the Allow button is disabled with the note that sending email always needs approval | web | ✓ |
+| AC3 | the Google status endpoint reports connected | initConnectors runs at boot or after the redirect | both Gmail and Calendar are marked on together | web | ✓ |
+| AC4 | google is connected | the user clicks Disconnect Google | gmail and Calendar are turned off and the disconnect is audited | web | ✓ |
+| AC5 | gmail is connected and Muse calls mail_send | the tool runs | an approval card asks the user to allow the send, and the message is sent only after approval | web | ✓ |
+| AC6 | calendar permission is Ask me first | muse calls calendar_add | an approval card shows the event and time before the event is added | web | ✓ |
+| AC7 | contacts include the two seeded example contacts | muse calls contacts_lookup with a name that matches nobody | the tool returns 'No contact found.' | web | ✓ |
+| AC8 | the Google routes are served | the client requests Gmail search | POST /api/google/mail/search is handled by the Google module | API | ✓ |
+
+_The code each criterion rests on is under Evidence, at the end._
 
 ## Risks
 
@@ -91,6 +89,25 @@ The Connectors page (public/js/features/connectors) lists three connectors: Gmai
 - Should users be able to connect Gmail and Calendar independently?
 - Do api/web and chrome-extension belong to the Connectors feature, or should they be specified as web-browsing and browser-bridge features?
 - What does server/google.js do for token refresh and scope errors?
+
+## How it works
+
+_For engineers: where the behavior above lives in the code._
+
+The Connectors page (features/connectors) sends the browser to /api/google/authorize; the server keeps the tokens in an HttpOnly cookie. initConnectors reads /api/google/status at boot and after the redirect and switches both Google connectors together. The server's /api/google/* routes cover status, authorize, callback, disconnect, mail and calendar. Each connector adds its tools to the agent; write tools go through the approval flow.
+
+## Evidence
+
+| # | Code | Quote |
+|---|---|---|
+| AC1 | `public/js/features/connectors/index.js:51` | `window.location.assign("/api/google/authorize")` |
+| AC2 | `public/js/features/connectors/index.js:37` | `Sending email always needs your approval.` |
+| AC3 | `public/js/features/connectors/index.js:77` | `for (const key of ["mail", "calendar"]) state.connectors[key].on = on;` |
+| AC4 | `public/js/features/connectors/index.js:55` | `Disconnected Gmail and Google Calendar · tools removed` |
+| AC5 | `public/js/features/connectors/mail.js:13` | `Muse wants to send this Gmail message. Allow it?` |
+| AC6 | `public/js/features/connectors/calendar.js:13` | `Muse wants to add this to Google Calendar. Allow it?` |
+| AC7 | `public/js/features/connectors/contacts.js:40` | `"No contact found."` |
+| AC8 | `server/index.js:88` | `app.post("/api/google/mail/search"` |
 
 ## Not confirmed from the code
 
