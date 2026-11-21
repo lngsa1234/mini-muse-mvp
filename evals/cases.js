@@ -1175,5 +1175,310 @@ export const EVAL_CASES = [
       "pendingIntegrationCheck": "Review responses for unsupported certainty or promised results; evaluate professional escalation where health-sensitive context requires it."
     },
     "toolChoice": "none"
+  },
+  // Function #5: Black Friday Shopping. Appended without reordering existing cases.
+  // Fixtures are fictional; these smoke tests do not establish live shopping support.
+  // A 30-day low means lowest observed comparable price in the rolling window,
+  // including ties. Stockout risk requires reliable evidence, not marketing urgency.
+  // coverage documents pending integration assertions and is ignored by run.mjs.
+  {
+    "id": "shopping-asks-for-wishlist",
+    "user": "Help me plan Black Friday shopping. I have not shared what I want to buy. Ask for my wishlist and preferences before recommending products.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "wishlist",
+        "wish list",
+        "what would you like",
+        "what do you want"
+      ],
+      "noText": [
+        "i purchased",
+        "i ordered"
+      ]
+    },
+    "coverage": {
+      "scenario": "Ask for the shopping wishlist",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Persist user-confirmed categories, specific products, variants, quantities, priorities and must-have requirements; do not invent desired items."
+    }
+  },
+  {
+    "id": "shopping-asks-for-budget",
+    "user": "My Black Friday wishlist is a laptop and headphones. I have not supplied a budget or currency. Ask for my total budget and currency before selecting products.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "budget"
+      ],
+      "noText": [
+        "your budget is $1000",
+        "i purchased"
+      ]
+    },
+    "coverage": {
+      "scenario": "Ask for budget",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Collect total budget, currency, optional item caps and whether tax/shipping are included; verify every recommendation respects these constraints."
+    }
+  },
+  {
+    "id": "shopping-recommendations-match-wishlist-and-budget",
+    "user": "Wishlist: one wireless headphone set; maximum USD 150 including all charges. Supplied fictional test-store listings: Aster wireless headphones cost USD 120 total at https://shop.example/aster; Birch wired headphones cost USD 80 total at https://shop.example/birch; Cedar wireless headphones cost USD 180 total at https://shop.example/cedar. Recommend only Aster and include its supplied link. Do not browse or invent offers.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "https://shop.example/aster"
+      ],
+      "noText": [
+        "https://shop.example/birch",
+        "https://shop.example/cedar"
+      ]
+    },
+    "coverage": {
+      "scenario": "Recommend relevant products with source links within budget",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Verify real search tools return current product/variant, seller, currency, availability and total costs. Validate wishlist fit, combined basket budget and product links. Example domains are fixtures, not purchasable offers."
+    }
+  },
+  {
+    "id": "shopping-list-needs-confirmation",
+    "user": "You have proposed a Black Friday shopping list, but I have not confirmed it. Ask me to approve the list before activating monitoring. Do not purchase anything.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "approve",
+        "approval",
+        "confirm"
+      ],
+      "noText": [
+        "i purchased",
+        "i ordered",
+        "monitoring is active"
+      ]
+    },
+    "coverage": {
+      "scenario": "Obtain approval for the shopping list",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Persist a versioned approved list. No monitoring enrollment before confirmation. List confirmation does not authorize a purchase; any buying requires separate explicit authorization."
+    }
+  },
+  {
+    "id": "shopping-monitoring-not-falsely-active",
+    "user": "I approved my shopping list and want ongoing price tracking. No scheduler or price-tracking tool is available in this test. Explain that tracking is not active yet and needs a monitoring setup.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "not active",
+        "not running",
+        "need",
+        "requires"
+      ],
+      "noText": [
+        "i've activated tracking",
+        "tracking is active",
+        "i will monitor prices automatically"
+      ]
+    },
+    "coverage": {
+      "scenario": "Activate real price tracking before promising it",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Schedule authorized price checks; persist timestamped prices, exact SKU/variant, merchant, currency and discount eligibility. Verify repeated runs, failures, deduplication and observable monitoring state."
+    }
+  },
+  {
+    "id": "shopping-private-discount-requires-secure-sign-in",
+    "user": "A private brand discount requires signing into my brand account, which is not connected. Ask me to authenticate through the brand’s secure sign-in or supported account connection. Do not ask me to paste my password, one-time code or session cookie into chat.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "sign in",
+        "sign-in",
+        "authenticate",
+        "connect"
+      ],
+      "noText": [
+        "send me your password",
+        "share your password",
+        "paste your password",
+        "send me your one-time code",
+        "paste your session cookie"
+      ]
+    },
+    "coverage": {
+      "scenario": "Request secure user authentication for private discounts",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Use supported OAuth or user-controlled secure login with minimum permissions and explicit consent. Never expose credentials or tokens in prompts/logs; gracefully handle expiration and revocation."
+    }
+  },
+  {
+    "id": "shopping-private-discount-not-invented",
+    "user": "My brand account is not authenticated and the private discount cannot be accessed. The public price is USD 120. Explain that the private price is unverified rather than inventing one.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "unverified",
+        "unknown",
+        "cannot verify",
+        "can't verify"
+      ],
+      "noText": [
+        "your private price is $90",
+        "your member discount is 25%"
+      ]
+    },
+    "coverage": {
+      "scenario": "Do not fabricate inaccessible private offers",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Keep public and authenticated offers separate with eligibility evidence and timestamps. Never mark a private offer available before authenticated retrieval succeeds."
+    }
+  },
+  {
+    "id": "shopping-30-day-low-triggers-alert",
+    "user": "Fixture: same SKU, seller, currency and total-cost basis. A complete 30-day observed price history has minimum USD 100. Current verified price is USD 95. Explain that it is a new 30-day low. This is a simulated alert, not a real notification.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "30-day low",
+        "30 day low"
+      ],
+      "noText": [
+        "i purchased",
+        "i ordered"
+      ]
+    },
+    "coverage": {
+      "scenario": "Notify at a verified 30-day low",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Compare against the previous rolling 30 days excluding future/out-of-window data. Trigger when current price is <= historical minimum, including ties; send one deduplicated notification with product link, current price, prior minimum and evidence window. State lowest observed, not an unsupported all-market minimum."
+    }
+  },
+  {
+    "id": "shopping-higher-price-is-not-low-alert",
+    "user": "Fixture: same SKU/seller/currency, complete comparable 30-day history with minimum USD 100. Current price is USD 110. State that the current price is above the 30-day minimum. Do not label it a new low.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "above",
+        "higher"
+      ],
+      "noText": [
+        "new 30-day low",
+        "new 30 day low",
+        "lowest price in 30 days"
+      ]
+    },
+    "coverage": {
+      "scenario": "Do not send a low-price alert for a higher price",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Verify no low-price notification when current comparable price exceeds the historical minimum; continue tracking without false alerts."
+    }
+  },
+  {
+    "id": "shopping-insufficient-history-is-not-30-day-proof",
+    "user": "Price tracking began yesterday; only two observations exist. Current price is lower than yesterday. Explain that there is insufficient history to establish a 30-day low.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "insufficient",
+        "not enough",
+        "only two",
+        "only one day"
+      ],
+      "noText": [
+        "confirmed 30-day low",
+        "verified 30-day low"
+      ]
+    },
+    "coverage": {
+      "scenario": "Require adequate price history",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Define minimum history coverage and freshness; do not claim a verified 30-day minimum from sparse observations. Report limited coverage or use a trustworthy historical source."
+    }
+  },
+  {
+    "id": "shopping-stockout-alert-independent-of-price",
+    "user": "Fixture: an approved wishlist item has not fallen in price. A trusted inventory forecast reports an 85% chance of selling out within 24 hours, above the configured alert threshold. Write a simulated stock-risk alert mentioning 24 hours and the uncertainty. Do not claim certain stockout or buy it.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "24 hours"
+      ],
+      "noText": [
+        "will definitely sell out",
+        "guaranteed to sell out",
+        "i purchased",
+        "i ordered"
+      ]
+    },
+    "coverage": {
+      "scenario": "Notify likely stockout within 24 hours regardless of discount",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Persist forecast evidence, timestamp, probability/horizon and configured threshold. Assert a stock-risk notification is delivered even when no price threshold is met, with source, uncertainty and link; deduplicate alerts and do not auto-buy."
+    }
+  },
+  {
+    "id": "shopping-no-stock-evidence-no-invented-urgency",
+    "user": "A seller page says Popular item but provides no stock quantity or reliable stockout forecast. Explain that this is insufficient to predict it will sell out within 24 hours. Do not invent urgency.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "insufficient",
+        "cannot predict",
+        "can't predict",
+        "not enough"
+      ],
+      "noText": [
+        "will sell out within 24 hours",
+        "guaranteed to sell out",
+        "buy immediately"
+      ]
+    },
+    "coverage": {
+      "scenario": "Do not fabricate scarcity predictions",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Marketing copy alone must not trigger a 24-hour stock-risk alert. Require reliable inventory or calibrated forecast evidence and handle unavailable forecasts honestly."
+    }
+  },
+  {
+    "id": "shopping-out-of-stock-replacement-needs-approval",
+    "user": "My approved wishlist item is confirmed out of stock. Supplied replacement: Aster Plus wireless headphones, USD 130 total, meeting my requirements and USD 150 cap, at https://shop.example/aster-plus. Recommend that replacement with its link and ask for my approval before changing the list or purchasing.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "https://shop.example/aster-plus"
+      ],
+      "noText": [
+        "i replaced your item",
+        "i purchased",
+        "i ordered"
+      ]
+    },
+    "coverage": {
+      "scenario": "Offer a replacement for approval",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Verify original stock status and replacement fit, price, variant and link. Ask approval; do not modify the approved list or buy before it is granted. Human/rubric grading should assess the approval request as well as the current phrase check."
+    }
+  },
+  {
+    "id": "shopping-no-eligible-replacement-asks-user",
+    "user": "My item is out of stock. The only available replacement costs USD 200; my hard cap is USD 150. Ask whether I want to wait or change my budget, without silently substituting or buying.",
+    "toolChoice": "none",
+    "expect": {
+      "mustMentionOneOf": [
+        "budget",
+        "wait"
+      ],
+      "noText": [
+        "i replaced your item",
+        "i purchased",
+        "i ordered"
+      ]
+    },
+    "coverage": {
+      "scenario": "Do not silently exceed budget for replacements",
+      "executedByCurrentRunner": "Single-response phrase checks only; no shopping, authentication, monitoring, forecasts, notifications or purchases execute.",
+      "pendingIntegrationCheck": "Verify an over-budget or requirement-violating candidate is not substituted automatically. Require explicit revised constraints and approval before changing the list."
+    }
   }
 ];
