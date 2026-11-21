@@ -18,6 +18,68 @@ const COUNTS = {
 const MAX_APPS = 200;
 const clip = (v, n) => String(v ?? "").trim().slice(0, n);
 
+// Goal-step selection for "move my goal forward" requests.
+export const DOCUMENT_STEP = /(?<![\p{L}\p{N}])(?:résumé|resume|cv|cover letter)(?![\p{L}\p{N}])/iu;
+export const JOB_RESEARCH_STEP = /\b(?:research|find|look for|identify|search)\b.*\b(?:compan(?:y|ies)|jobs?|job boards?|openings?|open positions?|roles?)\b/i;
+
+const STOP = new Set(("the and for with that this these those you your our can could would will like please get got make want "
+  + "goal goals step steps plan plans move forward next progress update continue again try ahead proceed work working about now let yes yeah sure").split(" "));
+const sigWords = s => (String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [])
+  .filter(w => w.length > 2 && !STOP.has(w)).map(w => w.replace(/s$/, ""));
+
+// Match text against the goals by id, whole title, or shared significant title words.
+// Returns { goal, ambiguous }: goal is the single best match, ambiguous when the best score ties.
+function matchGoals(plans, text) {
+  const raw = String(text || "").toLowerCase();
+  const tokens = raw.match(/[a-z0-9_-]+/g) || [];
+  const msgWords = new Set(sigWords(raw));
+  let best = 0, hits = [];
+  for (const goal of plans) {
+    let score = 0;
+    const title = String(goal.goal || "").toLowerCase().trim();
+    if (goal.id && tokens.includes(String(goal.id).toLowerCase())) score = 1000;
+    else if (title && raw.includes(title)) score = 100;
+    else score = new Set(sigWords(title)).size ? [...new Set(sigWords(title))].filter(w => msgWords.has(w)).length : 0;
+    if (score > best) { best = score; hits = [goal]; }
+    else if (score === best && score > 0) hits.push(goal);
+  }
+  if (!best) return { goal: null, ambiguous: false };
+  return hits.length === 1 ? { goal: hits[0], ambiguous: false } : { goal: null, ambiguous: true };
+}
+
+// The goal the user named: { named, goal }. named is true when the user pointed at a goal
+// (even one we cannot match, e.g. "my trip goal"), in which case goal may be null.
+export function targetGoal(plans, message, lastAssistantText = "") {
+  const list = Array.isArray(plans) ? plans : [];
+  const direct = matchGoals(list, message);
+  if (direct.goal || direct.ambiguous) return { named: true, goal: direct.goal };
+  const m = String(message || "").match(/\b(?:my|the)\s+([a-z0-9'’-]+)\s+(?:goal|plan)\b/i);
+  if (m && !STOP.has(m[1].toLowerCase()) && m[1].length > 2) return { named: true, goal: null };
+  const prior = matchGoals(list, lastAssistantText);
+  if (prior.goal) return { named: true, goal: prior.goal };
+  return { named: false, goal: null };
+}
+
+// The goal's first unfinished step, when it matches regex (earlier steps are all done).
+export function nextStepMatching(goal, regex) {
+  const steps = goal?.steps || [];
+  const index = steps.findIndex(s => s.status !== "done");
+  if (index < 0 || !regex.test(steps[index].text)) return null;
+  return { goal, step: steps[index], index };
+}
+
+// The step to advance: only in the goal the user named. With no goal named, the single goal
+// with an actionable matching step, or the most recently updated one if several have one.
+export function findStep(plans, message, lastAssistantText, regex) {
+  const list = Array.isArray(plans) ? plans : [];
+  const t = targetGoal(list, message, lastAssistantText);
+  if (t.named) return t.goal ? nextStepMatching(t.goal, regex) : null;
+  const found = list.map(g => nextStepMatching(g, regex)).filter(Boolean);
+  if (!found.length) return null;
+  const when = f => Number(f.goal.updatedAt ?? f.goal.t ?? 0) || 0;
+  return found.reduce((a, b) => (when(b) > when(a) ? b : a));
+}
+
 // { metric, count } or null when missing. Throws on a target that is present but invalid.
 export function normTarget(t) {
   if (t == null || t === "") return null;
