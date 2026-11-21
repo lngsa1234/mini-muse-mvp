@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How sensitive actions get approval
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code
+Mapped: 2026-11-21 · Mapped by Alex from the code
 
 A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.
 
@@ -48,4 +48,6 @@ sequenceDiagram
 ## Features it serves
 
 - [Approvals](../../specs/tool-approvals.md)
+- [Connectors](../../specs/connectors.md)
 - [Goals](../../specs/goals.md)
+

@@ -17,7 +17,7 @@ Mini Muse is a no-build browser app with a small Node/Express (or Vercel functio
 
 - [Containers](c4-containers.md) — its deployable parts, how they talk, and who and what is around them (C4 level 2)
 - [Components](c4-components-browser-app.md) — inside the browser app: the agent, each feature, and how they work together (C4 level 3)
-- [Workflows](workflows/README.md) — a chat turn runs; sensitive actions get approval; a goal step advances; google connectors sign in; documents enter the library
+- [Workflows](workflows/README.md) — how the product runs, flow by flow: [how a chat turn runs](workflows/chat-turn.md), [how sensitive actions get approval](workflows/tool-approval.md), [how a goal step advances](workflows/goal-step-progress.md), [how Google connectors sign in](workflows/google-connect.md), [how documents enter the Library](workflows/library-ingest.md), [how the daily check-in runs](workflows/daily-check-in.md), [how Muse fills an application in Chrome](workflows/browser-bridge-fill.md), [how turns are traced](workflows/tracing.md)
 
 | Part | Layer | Technology | Governed by |
 |---|---|---|---|

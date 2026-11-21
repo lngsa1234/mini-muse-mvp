@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How a chat turn runs
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code
+Mapped: 2026-11-21 · Mapped by Alex from the code
 
 A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.
 
@@ -54,3 +54,9 @@ sequenceDiagram
 - A tool that throws, or an unknown tool, goes back to the model as an 'Error: …' tool result instead of ending the turn.
 - If the user presses Stop the turn is cancelled and no error is shown. If the reply ends at max tokens, 'The reply was cut short' is shown.
 - If opening or reading the application page fails, or job tools are off, the shortcut replies without calling the model.
+
+## Features it serves
+
+- [Agent chat](../../specs/agent-chat.md)
+- [Observability](../../specs/observability.md)
+

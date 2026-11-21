@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How Google connectors sign in
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code
+Mapped: 2026-11-21 · Mapped by Alex from the code
 
 Gmail and Calendar share one Google sign-in. The server keeps the tokens in an HttpOnly cookie, and the browser only learns whether Google is connected.
 
@@ -47,3 +47,8 @@ sequenceDiagram
 - If the status call fails, both Google connectors are set off.
 - The Google route adapter turns a thrown error into a JSON error with its status, or 500, and keeps any cookie the error carries. Unknown actions return 404.
 - The disconnect call's failure is ignored, and the connectors are still turned off locally.
+
+## Features it serves
+
+- [Connectors](../../specs/connectors.md)
+

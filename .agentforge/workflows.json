@@ -1,0 +1,783 @@
+{
+  "document": {
+    "workflows": [
+      {
+        "id": "chat-turn",
+        "name": "How a chat turn runs",
+        "summary": "A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.",
+        "trigger": "The user presses Send in chat, or another page sends a message such as New goal, Do it or Ask Muse to move this forward.",
+        "features": [
+          "agent-chat",
+          "observability"
+        ],
+        "steps": [
+          {
+            "actor": "user",
+            "to": "client",
+            "action": "Submits a message from the composer or from a feature button.",
+            "call": "run(userMsg)",
+            "paths": []
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Pushes the user message and a live assistant placeholder, disables the composer, shows Stop, and starts a trace for the turn.",
+            "call": "",
+            "paths": [
+              "public/js/agent/run.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Builds the tool list from features and connected connectors, then applies pre-model shortcuts: Library check for résumé steps, a job-research nudge, and opening an application link in Chrome.",
+            "call": "",
+            "paths": [
+              "public/js/agent/run.js",
+              "public/js/agent/tools.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Sends the conversation and tool definitions with a trace header. It sends a tier and never a model name.",
+            "call": "POST /api/llm (tier, messages, tools, stream)",
+            "paths": [
+              "public/js/agent/loop.js",
+              "public/js/agent/transport.js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "external",
+            "action": "Drops any client model, maps the tier to a model, adds the API key and forwards the request to OpenAI.",
+            "call": "POST chat completions (pinned model, server-held key)",
+            "paths": [
+              "server/proxy.js",
+              "server/routing.js",
+              "api/llm.js"
+            ]
+          },
+          {
+            "actor": "external",
+            "to": "client",
+            "action": "Streams the reply back through the proxy.",
+            "call": "SSE text and tool_call deltas",
+            "paths": []
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Parses the stream and updates the message text live.",
+            "call": "",
+            "paths": [
+              "public/js/agent/transport.js",
+              "public/js/features/chat/chat.js"
+            ]
+          },
+          {
+            "actor": "agent",
+            "to": "",
+            "action": "Asks for tools. The loop runs each one locally and feeds the result back as a tool message. It repeats up to 12 steps until the model stops asking for tools.",
+            "call": "",
+            "paths": [
+              "public/js/agent/loop.js",
+              "public/js/agent/tools.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "data",
+            "action": "Ends the turn: expires unanswered approvals, marks the message not live, shows a truncation notice if the reply hit the token limit, and saves state in browser storage.",
+            "call": "save() chat state",
+            "paths": [
+              "public/js/agent/run.js",
+              "public/js/core/storage.js"
+            ]
+          }
+        ],
+        "errorPaths": [
+          "If the server has no API key it returns 503 no_api_key. The client maps this to sampling_disabled, shows the assistant-unavailable message and disables the composer.",
+          "HTTP 401, 403 and 429 map to session_expired, not_granted and rate_limited messages. A 400 maps to prompt_too_large or refused.",
+          "If the server cannot be reached the turn fails with a generic 'send your message again' message. If OpenAI is unreachable the proxy has an upstream_unreachable 502 response.",
+          "A tool that throws, or an unknown tool, goes back to the model as an 'Error: …' tool result instead of ending the turn.",
+          "If the user presses Stop the turn is cancelled and no error is shown. If the reply ends at max tokens, 'The reply was cut short' is shown.",
+          "If opening or reading the application page fails, or job tools are off, the shortcut replies without calling the model."
+        ]
+      },
+      {
+        "id": "tool-approval",
+        "name": "How sensitive actions get approval",
+        "summary": "A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.",
+        "trigger": "The model calls a tool that asks for approval, such as mail_send, a write on Calendar or Contacts with Ask me first, revise_plan, or marking an interview or offer.",
+        "features": [
+          "tool-approvals",
+          "connectors",
+          "goals"
+        ],
+        "steps": [
+          {
+            "actor": "agent",
+            "to": "client",
+            "action": "Requests a write tool during the loop. The tool is wrapped to log activity, trace it and show progress.",
+            "call": "tool.execute(input)",
+            "paths": [
+              "public/js/agent/loop.js",
+              "public/js/agent/tools.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Checks whether the connector needs approval. Gmail is always locked to ask, and others follow the user's Ask or Allow setting.",
+            "call": "",
+            "paths": [
+              "public/js/agent/tools.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "user",
+            "action": "Switches to chat, shows a pending approval card, and waits.",
+            "call": "approval card (heading, rows, Allow / Don't allow)",
+            "paths": [
+              "public/js/workflow/approvals.js"
+            ]
+          },
+          {
+            "actor": "user",
+            "to": "client",
+            "action": "Allows or declines the action.",
+            "call": "approve or decline click",
+            "paths": []
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Records the answer as approved, declined or expired, and writes an audit entry.",
+            "call": "",
+            "paths": [
+              "public/js/workflow/approvals.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Performs the change only if the answer was approved.",
+            "call": "the approved write, such as the mail send route or goals API",
+            "paths": [
+              "public/js/features/goals/goals.js",
+              "server/google-route.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "agent",
+            "action": "Returns the result to the model, or 'Nothing was changed' if declined or unanswered.",
+            "call": "tool result",
+            "paths": [
+              "public/js/agent/tools.js"
+            ]
+          }
+        ],
+        "errorPaths": [
+          "A decline returns 'The user declined. Nothing was changed.' to the model.",
+          "If the user does not answer before the turn ends, or presses Stop, the approval resolves as no answer and returns 'The user did not answer. Nothing was changed.'"
+        ]
+      },
+      {
+        "id": "goal-step-progress",
+        "name": "How a goal step advances",
+        "summary": "Muse creates a goal with a plan and moves a step to doing or done only when a tool did that step's work in the same turn. Application statuses are checked against proof in the same way.",
+        "trigger": "The user types a goal on the Goals page, or asks Muse to move a goal forward from chat or the Goals page.",
+        "features": [
+          "goals",
+          "tool-approvals"
+        ],
+        "steps": [
+          {
+            "actor": "user",
+            "to": "client",
+            "action": "Submits a goal or a nudge, which is sent as a normal chat message.",
+            "call": "say(\"New goal: …\") or say(\"Move my goal … forward\")",
+            "paths": [
+              "public/js/features/goals/goals.js"
+            ]
+          },
+          {
+            "actor": "agent",
+            "to": "client",
+            "action": "Plans the goal with 3 to 6 steps and an optional measurable target and deadline.",
+            "call": "create_goal(goal, steps, target_metric, target_count, days)",
+            "paths": [
+              "public/js/features/goals/goals.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Saves the goal through the goals API.",
+            "call": "POST /api/goals",
+            "paths": [
+              "public/js/core/api.js",
+              "api/goals/index.js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Rejects a missing goal or steps and invalid target or deadline with 400. Otherwise stores the goal and returns 201.",
+            "call": "createGoal(userId, goal, steps ≤ 8, target, deadline)",
+            "paths": [
+              "server/goals.js",
+              "server/db.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "For a résumé step the user wants moved forward, the pre-model shortcut searches the Library and marks the step done only if a document matches.",
+            "call": "",
+            "paths": [
+              "public/js/agent/run.js"
+            ]
+          },
+          {
+            "actor": "agent",
+            "to": "client",
+            "action": "Runs a real tool for the step, then asks to mark it, naming the tool as evidence.",
+            "call": "docs_search, jobs_search or a browser tool, then update_step(goal_id, step, status, evidence)",
+            "paths": [
+              "public/js/features/goals/goals.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Refuses doing or done unless a non-bookkeeping tool ran this turn and matches the cited evidence. Résumé steps need a docs_search that found a document.",
+            "call": "",
+            "paths": [
+              "public/js/features/goals/goals.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Saves the accepted step status. The user can also click a step to mark it done or undo it.",
+            "call": "PATCH /api/goals/:id { step, status }",
+            "paths": [
+              "public/js/core/api.js",
+              "api/goals/[id].js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Validates the status and step number and stores the updated steps.",
+            "call": "updateGoal(userId, id, steps)",
+            "paths": [
+              "server/goals.js",
+              "server/db.js"
+            ]
+          },
+          {
+            "actor": "agent",
+            "to": "client",
+            "action": "Records job applications. The client accepts drafted only after docs_add, and applied only after an approved Submit click or a Gmail confirmation email. Interview, offer and rejected need an employer email found in Gmail.",
+            "call": "track_application(goal_id, company, role, status)",
+            "paths": [
+              "public/js/features/goals/goals.js"
+            ]
+          }
+        ],
+        "errorPaths": [
+          "The goals API returns 400 for a missing goal, no steps, a bad status, an unknown step or an invalid application. It returns 404 for an unknown goal and 405 for unsupported methods.",
+          "update_step throws a refusal that tells the model to do the work with a tool first or cite the right tool.",
+          "track_application refuses a status the turn's actions do not prove, or moving a status backward. The model is told to ask the user to click the status on the Goals page.",
+          "If the Library has no résumé, the shortcut replies that it could not verify the step and asks the user to add one or click the step.",
+          "If the user declines or does not answer an approval for interview or offer, nothing is saved."
+        ]
+      },
+      {
+        "id": "google-connect",
+        "name": "How Google connectors sign in",
+        "summary": "Gmail and Calendar share one Google sign-in. The server keeps the tokens in an HttpOnly cookie, and the browser only learns whether Google is connected.",
+        "trigger": "The user clicks Connect on the Gmail or Calendar card.",
+        "features": [
+          "connectors"
+        ],
+        "steps": [
+          {
+            "actor": "user",
+            "to": "",
+            "action": "Clicks Connect and reads the consent panel listing what Muse can do.",
+            "call": "",
+            "paths": [
+              "public/js/features/connectors/index.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Continue with Google navigates the browser to the authorize endpoint.",
+            "call": "GET /api/google/authorize",
+            "paths": [
+              "public/js/features/connectors/index.js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "external",
+            "action": "The Google route adapter calls the authorize handler, which redirects to Google.",
+            "call": "redirect to Google consent",
+            "paths": [
+              "server/google-route.js",
+              "server/google.js"
+            ]
+          },
+          {
+            "actor": "external",
+            "to": "server",
+            "action": "Google asks for consent and redirects back.",
+            "call": "redirect to /api/google/callback (code)",
+            "paths": []
+          },
+          {
+            "actor": "server",
+            "to": "client",
+            "action": "The callback handler exchanges the code and sets the tokens in a cookie.",
+            "call": "Set-Cookie (HttpOnly tokens) and redirect",
+            "paths": [
+              "server/google-route.js",
+              "server/google.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "At boot and after the redirect, initConnectors asks whether Google is connected and turns Gmail and Calendar on or off together.",
+            "call": "GET /api/google/status",
+            "paths": [
+              "public/js/features/connectors/index.js",
+              "public/js/core/api.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "When connected, the mail and calendar tools join the agent's tool list. Each tool calls its Google route, and writes go through approval.",
+            "call": "/api/google/mail/* and /api/google/calendar/*",
+            "paths": [
+              "public/js/agent/tools.js",
+              "public/js/features/connectors/mail.js",
+              "server/google-route.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "On Disconnect Google, calls the endpoint, turns both connectors off and records an audit entry.",
+            "call": "disconnect endpoint",
+            "paths": [
+              "public/js/features/connectors/index.js"
+            ]
+          }
+        ],
+        "errorPaths": [
+          "If the status call fails, both Google connectors are set off.",
+          "The Google route adapter turns a thrown error into a JSON error with its status, or 500, and keeps any cookie the error carries. Unknown actions return 404.",
+          "The disconnect call's failure is ignored, and the connectors are still turned off locally."
+        ]
+      },
+      {
+        "id": "library-ingest",
+        "name": "How documents enter the Library",
+        "summary": "A user pastes text or uploads a file. The server stores only the extracted text, and the agent can then search and cite it.",
+        "trigger": "The user submits the Library form, or Muse calls docs_add.",
+        "features": [
+          "library",
+          "goals"
+        ],
+        "steps": [
+          {
+            "actor": "user",
+            "to": "",
+            "action": "Pastes text with a title or chooses a file such as a PDF, DOCX or TXT.",
+            "call": "",
+            "paths": []
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Sends the text or the base64 file. The docs_add tool does the same for text Muse saves.",
+            "call": "POST /api/docs (title, text) or (filename, contentType, dataBase64)",
+            "paths": [
+              "public/js/features/library/library.js",
+              "api/docs/index.js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "",
+            "action": "Pasted text needs a title and text and is cut to 60,000 characters. Files are decoded and checked for empty or over 3MB.",
+            "call": "",
+            "paths": [
+              "server/docs.js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "",
+            "action": "Extracts text from an uploaded file. The filename without its extension is the default title.",
+            "call": "",
+            "paths": [
+              "server/docs.js",
+              "server/extract.js"
+            ]
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Stores the document text for the user in Postgres. The original file is not kept. Returns 201 with the doc.",
+            "call": "createDoc(userId, title, text)",
+            "paths": [
+              "server/docs.js",
+              "server/db.js"
+            ]
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Adds the document to the in-memory list so the page and the docs_search and docs_read tools can use it.",
+            "call": "",
+            "paths": [
+              "public/js/features/library/library.js",
+              "public/js/features/library/search.js"
+            ]
+          }
+        ],
+        "errorPaths": [
+          "A missing title or text returns 400. An empty or undecodable file returns 400.",
+          "A file over 3MB returns 413.",
+          "A file with no extractable text returns 422.",
+          "Delete returns 404 for an unknown document. Unsupported methods return 405."
+        ]
+      },
+      {
+        "id": "daily-check-in",
+        "name": "How the daily check-in runs",
+        "features": [
+          "daily-check-in",
+          "goals",
+          "connectors"
+        ],
+        "summary": "Once a day, or when the user clicks the button, Muse works on the user’s goals without being asked and leaves a short progress brief in chat. It only runs while the app is open.",
+        "trigger": "The app is open after 9am with Every day on and no check-in yet today, or the user clicks the check-in button",
+        "steps": [
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Checks every five minutes, and 20 seconds after the app opens, whether a check-in is due: Every day is on, none ran today, it is after 9am, Muse is free and there is a goal",
+            "call": "",
+            "paths": [
+              "public/js/workflow/checkin.js:27-33"
+            ],
+            "label": "Is a check-in due?"
+          },
+          {
+            "actor": "client",
+            "to": "agent",
+            "action": "Records today as the last check-in and starts a turn with a check-in message instead of a user message",
+            "call": "run(role: checkin)",
+            "paths": [
+              "public/js/workflow/checkin.js:21-24"
+            ],
+            "label": "Start the check-in turn"
+          },
+          {
+            "actor": "agent",
+            "to": "",
+            "action": "Gets the fixed check-in instruction: the user is away, do what can be done alone, do not send emails, never submit an application",
+            "call": "",
+            "paths": [
+              "public/js/agent/prompt.js:54",
+              "public/js/workflow/checkin.js:14-16"
+            ],
+            "label": "Read the check-in instruction"
+          },
+          {
+            "actor": "agent",
+            "to": "external",
+            "action": "Searches Gmail for application confirmations and employer replies",
+            "call": "mail_search via /api/google/mail",
+            "paths": [
+              "public/js/workflow/checkin.js:15"
+            ],
+            "label": "Check Gmail"
+          },
+          {
+            "actor": "agent",
+            "to": "data",
+            "action": "Updates tracked applications and works out pace against the target and deadline",
+            "call": "track_application",
+            "paths": [
+              "public/js/features/goals/goals.js"
+            ],
+            "label": "Update applications"
+          },
+          {
+            "actor": "agent",
+            "to": "server",
+            "action": "When behind pace, searches the watched companies’ hiring pages and scores new postings against the résumé",
+            "call": "jobs_search, score_fit",
+            "paths": [
+              "public/js/features/jobs/jobs.js"
+            ],
+            "label": "Find and score postings"
+          },
+          {
+            "actor": "agent",
+            "to": "",
+            "action": "Writes a three-line progress brief and what needs the user’s decision into chat",
+            "call": "",
+            "paths": [
+              "public/js/workflow/checkin.js:16",
+              "public/js/agent/run.js"
+            ],
+            "label": "Leave the brief"
+          }
+        ],
+        "blocks": [
+          {
+            "kind": "opt",
+            "label": "only when behind pace",
+            "fromStep": 6,
+            "toStep": 6
+          }
+        ],
+        "errorPaths": [
+          "If the app is closed, nothing runs: there is no server-side scheduler, so the check-in waits until the app is next open after 9am.",
+          "If Muse is busy, the assistant is unavailable or there are no goals, the check-in is skipped and tried again five minutes later.",
+          "\"Do not send emails\" is an instruction to the model, not a tool restriction: mail_send is still offered, and its approval card is what stops an email being sent while the user is away."
+        ]
+      },
+      {
+        "id": "browser-bridge-fill",
+        "name": "How Muse fills an application in Chrome",
+        "features": [
+          "browser-bridge",
+          "library",
+          "tool-approvals"
+        ],
+        "summary": "Muse fills in a job application in the user’s own Chrome tab through the optional extension, and only submits it after the user has reviewed it and approved.",
+        "trigger": "The user asks Muse to fill in a specific application they chose",
+        "steps": [
+          {
+            "actor": "agent",
+            "to": "client",
+            "action": "Asks the page to open the application URL in a new Chrome tab",
+            "call": "browser_open(url)",
+            "paths": [
+              "public/js/features/browser/browser.js:22"
+            ],
+            "label": "Open the application",
+            "toName": "Mini Muse page"
+          },
+          {
+            "actor": "client",
+            "to": "external",
+            "action": "Posts the request to the extension through a window message, checking the reply comes from the same origin",
+            "call": "postMessage(source: mini-muse)",
+            "paths": [
+              "public/js/features/browser/browser.js:6-16"
+            ],
+            "actorName": "Mini Muse page",
+            "toName": "Chrome extension",
+            "label": "Hand to the extension"
+          },
+          {
+            "actor": "external",
+            "to": "",
+            "action": "Relays the request to the extension’s background script, which only accepts messages from the Mini Muse origins",
+            "call": "",
+            "paths": [
+              "chrome-extension/muse-bridge.js",
+              "chrome-extension/background.js:9-14"
+            ],
+            "actorName": "Chrome extension",
+            "label": "Check the sender"
+          },
+          {
+            "actor": "external",
+            "to": "",
+            "action": "Picks the last non–Mini Muse tab, checks the user allowed control of that site, and injects the form script",
+            "call": "",
+            "paths": [
+              "chrome-extension/background.js:16-28"
+            ],
+            "actorName": "Chrome extension",
+            "label": "Target the tab"
+          },
+          {
+            "actor": "agent",
+            "to": "external",
+            "action": "Reads the form fields, then fills the ones the Library résumé supports",
+            "call": "browser_fields, browser_fill(fields)",
+            "paths": [
+              "public/js/features/browser/browser.js:24-32"
+            ],
+            "toName": "Chrome extension",
+            "label": "Read and fill fields"
+          },
+          {
+            "actor": "external",
+            "to": "",
+            "action": "Fills the fields in the tab and skips passwords, SSNs and card or account numbers",
+            "call": "",
+            "paths": [
+              "chrome-extension/target.js:8",
+              "chrome-extension/target.js:54"
+            ],
+            "actorName": "Chrome extension",
+            "label": "Fill, skip sensitive"
+          },
+          {
+            "actor": "user",
+            "to": "agent",
+            "action": "Reviews the filled form in Chrome and approves the Submit click on the approval card",
+            "call": "Submit it",
+            "paths": [],
+            "label": "Review and approve"
+          },
+          {
+            "actor": "agent",
+            "to": "external",
+            "action": "Clicks Submit in the tab",
+            "call": "browser_click(selector)",
+            "paths": [
+              "public/js/features/browser/browser.js:33-40"
+            ],
+            "toName": "Chrome extension",
+            "label": "Submit"
+          }
+        ],
+        "errorPaths": [
+          "Without the extension, a request times out after 12 seconds and Muse is told to use web_open or ask the user to install it.",
+          "If the user hasn’t allowed control of the site, the extension refuses and asks them to allow it in the extension popup.",
+          "If the extension was reloaded, the page is asked to reload to reconnect.",
+          "If the user doesn’t approve the click, nothing is clicked and the refusal goes back to Muse."
+        ]
+      },
+      {
+        "id": "tracing",
+        "name": "How turns are traced",
+        "features": [
+          "observability",
+          "agent-chat"
+        ],
+        "summary": "Each chat turn and model call is recorded as a trace, with prompts, replies and tool inputs and outputs, so the builder can replay it on the Observability page.",
+        "trigger": "Any chat turn, model call or API request while tracing is on",
+        "steps": [
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Loads the tracing settings at startup: whether tracing is on, whether to keep prompt and reply text, and the sample rate",
+            "call": "GET /api/trace?view=config",
+            "paths": [
+              "public/js/core/trace.js:176-185"
+            ],
+            "label": "Load tracing settings"
+          },
+          {
+            "actor": "client",
+            "to": "",
+            "action": "Starts a trace for the turn and records spans for the model call and each tool, keeping text up to the cap or only its length",
+            "call": "",
+            "paths": [
+              "public/js/core/trace.js:128-139",
+              "public/js/core/trace.js:40-43"
+            ],
+            "label": "Record spans"
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Sends a traceparent header with model and API calls so the server’s spans join the same trace",
+            "call": "traceparent header",
+            "paths": [
+              "public/js/agent/transport.js:11-16",
+              "public/js/core/api.js:7-12"
+            ],
+            "label": "Link server spans"
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Opens a server span for the request and records it under the same trace",
+            "call": "spans",
+            "paths": [
+              "server/trace-node.js:71-74"
+            ],
+            "label": "Record server spans"
+          },
+          {
+            "actor": "client",
+            "to": "server",
+            "action": "Sends buffered spans and logs every three seconds, and when the page is hidden or closed",
+            "call": "POST /api/trace",
+            "paths": [
+              "public/js/core/trace.js:154-165"
+            ],
+            "label": "Ship the batch"
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Stamps the signed-in user on traces and logs and writes the batch to Postgres",
+            "call": "insert traces, spans, logs",
+            "paths": [
+              "server/trace.js:60-77",
+              "server/trace-store.js:74-79"
+            ],
+            "label": "Store the batch"
+          },
+          {
+            "actor": "user",
+            "to": "server",
+            "action": "Opens the Observability page and a trace, which loads its spans for the waterfall",
+            "call": "GET /api/trace?id=",
+            "paths": [
+              "public/js/features/observability/observability.js"
+            ],
+            "label": "Replay a trace"
+          }
+        ],
+        "errorPaths": [
+          "Every write is best-effort: a failed config load or flush never breaks the user’s request.",
+          "With OBS_ENABLED off, ingest accepts the batch and writes nothing.",
+          "Reading one trace by id doesn’t check who owns it, so anyone with a trace id can read its prompts and tool outputs."
+        ]
+      }
+    ],
+    "limitations": [
+      "The check-in steps that search Gmail and update applications follow the check-in instruction; which tools the model calls depends on the model.",
+      "I did not read the extension popup that grants site access."
+    ]
+  },
+  "status": "complete",
+  "problems": [],
+  "notes": [],
+  "coverage": {
+    "workflows": 8,
+    "features": 13,
+    "served": 8,
+    "unserved": [
+      "Ideas",
+      "Memory",
+      "Web search",
+      "Settings",
+      "How Muse works"
+    ]
+  },
+  "checkedAt": "2026-11-21T22:34:01.164Z"
+}

@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How a goal step advances
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code
+Mapped: 2026-11-21 · Mapped by Alex from the code
 
 Muse creates a goal with a plan and moves a step to doing or done only when a tool did that step's work in the same turn. Application statuses are checked against proof in the same way.
 
@@ -59,3 +59,4 @@ sequenceDiagram
 
 - [Goals](../../specs/goals.md)
 - [Approvals](../../specs/tool-approvals.md)
+

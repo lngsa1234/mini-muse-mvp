@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How documents enter the Library
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code
+Mapped: 2026-11-21 · Mapped by Alex from the code
 
 A user pastes text or uploads a file. The server stores only the extracted text, and the agent can then search and cite it.
 
@@ -49,3 +49,4 @@ sequenceDiagram
 
 - [Library](../../specs/library.md)
 - [Goals](../../specs/goals.md)
+
