@@ -124,7 +124,7 @@ flowchart LR
   s1 --> s2
   s2 --> s3
   s3 --> s4
-  done(["✅ A short list of fits<br/>with honest scores the<br/>user can turn it into<br/>a goal."])
+  done(["✅ A short list of fits<br/>with honest scores,<br/>the user can turn it<br/>into a goal."])
   s4 --> done
   classDef approval fill:#fff4e0,stroke:#d18a1f,color:#5c3a00
   classDef outcome fill:#e6f6ea,stroke:#2f9e4f,color:#14401f
