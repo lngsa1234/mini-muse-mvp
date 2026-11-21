@@ -30,49 +30,57 @@
             "actor": "user",
             "action": "States the goal and target roles",
             "feature": "goals",
-            "approval": false
+            "approval": false,
+            "short": "States the goal"
           },
           {
             "actor": "agent",
             "action": "Creates the goal with a plan, a target count and a deadline (create_goal)",
             "feature": "goals",
-            "approval": false
+            "approval": false,
+            "short": "Plans goal, target, deadline"
           },
           {
             "actor": "agent",
             "action": "Finds openings on employers' hiring sites (jobs_search) and scores the best against the résumé (score_fit)",
             "feature": "goals",
-            "approval": false
+            "approval": false,
+            "short": "Finds and scores jobs"
           },
           {
             "actor": "agent",
             "action": "Saves a tailored résumé or cover letter to the Library (docs_add)",
             "feature": "library",
-            "approval": false
+            "approval": false,
+            "short": "Tailors the résumé"
           },
           {
             "actor": "agent",
             "action": "Fills the chosen application in the user's Chrome tab (browser_fill)",
             "feature": "browser-bridge",
-            "approval": false
+            "approval": false,
+            "short": "Fills the application"
           },
           {
             "actor": "system",
             "action": "Shows an approval card for the Submit click",
             "feature": "tool-approvals",
-            "approval": false
+            "approval": false,
+            "short": "Shows approval card"
           },
           {
             "actor": "agent",
             "action": "Clicks Submit after the user approves",
             "feature": "browser-bridge",
-            "approval": true
+            "approval": true,
+            "short": "Clicks Submit"
           },
           {
             "actor": "agent",
             "action": "Finds the confirmation in Gmail and marks the job applied (track_application)",
             "feature": "connectors",
-            "approval": false
+            "approval": false,
+            "short": "Confirms in Gmail"
           }
         ],
         "outcome": "The goal shows applications and interviews against the target, with the days left.",
@@ -92,25 +100,29 @@
             "actor": "user",
             "action": "Asks Muse for jobs or how well they fit a posting",
             "feature": "agent-chat",
-            "approval": false
+            "approval": false,
+            "short": "Asks for jobs"
           },
           {
             "actor": "agent",
             "action": "Searches employers' hiring sites (jobs_search)",
             "feature": "goals",
-            "approval": false
+            "approval": false,
+            "short": "Searches hiring sites"
           },
           {
             "actor": "agent",
             "action": "Reads the résumé from the Library and scores fit (score_fit)",
             "feature": "library",
-            "approval": false
+            "approval": false,
+            "short": "Scores fit with résumé"
           },
           {
             "actor": "agent",
             "action": "Lists the strong and possible fits with scores and missing keywords",
             "feature": "agent-chat",
-            "approval": false
+            "approval": false,
+            "short": "Lists the best fits"
           }
         ],
         "outcome": "A short list of fits with honest scores; the user can turn it into a goal.",
@@ -129,25 +141,29 @@
             "actor": "system",
             "action": "Starts the check-in once a day",
             "feature": "daily-check-in",
-            "approval": false
+            "approval": false,
+            "short": "Starts daily check-in"
           },
           {
             "actor": "agent",
             "action": "Searches Gmail for application confirmations and employer replies (mail_search)",
             "feature": "connectors",
-            "approval": false
+            "approval": false,
+            "short": "Checks Gmail for replies"
           },
           {
             "actor": "agent",
             "action": "Updates tracked applications the emails prove, and searches for more if behind pace",
             "feature": "goals",
-            "approval": false
+            "approval": false,
+            "short": "Updates applications"
           },
           {
             "actor": "agent",
             "action": "Leaves a three-line progress brief and what needs the user's decision",
             "feature": "agent-chat",
-            "approval": false
+            "approval": false,
+            "short": "Leaves a progress brief"
           }
         ],
         "outcome": "Goals are current and the user has a short brief when they return.",
@@ -166,25 +182,29 @@
             "actor": "user",
             "action": "Uploads a file; its text is extracted and stored",
             "feature": "library",
-            "approval": false
+            "approval": false,
+            "short": "Uploads a document"
           },
           {
             "actor": "user",
             "action": "Asks Muse a question in chat",
             "feature": "agent-chat",
-            "approval": false
+            "approval": false,
+            "short": "Asks a question"
           },
           {
             "actor": "agent",
             "action": "Searches and reads the Library (docs_search, docs_read)",
             "feature": "library",
-            "approval": false
+            "approval": false,
+            "short": "Searches the Library"
           },
           {
             "actor": "agent",
             "action": "Answers and names the document it used",
             "feature": "agent-chat",
-            "approval": false
+            "approval": false,
+            "short": "Answers with source"
           }
         ],
         "outcome": "An answer that cites which document it came from."
@@ -200,25 +220,29 @@
             "actor": "user",
             "action": "Asks Muse to email a person about something",
             "feature": "agent-chat",
-            "approval": false
+            "approval": false,
+            "short": "Asks to email someone"
           },
           {
             "actor": "agent",
             "action": "Looks up the contact (contacts_lookup)",
             "feature": "connectors",
-            "approval": false
+            "approval": false,
+            "short": "Looks up the contact"
           },
           {
             "actor": "system",
             "action": "Shows an approval card with the recipient, subject and body",
             "feature": "tool-approvals",
-            "approval": false
+            "approval": false,
+            "short": "Shows approval card"
           },
           {
             "actor": "agent",
             "action": "Sends the email after the user approves (mail_send)",
             "feature": "connectors",
-            "approval": true
+            "approval": true,
+            "short": "Sends the email"
           }
         ],
         "outcome": "The email is sent only with approval, and appears in the activity audit.",
@@ -237,19 +261,22 @@
             "actor": "agent",
             "action": "Saves an idea from the conversation (save_idea)",
             "feature": "ideas",
-            "approval": false
+            "approval": false,
+            "short": "Saves an idea"
           },
           {
             "actor": "user",
             "action": "Chooses to turn the idea into a goal",
             "feature": "ideas",
-            "approval": false
+            "approval": false,
+            "short": "Turns it into a goal"
           },
           {
             "actor": "agent",
             "action": "Creates the goal linked to the idea (create_goal with idea_id)",
             "feature": "goals",
-            "approval": false
+            "approval": false,
+            "short": "Creates the linked goal"
           }
         ],
         "outcome": "The idea shows as a goal, and the goal has a plan."
@@ -275,5 +302,5 @@
     "prdBuilt": 0,
     "notInPrd": []
   },
-  "checkedAt": "2026-11-21T20:57:46.707Z"
+  "checkedAt": "2026-11-21T21:11:34.262Z"
 }
