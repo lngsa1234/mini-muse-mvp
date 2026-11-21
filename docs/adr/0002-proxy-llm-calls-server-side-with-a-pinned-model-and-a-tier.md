@@ -1,3 +1,11 @@
+---
+status: accepted
+paths:
+  - server/proxy.js
+  - server/routing.js
+  - api/llm.js
+---
+
 # ADR-0002: Proxy LLM calls server-side with a pinned model and a tier
 
 **Date**: 2026-11-18

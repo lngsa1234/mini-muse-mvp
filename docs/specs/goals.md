@@ -8,90 +8,91 @@ owner: Product Manager (Maya)
 
 # Goals
 
-_Written by Maya from the code on 2026-11-17. It describes the feature as built._
+_Written by Maya from the code on 2026-11-21. It describes the feature as built._
 
 ## Summary
 
-Lets a user create, list, update and delete personal goals through the Goals API. Each goal has an ordered plan of steps and can carry an optional target, a deadline and tracked job applications.
+Lets a user set a goal that Muse turns into a plan of steps and works through, marking a step in progress or done only when a tool it ran this turn did that step's work. Job-search goals add tools to find postings and score fit, and track applications against a measurable target and deadline.
 
-The Goals API is a set of Vercel Node functions: `api/goals/index.js` handles list and create, and `api/goals/[id].js` handles update and delete. Both call shared handlers in `server/goals.js`, which the local Express server also uses. Each request is scoped to a user id from `currentUserId` and wrapped in tracing. Create requires a goal text and at least one step, and keeps at most 8 steps. Update accepts one of three body shapes: a single-step status change, an application upsert, or a full patch. I did not read the persistence layer (`server/db.js`), the front-end goals UI, or the agent tools, so this spec covers only the API layer.
+A goal is created through chat: the Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. For job-search goals, jobs_search finds postings on employers' hiring sites and score_fit rates the Library résumé against a posting; track_application records each job with a status that needs proof from this turn, and interview or offer also asks the user to confirm. revise_plan changes steps only after the user approves.
 
 ## User stories
 
-- As a user, I want to create a goal with steps so that I have a plan to work through.
-- As a user, I want to mark an individual step todo, doing, done or blocked so that I can track progress.
-- As a user, I want to record job applications against a goal so that I can track my search.
-- As a user, I want to edit or delete a goal so that my plan stays current.
+- As a job seeker, I want to state a goal and get a concrete plan so that I know the next steps.
+- As a user, I want Muse to mark progress only when it really did the work so that the plan stays honest.
+- As a job seeker, I want postings found and scored against my résumé so that I apply where I fit.
+- As a job seeker, I want applications tracked against a target and deadline so that I can see whether I'm on pace.
 
 ## Scope
 
 **In scope**
 
-- GET /api/goals lists the user's goals
-- POST /api/goals creates a goal with steps, an optional target and an optional deadline
-- PATCH /api/goals/:id: single-step status change, application add or update, and full patch of goal, steps, target and deadline
-- DELETE /api/goals/:id
-- Input validation and HTTP status codes in server/goals.js
+- Creating goals through Muse (create_goal)
+- Step status changes by Muse (update_step) and by the user (click)
+- Job-search tools: jobs_search and score_fit
+- Targets, deadlines and the application tracker (track_application)
+- Plan revision with approval (revise_plan)
 
 **Out of scope**
 
-- Goals page UI (public/js/features/goals)
-- Agent tools for goals, such as revise_plan, and the evidence rules for advancing steps
-- Daily check-in and job search tools
-- Database schema and storage details
-- Authentication internals
+- The daily check-in (its own feature)
+- Goal suggestions from ideas beyond linking idea_id
+- Server persistence details
 
 ## Requirements
 
 | ID | Requirement |
 |---|---|
-| FS-R01 | GET /api/goals returns { goals: [...] } for the current user. |
-| FS-R02 | POST /api/goals requires a non-empty goal text and returns 400 if it is missing. |
-| FS-R03 | POST /api/goals requires at least one non-empty step and returns 400 if there are none. |
-| FS-R04 | POST /api/goals accepts steps as strings or as { text, status } objects, defaults the status to todo, and keeps at most 8 steps. |
-| FS-R05 | POST /api/goals validates target and deadline and returns 400 with the validation message when they are invalid. A successful create returns 201 with { goal }. |
-| FS-R06 | PATCH /api/goals/:id with step (1-based) and status updates that step. Status must be one of todo, doing, done or blocked. It returns 404 for an unknown goal and 400 for an unknown step. |
-| FS-R07 | PATCH /api/goals/:id with application upserts a tracked application and returns 400 if it is invalid. |
-| FS-R08 | PATCH /api/goals/:id with goal, steps, target or deadline updates those fields. It returns 404 if the goal does not exist. |
-| FS-R09 | DELETE /api/goals/:id returns { removed: id }, or 404 if the goal does not exist. |
-| FS-R10 | Methods other than GET and POST on the collection route, and other than PATCH and DELETE on the item route, return 405. |
+| FS-R01 | The system creates a goal only through create_goal, with at least one step and at most 8. |
+| FS-R02 | The system refuses to mark a step doing or done unless a non-bookkeeping tool ran this turn and is cited as evidence. |
+| FS-R03 | The system searches only employers' hiring sites for postings. |
+| FS-R04 | The system refuses an application status the turn's actions do not prove. |
+| FS-R05 | The system changes a plan only after the user approves the revision. |
 
 ## Acceptance criteria
 
-- **AC1** ✓ (API): Given A request to create a goal with an empty goal text, when POST /api/goals is called, then The response is 400 with the error 'goal is required'.
-  - `server/goals.js:28`: `if (!goal) return err(400, "goal is required");`
-- **AC2** ✓ (API): Given A create request with a goal text but no valid steps, when POST /api/goals is called, then The response is 400 with the error 'at least one step is required'.
-  - `server/goals.js:29`: `at least one step is required`
-- **AC3** ✓ (API): Given A create request with more than 8 steps, when POST /api/goals is called, then The goal is created with only the first 8 steps, and the response is 201.
-  - `server/goals.js:27`: `.slice(0, 8);`
-  - `server/goals.js:33`: `return { status: 201, json: { goal: created } };`
-- **AC4** ✓ (API): Given An existing goal, when PATCH /api/goals/:id is called with step 2 and status 'done', then Step 2 is set to done and the updated goal is returned.
-  - `server/goals.js:47`: `const steps = current.steps.map((s, i) => (i === idx ? { ...s, status: body.status } : s));`
-- **AC5** ✓ (API): Given An existing goal, when PATCH /api/goals/:id is called with a status outside todo, doing, done or blocked, then The response is 400 with 'bad status'.
-  - `server/goals.js:42`: `return err(400, "bad status");`
-- **AC6** ✓ (API): Given An existing goal, when PATCH /api/goals/:id is called with an application object, then The application is added or updated and the goal is returned. An invalid application returns 400..
-  - `server/goals.js:59`: `applications = upsertApplication(current.applications, app);`
-- **AC7** ✓ (API): Given A goal id that does not exist, when DELETE /api/goals/:id is called, then The response is 404 'no such goal'.
-  - `server/goals.js:79`: `if (!removed) return err(404, "no such goal");`
-- **AC8** ✓ (API): Given A request to the collection route, when The method is neither GET nor POST, then The response is 405 'method not allowed'.
-  - `api/goals/index.js:23`: `return send(res, { status: 405, json: { error: "method not allowed" } });`
+- **AC1** ✓ (web): Given Muse is connected and not busy, when the user submits a goal in the Goals form, then Muse is asked to plan it with every step left as todo.
+  - `public/js/features/goals/goals.js:57`: `say("New goal: " + t + ". Make a plan for it.`
+- **AC2** ✓ (web): Given Muse calls create_goal, when it passes more than 8 steps or none, then at most 8 steps are kept, and a goal with no steps is refused.
+  - `public/js/features/goals/goals.js:93`: `.map(String).filter(Boolean).slice(0, 8);`
+- **AC3** ✓ (web): Given only bookkeeping tools ran this turn, when Muse calls update_step with status done, then the tool refuses because no tool did any work this turn.
+  - `public/js/features/goals/goals.js:119`: `no tool did any work this turn`
+- **AC4** ✓ (web): Given a web_search ran this turn, when Muse marks a step done citing a different tool, then the tool refuses and lists the tools that did run.
+  - `public/js/features/goals/goals.js:125`: `set "evidence" to the tool you used this turn for THIS step`
+- **AC5** ✓ (web): Given Muse calls jobs_search, when it passes neither keywords nor company boards, then the tool refuses and asks for a job title or boards.
+  - `public/js/features/jobs/jobs.js:29`: `give keywords (the job title) to search the hiring sites, or name company boards`
+- **AC6** ✓ (web): Given the Library has no résumé, when Muse calls score_fit for a posting, then the tool refuses and asks the user to add a résumé.
+  - `public/js/features/jobs/jobs.js:40`: `No résumé in the Library.`
+- **AC7** ✓ (web): Given a tracked job is drafted, when Muse marks it applied with no approved Submit click and no confirmation email this turn, then the tool refuses and points to Gmail or the Goals page.
+  - `public/js/features/goals/goals.js:164`: `there's no proof it was submitted this turn`
+- **AC8** ✓ (web): Given Muse found the employer's email this turn, when it marks a job as interview, then the user is asked to confirm before it counts.
+  - `public/js/features/goals/goals.js:170`: `Count this as ${app.status === "offer" ? "an offer" : "an interview"}?`
+- **AC9** ✓ (web): Given a goal exists, when Muse calls revise_plan with changed steps, then the user sees a before/after card and nothing changes unless they approve.
+  - `public/js/features/goals/goals.js:141`: `yes: "Update plan"`
+
+## Scenarios
+
+### SC1 Plan a measurable goal
+
+1. **User**: Types "Land 3 interviews in 30 days" in the Goals form
+2. **Agent**: Calls create_goal with steps, target_metric interviews, target_count 3 and days 30
+3. **System**: Shows the goal with its target, deadline and days left
+
+### SC2 Find and save a good fit
+
+1. **Agent**: Runs jobs_search with the target role and location
+2. **Agent**: Scores the most promising posting with score_fit against the Library résumé
+3. **Agent**: Saves a strong fit with track_application as saved, and marks the find-openings step doing with evidence jobs_search
+
+### SC3 Claimed progress without proof (failure)
+
+1. **Agent**: Tries update_step done on a step no tool worked on this turn
+2. **System**: Refuses with the reason; the step stays todo and Muse tells the user what it needs
 
 ## Risks
 
-- The single-step PATCH handler lets any client set any step to 'done' directly. Any rule requiring tool-backed proof before a step advances is enforced elsewhere, or not at all. I did not verify this.
-- The full-patch handler passes body.steps to the database without validating or normalizing it, unlike create, which caps at 8 steps and checks status.
-- A malformed JSON body in readJson throws and returns 500 instead of 400.
-- The single-step handler reads the goal and then writes it back, so concurrent updates could overwrite each other.
-- I found no automated tests for this API, so none of the behavior is verified by QA. A QA Engineer verification task against these criteria is recommended.
-
-## Open questions
-
-- Should the full patch enforce the same step limit and status validation as create?
-- Should the API itself enforce evidence-before-done for steps, or only the agent layer?
-- What are the allowed values and formats for target, deadline and application status? They are defined in model.js, which I did not read.
+- The tool description and guidance say 3-6 steps, but create_goal keeps up to 8; the model and the code disagree on the limit.
 
 ## Not confirmed from the code
 
-- I did not read server/db.js, server/auth.js, public/js/features/goals/model.js, the Goals UI, the agent tools or the tests.
-- I did not read the Express route wiring in server/index.js.
-- Persistence behavior, user scoping and the shape of the returned goal are inferred from the handler code only.
+- Carried over from the previous spec at docs/specs/goals.md (API layer); its server-side behaviour is not re-cited here.

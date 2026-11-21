@@ -1,3 +1,11 @@
+---
+status: accepted
+paths:
+  - server/google.js
+  - server/google-route.js
+  - api/google.js
+---
+
 # ADR-0006: Keep Google OAuth tokens in an HttpOnly cookie, with one consent for Gmail and Calendar
 
 **Date**: 2026-11-18

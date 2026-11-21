@@ -1,3 +1,14 @@
+---
+status: accepted
+paths:
+  - server/db.js
+  - db/schema.sql
+  - server/docs.js
+  - server/goals.js
+  - server/ideas.js
+  - server/trace-store.js
+---
+
 # ADR-0004: Store documents, goals, ideas and traces in Neon Postgres, scoped by user_id
 
 **Date**: 2026-11-18

@@ -1,0 +1,279 @@
+{
+  "document": {
+    "product": {
+      "name": "Mini Muse",
+      "summary": "A personal AI agent you chat with that turns goals into plans and works through them with real tools — your Gmail, calendar, contacts, documents, the web and your Chrome browser — asking before it acts on your behalf and only claiming progress it can prove. Built as a classroom replica of the Muse concept for a learning circle.",
+      "users": [
+        {
+          "name": "Job seeker",
+          "needs": "Wants an agent to run a job search with them: find openings, judge fit, prepare applications and track replies against a target."
+        },
+        {
+          "name": "Busy professional",
+          "needs": "Wants an assistant that can act across mail, calendar, contacts and documents without doing anything risky unasked."
+        },
+        {
+          "name": "Learning-circle builder",
+          "needs": "Wants to see and extend how an agent works: the loop, the tools, approvals and traces."
+        }
+      ]
+    },
+    "journeys": [
+      {
+        "title": "Land interviews within a deadline",
+        "user": "Job seeker",
+        "goal": "Get a set number of interviews in a month without doing every step alone.",
+        "trigger": "The user types a goal like \"Land 3 interviews in 30 days\" on the Goals page.",
+        "priority": "P1",
+        "steps": [
+          {
+            "actor": "user",
+            "action": "States the goal and target roles",
+            "feature": "goals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Creates the goal with a plan, a target count and a deadline (create_goal)",
+            "feature": "goals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Finds openings on employers' hiring sites (jobs_search) and scores the best against the résumé (score_fit)",
+            "feature": "goals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Saves a tailored résumé or cover letter to the Library (docs_add)",
+            "feature": "library",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Fills the chosen application in the user's Chrome tab (browser_fill)",
+            "feature": "browser-bridge",
+            "approval": false
+          },
+          {
+            "actor": "system",
+            "action": "Shows an approval card for the Submit click",
+            "feature": "tool-approvals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Clicks Submit after the user approves",
+            "feature": "browser-bridge",
+            "approval": true
+          },
+          {
+            "actor": "agent",
+            "action": "Finds the confirmation in Gmail and marks the job applied (track_application)",
+            "feature": "connectors",
+            "approval": false
+          }
+        ],
+        "outcome": "The goal shows applications and interviews against the target, with the days left.",
+        "failures": [
+          "Gmail isn't connected: Muse can't confirm an application and asks the user to click the job's status or connect Gmail.",
+          "No résumé in the Library: score_fit refuses and Muse asks the user to add one."
+        ]
+      },
+      {
+        "title": "Find and judge jobs from chat",
+        "user": "Job seeker",
+        "goal": "Know which openings are worth applying to, without setting up a goal.",
+        "trigger": "The user asks in chat, e.g. \"find product manager jobs in Detroit\".",
+        "priority": "P1",
+        "steps": [
+          {
+            "actor": "user",
+            "action": "Asks Muse for jobs or how well they fit a posting",
+            "feature": "agent-chat",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Searches employers' hiring sites (jobs_search)",
+            "feature": "goals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Reads the résumé from the Library and scores fit (score_fit)",
+            "feature": "library",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Lists the strong and possible fits with scores and missing keywords",
+            "feature": "agent-chat",
+            "approval": false
+          }
+        ],
+        "outcome": "A short list of fits with honest scores; the user can turn it into a goal.",
+        "failures": [
+          "The user asks for LinkedIn or Indeed: Muse explains it can't search them and uses employers' sites instead."
+        ]
+      },
+      {
+        "title": "Let Muse work on my goals while I'm away",
+        "user": "Job seeker",
+        "goal": "Have progress made and reported every day without asking.",
+        "trigger": "Every day after 9am with \"Every day\" on and the app open, or the check-in button.",
+        "priority": "P1",
+        "steps": [
+          {
+            "actor": "system",
+            "action": "Starts the check-in once a day",
+            "feature": "daily-check-in",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Searches Gmail for application confirmations and employer replies (mail_search)",
+            "feature": "connectors",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Updates tracked applications the emails prove, and searches for more if behind pace",
+            "feature": "goals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Leaves a three-line progress brief and what needs the user's decision",
+            "feature": "agent-chat",
+            "approval": false
+          }
+        ],
+        "outcome": "Goals are current and the user has a short brief when they return.",
+        "failures": [
+          "The app is closed: no check-in runs (there is no server-side scheduler yet)."
+        ]
+      },
+      {
+        "title": "Get answers from my own documents",
+        "user": "Busy professional",
+        "goal": "Ask questions and get answers grounded in my notes, with the source named.",
+        "trigger": "The user uploads a document to the Library.",
+        "priority": "P2",
+        "steps": [
+          {
+            "actor": "user",
+            "action": "Uploads a file; its text is extracted and stored",
+            "feature": "library",
+            "approval": false
+          },
+          {
+            "actor": "user",
+            "action": "Asks Muse a question in chat",
+            "feature": "agent-chat",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Searches and reads the Library (docs_search, docs_read)",
+            "feature": "library",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Answers and names the document it used",
+            "feature": "agent-chat",
+            "approval": false
+          }
+        ],
+        "outcome": "An answer that cites which document it came from."
+      },
+      {
+        "title": "Email someone without leaving the chat",
+        "user": "Busy professional",
+        "goal": "Have Muse write and send an email to a contact, safely.",
+        "trigger": "The user asks Muse to email someone.",
+        "priority": "P2",
+        "steps": [
+          {
+            "actor": "user",
+            "action": "Asks Muse to email a person about something",
+            "feature": "agent-chat",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Looks up the contact (contacts_lookup)",
+            "feature": "connectors",
+            "approval": false
+          },
+          {
+            "actor": "system",
+            "action": "Shows an approval card with the recipient, subject and body",
+            "feature": "tool-approvals",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Sends the email after the user approves (mail_send)",
+            "feature": "connectors",
+            "approval": true
+          }
+        ],
+        "outcome": "The email is sent only with approval, and appears in the activity audit.",
+        "failures": [
+          "The user declines or doesn't answer: nothing is sent and Muse says so."
+        ]
+      },
+      {
+        "title": "Turn an idea into a goal",
+        "user": "Job seeker",
+        "goal": "Act on an idea Muse noticed in conversation.",
+        "trigger": "Muse saves an idea while chatting.",
+        "priority": "P3",
+        "steps": [
+          {
+            "actor": "agent",
+            "action": "Saves an idea from the conversation (save_idea)",
+            "feature": "ideas",
+            "approval": false
+          },
+          {
+            "actor": "user",
+            "action": "Chooses to turn the idea into a goal",
+            "feature": "ideas",
+            "approval": false
+          },
+          {
+            "actor": "agent",
+            "action": "Creates the goal linked to the idea (create_goal with idea_id)",
+            "feature": "goals",
+            "approval": false
+          }
+        ],
+        "outcome": "The idea shows as a goal, and the goal has a plan."
+      }
+    ],
+    "openQuestions": [
+      "The daily check-in only runs while the app is open; is a server-side scheduler planned?"
+    ]
+  },
+  "status": "complete",
+  "problems": [],
+  "coverage": {
+    "features": 13,
+    "onJourney": 8,
+    "notOnJourney": [
+      "Memory",
+      "Web search",
+      "Settings",
+      "How Muse works",
+      "Observability"
+    ],
+    "prdRequirements": 0,
+    "prdBuilt": 0,
+    "notInPrd": []
+  },
+  "checkedAt": "2026-11-21T20:20:03.189Z"
+}

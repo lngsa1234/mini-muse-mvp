@@ -1,3 +1,9 @@
+---
+status: accepted
+paths:
+  - server/auth.js
+---
+
 # ADR-0005: Single seam for user identity with a hardcoded dev user
 
 **Date**: 2026-11-18

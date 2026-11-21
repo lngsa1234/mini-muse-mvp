@@ -1,3 +1,10 @@
+---
+status: accepted
+paths:
+  - api
+  - server/index.js
+---
+
 # ADR-0003: Share request handlers between Express and Vercel functions
 
 **Date**: 2026-11-18

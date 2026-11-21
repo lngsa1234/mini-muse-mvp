@@ -1,3 +1,10 @@
+---
+status: accepted
+paths:
+  - public/js/features/goals/goals.js
+  - public/js/workflow/approvals.js
+---
+
 # ADR-0007: Gate agent actions on approvals and tool evidence
 
 **Date**: 2026-11-18

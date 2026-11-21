@@ -1,0 +1,587 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-21T20:20:00Z",
+  "features": [
+    {
+      "id": "agent-chat",
+      "name": "Agent chat",
+      "summary": "Chat with Muse, which runs a tool-using agent loop in the browser and streams replies through the server's LLM proxy.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/chat",
+        "module:public/js/agent",
+        "route:api/llm.js",
+        "module:server/proxy.js",
+        "module:server/routing.js",
+        "doc:docs/specs/agent-chat.md"
+      ],
+      "spec": {
+        "status": "not_checked",
+        "existingDoc": "docs/specs/agent-chat.md"
+      }
+    },
+    {
+      "id": "tool-approvals",
+      "name": "Approvals",
+      "summary": "Muse stops and shows an approval card before sending mail, changing the calendar or clicking Submit; the user approves or declines.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/workflow/approvals.js"
+      ],
+      "spec": {
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given a tool asks for approval, when the card appears, then the chat shows that Muse is waiting for the user's approval.",
+          "AC2: Given an approval card is showing, when the user clicks Approve, then the tool continues with a yes.",
+          "AC3: Given an approval card is showing, when the user clicks Decline, then the tool continues with a no.",
+          "AC4: Given an approval card is still waiting, when the turn ends, then the card resolves as no answer.",
+          "AC5: Given the user answered a card, when the tool resumes, then the outcome is written to the activity audit."
+        ],
+        "document": {
+          "objective": "Makes Muse stop and ask before a sensitive action: a tool pauses, an approval card appears in chat, and the action goes ahead only if the user approves.",
+          "summary": "requestApproval puts the chat in a waiting state, shows a card with a heading, rows, an optional body and a yes label, and waits for the user's click. Approve resolves true, Decline false, and a turn that ends first resolves null (no answer). The outcome is labelled on the card and written to the activity audit.",
+          "userStories": [
+            "As a user, I want Muse to ask before sending, submitting or changing things so that nothing happens on my behalf without my say-so."
+          ],
+          "inScope": [
+            "The approval card and its three outcomes",
+            "The audit record of each decision"
+          ],
+          "outOfScope": [
+            "Which tools ask (each tool decides)"
+          ],
+          "functionalRequirements": [
+            "The system pauses a tool until the user approves, declines or the turn ends.",
+            "The system records each approval outcome in the activity audit."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "a tool asks for approval",
+              "when": "the card appears",
+              "then": "the chat shows that Muse is waiting for the user's approval",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/approvals.js",
+                  "startLine": 15,
+                  "endLine": 15,
+                  "quote": "msg.status = \"Waiting for your approval…\""
+                }
+              ]
+            },
+            {
+              "given": "an approval card is showing",
+              "when": "the user clicks Approve",
+              "then": "the tool continues with a yes",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/approvals.js",
+                  "startLine": 29,
+                  "endLine": 29,
+                  "quote": "onClick(\"approve\", id => approvals.get(id)?.(true));"
+                }
+              ]
+            },
+            {
+              "given": "an approval card is showing",
+              "when": "the user clicks Decline",
+              "then": "the tool continues with a no",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/approvals.js",
+                  "startLine": 30,
+                  "endLine": 30,
+                  "quote": "onClick(\"decline\", id => approvals.get(id)?.(false));"
+                }
+              ]
+            },
+            {
+              "given": "an approval card is still waiting",
+              "when": "the turn ends",
+              "then": "the card resolves as no answer",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/approvals.js",
+                  "startLine": 27,
+                  "endLine": 27,
+                  "quote": "export function expireApprovals() { for (const [, res] of approvals) res(null); }"
+                }
+              ]
+            },
+            {
+              "given": "the user answered a card",
+              "when": "the tool resumes",
+              "then": "the outcome is written to the activity audit",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/approvals.js",
+                  "startLine": 21,
+                  "endLine": 21,
+                  "quote": "audit(\"approval\", { [tool]: card.summary }, a.approval, \"you\");"
+                }
+              ]
+            }
+          ],
+          "scenarios": [
+            {
+              "title": "Approve a sensitive action",
+              "kind": "main",
+              "steps": [
+                {
+                  "actor": "agent",
+                  "action": "Calls a write tool such as mail_send",
+                  "approval": false
+                },
+                {
+                  "actor": "system",
+                  "action": "Shows the approval card and waits",
+                  "approval": false
+                },
+                {
+                  "actor": "user",
+                  "action": "Clicks Approve",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Carries out the action",
+                  "approval": true
+                }
+              ]
+            },
+            {
+              "title": "No answer before the turn ends",
+              "kind": "failure",
+              "steps": [
+                {
+                  "actor": "system",
+                  "action": "Ends the turn with the card still waiting",
+                  "approval": false
+                },
+                {
+                  "actor": "system",
+                  "action": "Marks it as no answer; the tool does nothing",
+                  "approval": false
+                }
+              ]
+            }
+          ],
+          "risks": [],
+          "openQuestions": [],
+          "limitations": []
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 5,
+          "verified": 5
+        },
+        "checkedAt": "2026-11-21T20:19:42.855Z"
+      }
+    },
+    {
+      "id": "goals",
+      "name": "Goals",
+      "summary": "Goals with a plan of steps, measurable targets and deadlines, which Muse works through and marks done only with tool evidence — including the job-search tools (find postings, score fit) and the application tracker that job-search goals use.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/goals",
+        "route:api/goals",
+        "module:server/goals.js",
+        "module:public/js/features/jobs",
+        "route:api/jobs",
+        "module:server/jobs.js",
+        "doc:docs/specs/goals.md"
+      ],
+      "spec": {
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given Muse is connected and not busy, when the user submits a goal in the Goals form, then Muse is asked to plan it with every step left as todo.",
+          "AC2: Given Muse calls create_goal, when it passes more than 8 steps or none, then at most 8 steps are kept, and a goal with no steps is refused.",
+          "AC3: Given only bookkeeping tools ran this turn, when Muse calls update_step with status done, then the tool refuses because no tool did any work this turn.",
+          "AC4: Given a web_search ran this turn, when Muse marks a step done citing a different tool, then the tool refuses and lists the tools that did run.",
+          "AC5: Given Muse calls jobs_search, when it passes neither keywords nor company boards, then the tool refuses and asks for a job title or boards.",
+          "AC6: Given the Library has no résumé, when Muse calls score_fit for a posting, then the tool refuses and asks the user to add a résumé.",
+          "AC7: Given a tracked job is drafted, when Muse marks it applied with no approved Submit click and no confirmation email this turn, then the tool refuses and points to Gmail or the Goals page.",
+          "AC8: Given Muse found the employer's email this turn, when it marks a job as interview, then the user is asked to confirm before it counts.",
+          "AC9: Given a goal exists, when Muse calls revise_plan with changed steps, then the user sees a before/after card and nothing changes unless they approve."
+        ],
+        "document": {
+          "objective": "Lets a user set a goal that Muse turns into a plan of steps and works through, marking a step in progress or done only when a tool it ran this turn did that step's work. Job-search goals add tools to find postings and score fit, and track applications against a measurable target and deadline.",
+          "summary": "A goal is created through chat: the Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. For job-search goals, jobs_search finds postings on employers' hiring sites and score_fit rates the Library résumé against a posting; track_application records each job with a status that needs proof from this turn, and interview or offer also asks the user to confirm. revise_plan changes steps only after the user approves.",
+          "userStories": [
+            "As a job seeker, I want to state a goal and get a concrete plan so that I know the next steps.",
+            "As a user, I want Muse to mark progress only when it really did the work so that the plan stays honest.",
+            "As a job seeker, I want postings found and scored against my résumé so that I apply where I fit.",
+            "As a job seeker, I want applications tracked against a target and deadline so that I can see whether I'm on pace."
+          ],
+          "inScope": [
+            "Creating goals through Muse (create_goal)",
+            "Step status changes by Muse (update_step) and by the user (click)",
+            "Job-search tools: jobs_search and score_fit",
+            "Targets, deadlines and the application tracker (track_application)",
+            "Plan revision with approval (revise_plan)"
+          ],
+          "outOfScope": [
+            "The daily check-in (its own feature)",
+            "Goal suggestions from ideas beyond linking idea_id",
+            "Server persistence details"
+          ],
+          "functionalRequirements": [
+            "The system creates a goal only through create_goal, with at least one step and at most 8.",
+            "The system refuses to mark a step doing or done unless a non-bookkeeping tool ran this turn and is cited as evidence.",
+            "The system searches only employers' hiring sites for postings.",
+            "The system refuses an application status the turn's actions do not prove.",
+            "The system changes a plan only after the user approves the revision."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "Muse is connected and not busy",
+              "when": "the user submits a goal in the Goals form",
+              "then": "Muse is asked to plan it with every step left as todo",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 57,
+                  "endLine": 57,
+                  "quote": "say(\"New goal: \" + t + \". Make a plan for it."
+                }
+              ]
+            },
+            {
+              "given": "Muse calls create_goal",
+              "when": "it passes more than 8 steps or none",
+              "then": "at most 8 steps are kept, and a goal with no steps is refused",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 93,
+                  "endLine": 93,
+                  "quote": ".map(String).filter(Boolean).slice(0, 8);"
+                }
+              ]
+            },
+            {
+              "given": "only bookkeeping tools ran this turn",
+              "when": "Muse calls update_step with status done",
+              "then": "the tool refuses because no tool did any work this turn",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 119,
+                  "endLine": 119,
+                  "quote": "no tool did any work this turn"
+                }
+              ]
+            },
+            {
+              "given": "a web_search ran this turn",
+              "when": "Muse marks a step done citing a different tool",
+              "then": "the tool refuses and lists the tools that did run",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 125,
+                  "endLine": 125,
+                  "quote": "set \"evidence\" to the tool you used this turn for THIS step"
+                }
+              ]
+            },
+            {
+              "given": "Muse calls jobs_search",
+              "when": "it passes neither keywords nor company boards",
+              "then": "the tool refuses and asks for a job title or boards",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/jobs/jobs.js",
+                  "startLine": 29,
+                  "endLine": 29,
+                  "quote": "give keywords (the job title) to search the hiring sites, or name company boards"
+                }
+              ]
+            },
+            {
+              "given": "the Library has no résumé",
+              "when": "Muse calls score_fit for a posting",
+              "then": "the tool refuses and asks the user to add a résumé",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/jobs/jobs.js",
+                  "startLine": 40,
+                  "endLine": 40,
+                  "quote": "No résumé in the Library."
+                }
+              ]
+            },
+            {
+              "given": "a tracked job is drafted",
+              "when": "Muse marks it applied with no approved Submit click and no confirmation email this turn",
+              "then": "the tool refuses and points to Gmail or the Goals page",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 164,
+                  "endLine": 164,
+                  "quote": "there's no proof it was submitted this turn"
+                }
+              ]
+            },
+            {
+              "given": "Muse found the employer's email this turn",
+              "when": "it marks a job as interview",
+              "then": "the user is asked to confirm before it counts",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 170,
+                  "endLine": 170,
+                  "quote": "Count this as ${app.status === \"offer\" ? \"an offer\" : \"an interview\"}?"
+                }
+              ]
+            },
+            {
+              "given": "a goal exists",
+              "when": "Muse calls revise_plan with changed steps",
+              "then": "the user sees a before/after card and nothing changes unless they approve",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/goals/goals.js",
+                  "startLine": 141,
+                  "endLine": 141,
+                  "quote": "yes: \"Update plan\""
+                }
+              ]
+            }
+          ],
+          "scenarios": [
+            {
+              "title": "Plan a measurable goal",
+              "kind": "main",
+              "steps": [
+                {
+                  "actor": "user",
+                  "action": "Types \"Land 3 interviews in 30 days\" in the Goals form",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Calls create_goal with steps, target_metric interviews, target_count 3 and days 30",
+                  "approval": false
+                },
+                {
+                  "actor": "system",
+                  "action": "Shows the goal with its target, deadline and days left",
+                  "approval": false
+                }
+              ]
+            },
+            {
+              "title": "Find and save a good fit",
+              "kind": "main",
+              "steps": [
+                {
+                  "actor": "agent",
+                  "action": "Runs jobs_search with the target role and location",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Scores the most promising posting with score_fit against the Library résumé",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Saves a strong fit with track_application as saved, and marks the find-openings step doing with evidence jobs_search",
+                  "approval": false
+                }
+              ]
+            },
+            {
+              "title": "Claimed progress without proof",
+              "kind": "failure",
+              "steps": [
+                {
+                  "actor": "agent",
+                  "action": "Tries update_step done on a step no tool worked on this turn",
+                  "approval": false
+                },
+                {
+                  "actor": "system",
+                  "action": "Refuses with the reason; the step stays todo and Muse tells the user what it needs",
+                  "approval": false
+                }
+              ]
+            }
+          ],
+          "risks": [
+            "The tool description and guidance say 3-6 steps, but create_goal keeps up to 8; the model and the code disagree on the limit."
+          ],
+          "openQuestions": [],
+          "limitations": [
+            "Carried over from the previous spec at docs/specs/goals.md (API layer); its server-side behaviour is not re-cited here."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 9,
+          "verified": 9
+        },
+        "checkedAt": "2026-11-21T20:19:42.855Z"
+      }
+    },
+    {
+      "id": "daily-check-in",
+      "name": "Daily check-in",
+      "summary": "A background check-in, from a button or once a day, where Muse reviews goals and connected services, acts where it can and leaves a progress brief.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/workflow/checkin.js"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    },
+    {
+      "id": "ideas",
+      "name": "Ideas",
+      "summary": "Muse captures ideas from the conversation and suggests turning them into goals.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/ideas",
+        "route:api/ideas",
+        "module:server/ideas.js",
+        "doc:docs/specs/ideas.md"
+      ],
+      "spec": {
+        "status": "not_checked",
+        "existingDoc": "docs/specs/ideas.md"
+      }
+    },
+    {
+      "id": "library",
+      "name": "Library",
+      "summary": "Upload documents (text extracted and stored in Postgres) that Muse searches and cites.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/library",
+        "route:api/docs",
+        "module:server/docs.js",
+        "module:server/extract.js",
+        "doc:docs/specs/library.md"
+      ],
+      "spec": {
+        "status": "not_checked",
+        "existingDoc": "docs/specs/library.md"
+      }
+    },
+    {
+      "id": "connectors",
+      "name": "Connectors",
+      "summary": "Gmail, Google Calendar and Contacts connectors (Google OAuth, or sample data) that give Muse mail, calendar and contact tools.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/connectors",
+        "route:api/google.js",
+        "module:server/google.js",
+        "module:server/google-route.js",
+        "doc:docs/specs/connectors.md"
+      ],
+      "spec": {
+        "status": "not_checked",
+        "existingDoc": "docs/specs/connectors.md"
+      }
+    },
+    {
+      "id": "memory",
+      "name": "Memory",
+      "summary": "Muse remembers and forgets facts about the user on request, shown and editable in Settings.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/memory"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    },
+    {
+      "id": "web-search",
+      "name": "Web search",
+      "summary": "Muse searches the web and opens pages through the server.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/web",
+        "route:api/web",
+        "module:server/web.js"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    },
+    {
+      "id": "browser-bridge",
+      "name": "Browser bridge",
+      "summary": "A Chrome extension lets Muse open, read and fill pages in the user's browser, such as job applications.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/browser",
+        "module:chrome-extension"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    },
+    {
+      "id": "settings",
+      "name": "Settings",
+      "summary": "Settings page with memory, the activity audit and a reset.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/settings"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    },
+    {
+      "id": "how-muse-works",
+      "name": "How Muse works",
+      "summary": "A panel showing the agent loop's phases, the live tool list and recent activity.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/hood"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    },
+    {
+      "id": "observability",
+      "name": "Observability",
+      "summary": "Records agent turns as traces in Postgres and shows them as a span waterfall with prompts, tokens and tool calls.",
+      "status": "built",
+      "anchors": [
+        "module:public/js/features/observability",
+        "route:api/trace.js",
+        "module:server/trace.js",
+        "module:server/trace-core.js",
+        "module:server/trace-node.js",
+        "module:server/trace-store.js"
+      ],
+      "spec": {
+        "status": "not_started"
+      }
+    }
+  ]
+}

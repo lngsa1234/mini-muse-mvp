@@ -1,3 +1,9 @@
+---
+status: accepted
+paths:
+  - public/js/agent
+---
+
 # ADR-0001: Run the agent loop in the browser, not on the server
 
 **Date**: 2026-11-18
