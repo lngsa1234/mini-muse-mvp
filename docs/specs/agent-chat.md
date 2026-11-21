@@ -1,14 +1,14 @@
 ---
-title: Agent Chat
+title: Agent chat
 type: Feature spec
 featureId: agent-chat
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
-# Agent Chat
+# Agent chat
 
-_Written by Maya from the code on 2026-11-17. It describes the feature as built._
+_Written by Maya from the code on 2026-11-21. It describes the feature as built._
 
 ## Summary
 
@@ -74,7 +74,7 @@ The Chat page has a message log, an examples welcome screen, and a composer. Sub
 - **AC5** ✓ (API): Given A request carries tier "default" or any other value, when The proxy builds the upstream request, then "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored..
   - `server/routing.js:31`: `const tier = body && body.tier === "default" ? "default" : "quick";`
   - `server/proxy.js:19`: `Strip our 'tier' field and any client-sent model`
-- **AC6** ✓ (web): Given The provider returns HTTP 429, when A turn runs, then The assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.'.
+- **AC6** ✓ (web): Given The provider returns HTTP 429, when A turn runs, then The assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.'..
   - `public/js/agent/transport.js:30`: `res.status === 429) code = "rate_limited"`
   - `public/js/agent/errors.js:5`: `Muse hit a usage limit. Wait a minute, then send again.`
 - **AC7** ✓ (web): Given The chat is empty, when The Chat page renders, then A welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle..
@@ -85,7 +85,7 @@ The Chat page has a message log, an examples welcome screen, and a composer. Sub
   - `public/js/features/chat/chat.js:23`: `Don't allow</button>`
 - **AC9** ✓ (web): Given The user asks to apply for a job and the message is not an email request, when The model is called, then mail_search and mail_send are removed from the tools offered for that turn..
   - `public/js/agent/run.js:160`: `tool.name !== "mail_search" && tool.name !== "mail_send"`
-- **AC10** ✓ (web): Given A reply stops because of the token limit, when The turn finishes, then The message shows 'The reply was cut short. Ask for less at once.'.
+- **AC10** ✓ (web): Given A reply stops because of the token limit, when The turn finishes, then The message shows 'The reply was cut short. Ask for less at once.'..
   - `public/js/agent/run.js:169`: `The reply was cut short. Ask for less at once.`
 
 ## Risks

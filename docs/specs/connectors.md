@@ -8,7 +8,7 @@ owner: Product Manager (Maya)
 
 # Connectors
 
-_Written by Maya from the code on 2026-11-17. It describes the feature as built._
+_Written by Maya from the code on 2026-11-21. It describes the feature as built._
 
 ## Summary
 
@@ -59,21 +59,21 @@ The Connectors page (public/js/features/connectors) lists three connectors: Gmai
 
 ## Acceptance criteria
 
-- **AC1** ✓ (web): Given A connector is not connected, when The user clicks Continue with Google in the consent panel, then The browser navigates to /api/google/authorize.
+- **AC1** ✓ (web): Given A connector is not connected, when The user clicks Continue with Google in the consent panel, then The browser navigates to /api/google/authorize..
   - `public/js/features/connectors/index.js:51`: `window.location.assign("/api/google/authorize")`
-- **AC2** ✓ (web): Given The Gmail connector is connected, when The user views its permission controls, then The Allow button is disabled with the note that sending email always needs approval.
+- **AC2** ✓ (web): Given The Gmail connector is connected, when The user views its permission controls, then The Allow button is disabled with the note that sending email always needs approval..
   - `public/js/features/connectors/index.js:37`: `Sending email always needs your approval.`
-- **AC3** ✓ (web): Given The Google status endpoint reports connected, when initConnectors runs at boot or after the redirect, then Both Gmail and Calendar are marked on together.
+- **AC3** ✓ (web): Given The Google status endpoint reports connected, when initConnectors runs at boot or after the redirect, then Both Gmail and Calendar are marked on together..
   - `public/js/features/connectors/index.js:77`: `for (const key of ["mail", "calendar"]) state.connectors[key].on = on;`
-- **AC4** ✓ (web): Given Google is connected, when The user clicks Disconnect Google, then Gmail and Calendar are turned off and the disconnect is audited.
+- **AC4** ✓ (web): Given Google is connected, when The user clicks Disconnect Google, then Gmail and Calendar are turned off and the disconnect is audited..
   - `public/js/features/connectors/index.js:55`: `Disconnected Gmail and Google Calendar · tools removed`
-- **AC5** ✓ (web): Given Gmail is connected and Muse calls mail_send, when The tool runs, then An approval card asks the user to allow the send, and the message is sent only after approval.
+- **AC5** ✓ (web): Given Gmail is connected and Muse calls mail_send, when The tool runs, then An approval card asks the user to allow the send, and the message is sent only after approval..
   - `public/js/features/connectors/mail.js:13`: `Muse wants to send this Gmail message. Allow it?`
-- **AC6** ✓ (web): Given Calendar permission is Ask me first, when Muse calls calendar_add, then An approval card shows the event and time before the event is added.
+- **AC6** ✓ (web): Given Calendar permission is Ask me first, when Muse calls calendar_add, then An approval card shows the event and time before the event is added..
   - `public/js/features/connectors/calendar.js:13`: `Muse wants to add this to Google Calendar. Allow it?`
-- **AC7** ✓ (web): Given Contacts include the two seeded example contacts, when Muse calls contacts_lookup with a name that matches nobody, then The tool returns 'No contact found.'.
+- **AC7** ✓ (web): Given Contacts include the two seeded example contacts, when Muse calls contacts_lookup with a name that matches nobody, then The tool returns 'No contact found.'..
   - `public/js/features/connectors/contacts.js:40`: `"No contact found."`
-- **AC8** ✓ (API): Given The Google routes are served, when The client requests Gmail search, then POST /api/google/mail/search is handled by the Google module.
+- **AC8** ✓ (API): Given The Google routes are served, when The client requests Gmail search, then POST /api/google/mail/search is handled by the Google module..
   - `server/index.js:88`: `app.post("/api/google/mail/search"`
 
 ## Risks

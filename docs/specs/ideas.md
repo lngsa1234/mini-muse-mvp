@@ -8,7 +8,7 @@ owner: Product Manager (Maya)
 
 # Ideas
 
-_Written by Maya from the code on 2026-11-17. It describes the feature as built._
+_Written by Maya from the code on 2026-11-21. It describes the feature as built._
 
 ## Summary
 
@@ -57,28 +57,28 @@ The API has GET and POST on /api/ideas, and PATCH and DELETE on /api/ideas/:id. 
 
 ## Acceptance criteria
 
-- **AC1** ✓ (API): Given An API client, when it POSTs /api/ideas with a blank or missing title, then the response is 400 with 'title is required'.
+- **AC1** ✓ (API): Given An API client, when it POSTs /api/ideas with a blank or missing title, then the response is 400 with 'title is required'..
   - `server/ideas.js:19`: `if (!title) return err(400, "title is required");`
-- **AC2** ✓ (API): Given An API client, when it POSTs a valid idea, then the response is 201 with the created idea, and the title is capped at 200 characters.
+- **AC2** ✓ (API): Given An API client, when it POSTs a valid idea, then the response is 201 with the created idea, and the title is capped at 200 characters..
   - `server/ideas.js:21`: `title: title.slice(0, TITLE_CAP),`
-- **AC3** ✓ (API): Given An idea id that does not exist for the user, when the client sends PATCH or DELETE, then the response is 404 'no such idea'.
+- **AC3** ✓ (API): Given An idea id that does not exist for the user, when the client sends PATCH or DELETE, then the response is 404 'no such idea'..
   - `server/ideas.js:38`: `if (!idea) return err(404, "no such idea");`
   - `server/ideas.js:44`: `if (!removed) return err(404, "no such idea");`
-- **AC4** ✓ (API): Given An unsupported HTTP method on /api/ideas, when the request is made, then the response is 405 'method not allowed'.
+- **AC4** ✓ (API): Given An unsupported HTTP method on /api/ideas, when the request is made, then the response is 405 'method not allowed'..
   - `api/ideas/index.js:23`: `return send(res, { status: 405, json: { error: "method not allowed" } });`
-- **AC5** ✓ (web): Given A user opens the Ideas page and has no 'new' ideas, when the page renders, then rule-based starter ideas appear under 'Starter ideas'.
-  - `public/js/features/ideas/ideas.js:51`: `['Starter ideas <span>${gen.busy ? "Muse is personalizing these…" : "from simple rules"}</span>', ruleIdeas()]`
-- **AC6** ✓ (web): Given A user with an active LLM session, when they press 'Update with Muse', then Muse creates ideas with status 'new', and the page shows them under 'New from Muse'.
+- **AC5** ✓ (web): Given A user opens the Ideas page and has no 'new' ideas, when the page renders, then rule-based starter ideas appear under 'Starter ideas'..
+  - `public/js/features/ideas/ideas.js:51`: `Starter ideas <span>${gen.busy ? "Muse is personalizing these…" : "from simple rules"}</span>`
+- **AC6** ✓ (web): Given A user with an active LLM session, when they press 'Update with Muse', then Muse creates ideas with status 'new', and the page shows them under 'New from Muse'..
   - `public/js/features/ideas/ideas.js:93`: `status: "new", by: "muse" }));`
   - `public/js/features/ideas/ideas.js:50`: `'New from Muse <span>updated`
-- **AC7** ✓ (web): Given A stored idea, when the user presses Save, then its status is set to 'saved' and it moves to the Saved group.
+- **AC7** ✓ (web): Given A stored idea, when the user presses Save, then its status is set to 'saved' and it moves to the Saved group..
   - `public/js/features/ideas/ideas.js:131`: `replaceIdea(i = await updateIdea(i.id, { status: "saved" }))`
-- **AC8** ✓ (web): Given An idea card, when the user presses 'Not for me' on a stored idea, then its status becomes dismissed and the card disappears.
+- **AC8** ✓ (web): Given An idea card, when the user presses 'Not for me' on a stored idea, then its status becomes dismissed and the card disappears..
   - `public/js/features/ideas/ideas.js:137`: `replaceIdea(await updateIdea(i.id, { status: "dismissed" }))`
   - `public/js/features/ideas/ideas.js:47`: `filter(i => ideaStatus(i) !== "dismissed")`
-- **AC9** ✓ (web): Given An idea card, when the user presses 'Do it', then the idea is marked done and Muse is sent a message to carry it out.
+- **AC9** ✓ (web): Given An idea card, when the user presses 'Do it', then the idea is marked done and Muse is sent a message to carry it out..
   - `public/js/features/ideas/ideas.js:120`: `updateIdea(i.id, { status: "done" })`
-- **AC10** ✓ (web): Given A chat where the user shares an idea, when Muse calls save_idea with a title already on the page, then nothing is created and the tool replies 'Already on the Ideas page.'.
+- **AC10** ✓ (web): Given A chat where the user shares an idea, when Muse calls save_idea with a title already on the page, then nothing is created and the tool replies 'Already on the Ideas page.'..
   - `public/js/features/ideas/ideas.js:158`: `return "Already on the Ideas page.";`
 
 ## Risks

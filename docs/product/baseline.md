@@ -9,7 +9,7 @@ status: Checked
 
 _What the product is today, written by Maya from the code on 2026-11-21. Each feature's detail is in its spec._
 
-**At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **2** checked against the code, 4 in progress, 7 not written
+**At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **13** checked against the code, 0 in progress, 0 not written
 
 ## Summary
 
@@ -27,9 +27,9 @@ What users set out to do, end to end. Each journey runs through several features
 
 | Journey | Priority | Features it runs through |
 |---|---|---|
-| [J1 Land interviews within a deadline](#j1-land-interviews-within-a-deadline) | P1 | [Goals](../specs/goals.md), [Library](../specs/library.md), Browser bridge, [Approvals](../specs/tool-approvals.md), [Connectors](../specs/connectors.md) |
+| [J1 Land interviews within a deadline](#j1-land-interviews-within-a-deadline) | P1 | [Goals](../specs/goals.md), [Library](../specs/library.md), [Browser bridge](../specs/browser-bridge.md), [Approvals](../specs/tool-approvals.md), [Connectors](../specs/connectors.md) |
 | [J2 Find and judge jobs from chat](#j2-find-and-judge-jobs-from-chat) | P1 | [Agent chat](../specs/agent-chat.md), [Goals](../specs/goals.md), [Library](../specs/library.md) |
-| [J3 Let Muse work on my goals while I'm away](#j3-let-muse-work-on-my-goals-while-i-m-away) | P1 | Daily check-in, [Connectors](../specs/connectors.md), [Goals](../specs/goals.md), [Agent chat](../specs/agent-chat.md) |
+| [J3 Let Muse work on my goals while I'm away](#j3-let-muse-work-on-my-goals-while-i-m-away) | P1 | [Daily check-in](../specs/daily-check-in.md), [Connectors](../specs/connectors.md), [Goals](../specs/goals.md), [Agent chat](../specs/agent-chat.md) |
 | [J4 Get answers from my own documents](#j4-get-answers-from-my-own-documents) | P2 | [Library](../specs/library.md), [Agent chat](../specs/agent-chat.md) |
 | [J5 Email someone without leaving the chat](#j5-email-someone-without-leaving-the-chat) | P2 | [Agent chat](../specs/agent-chat.md), [Connectors](../specs/connectors.md), [Approvals](../specs/tool-approvals.md) |
 | [J6 Turn an idea into a goal](#j6-turn-an-idea-into-a-goal) | P3 | [Ideas](../specs/ideas.md), [Goals](../specs/goals.md) |
@@ -86,10 +86,10 @@ flowchart LR
 | 2 | Mini Muse | Creates the goal with a plan, a target count and a deadline (create_goal) | [Goals](../specs/goals.md) |
 | 3 | Mini Muse | Finds openings on employers' hiring sites (jobs_search) and scores the best against the résumé (score_fit) | [Goals](../specs/goals.md) |
 | 4 | Mini Muse | Saves a tailored résumé or cover letter to the Library (docs_add) | [Library](../specs/library.md) |
-| 5 | Mini Muse | Fills the chosen application in the user's Chrome tab (browser_fill) | Browser bridge |
+| 5 | Mini Muse | Fills the chosen application in the user's Chrome tab (browser_fill) | [Browser bridge](../specs/browser-bridge.md) |
 | 6 | System | Shows an approval card for the Submit click | [Approvals](../specs/tool-approvals.md) |
-| 7 | Job seeker | ✋ Approves: clicks Submit | Browser bridge |
-| 8 | Mini Muse | Clicks Submit | Browser bridge |
+| 7 | Job seeker | ✋ Approves: clicks Submit | [Browser bridge](../specs/browser-bridge.md) |
+| 8 | Mini Muse | Clicks Submit | [Browser bridge](../specs/browser-bridge.md) |
 | 9 | Mini Muse | Finds the confirmation in Gmail and marks the job applied (track_application) | [Connectors](../specs/connectors.md) |
 
 **Done when:** The goal shows applications and interviews against the target, with the days left.
@@ -176,7 +176,7 @@ flowchart LR
 
 | # | Who | Step | Feature |
 |---|---|---|---|
-| 1 | System | Starts the check-in once a day | Daily check-in |
+| 1 | System | Starts the check-in once a day | [Daily check-in](../specs/daily-check-in.md) |
 | 2 | Mini Muse | Searches Gmail for application confirmations and employer replies (mail_search) | [Connectors](../specs/connectors.md) |
 | 3 | Mini Muse | Updates tracked applications the emails prove, and searches for more if behind pace | [Goals](../specs/goals.md) |
 | 4 | Mini Muse | Leaves a three-line progress brief and what needs the user's decision | [Agent chat](../specs/agent-chat.md) |
@@ -320,19 +320,19 @@ flowchart LR
 
 | Feature | Spec |
 |---|---|
-| [Agent chat](../specs/agent-chat.md) | Written, not checked yet |
+| [Agent chat](../specs/agent-chat.md) | ✓ Checked against the code |
 | [Approvals](../specs/tool-approvals.md) | ✓ Checked against the code |
 | [Goals](../specs/goals.md) | ✓ Checked against the code |
-| Daily check-in | Not written yet |
-| [Ideas](../specs/ideas.md) | Written, not checked yet |
-| [Library](../specs/library.md) | Written, not checked yet |
-| [Connectors](../specs/connectors.md) | Written, not checked yet |
-| Memory | Not written yet |
-| Web search | Not written yet |
-| Browser bridge | Not written yet |
-| Settings | Not written yet |
-| How Muse works | Not written yet |
-| Observability | Not written yet |
+| [Daily check-in](../specs/daily-check-in.md) | ✓ Checked against the code |
+| [Ideas](../specs/ideas.md) | ✓ Checked against the code |
+| [Library](../specs/library.md) | ✓ Checked against the code |
+| [Connectors](../specs/connectors.md) | ✓ Checked against the code |
+| [Memory](../specs/memory.md) | ✓ Checked against the code |
+| [Web search](../specs/web-search.md) | ✓ Checked against the code |
+| [Browser bridge](../specs/browser-bridge.md) | ✓ Checked against the code |
+| [Settings](../specs/settings.md) | ✓ Checked against the code |
+| [How Muse works](../specs/how-muse-works.md) | ✓ Checked against the code |
+| [Observability](../specs/observability.md) | ✓ Checked against the code |
 
 ## Gaps and open questions
 

@@ -16,8 +16,271 @@
         "doc:docs/specs/agent-chat.md"
       ],
       "spec": {
-        "status": "not_checked",
-        "existingDoc": "docs/specs/agent-chat.md"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given The chat composer is focused with text entered, when The user presses Enter without Shift, then The form is submitted and the message is sent; Shift+Enter does not send..",
+          "AC2: Given A turn is in progress, when The user clicks Stop, then The request is aborted. No error banner is shown for the cancellation..",
+          "AC3: Given The model replies with tool calls, when A turn runs, then Each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached..",
+          "AC4: Given The server has no OPENAI_API_KEY, when The browser calls /api/llm, then The server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message \"The assistant isn't available on this account…\"..",
+          "AC5: Given A request carries tier \"default\" or any other value, when The proxy builds the upstream request, then \"default\" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored..",
+          "AC6: Given The provider returns HTTP 429, when A turn runs, then The assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.'..",
+          "AC7: Given The chat is empty, when The Chat page renders, then A welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle..",
+          "AC8: Given A tool action needs approval, when The assistant message renders, then A card with the heading, detail rows, and Allow / Don't allow buttons is shown..",
+          "AC9: Given The user asks to apply for a job and the message is not an email request, when The model is called, then mail_search and mail_send are removed from the tools offered for that turn..",
+          "AC10: Given A reply stops because of the token limit, when The turn finishes, then The message shows 'The reply was cut short. Ask for less at once.'.."
+        ],
+        "document": {
+          "objective": "Agent Chat lets a user type a request to the Muse assistant. The assistant answers with streamed text and runs tools (Library, goals, connectors, browser bridge) on the user's behalf. Sensitive actions show as approval cards.",
+          "summary": "The Chat page has a message log, an examples welcome screen, and a composer. Submitting a message calls run() in public/js/agent/run.js. run() pushes the user message and a live assistant placeholder, starts a trace, builds the tools and prompt, and calls the agent loop. Before the model is called, run() applies deterministic shortcuts: Library verification for document goal steps, a job-research nudge, and opening an application link in Chrome. The loop in agent/loop.js POSTs the conversation and tool definitions to /api/llm through transport.js. It streams the SSE reply into the message, executes any requested tools locally, feeds the results back, and repeats up to 12 steps. The server proxy (server/proxy.js) injects the API key and maps the tier (Fast = quick, Thorough = default) to a model, so the browser never names a model. Errors map to user-facing messages. This spec describes the code as read; QA has not verified it.",
+          "userStories": [
+            "As a user, I want to send a message and see Muse's reply stream in, so that I get answers without waiting for the full response.",
+            "As a user, I want to stop a response in progress, so that I can cancel a turn I no longer want.",
+            "As a user, I want clear error messages when the assistant is unavailable or rate-limited, so that I know how to recover.",
+            "As a user, I want example prompts on an empty chat, so that I can see what Muse can do.",
+            "As a user, I want to see which tools Muse ran and to approve sensitive actions, so that I stay in control."
+          ],
+          "inScope": [
+            "Chat page rendering: welcome screen with example chips, message log, tool-activity rows, approval cards",
+            "Composer: Enter to send, Shift+Enter for newline, Stop button that cancels the in-flight turn",
+            "Agent loop: streaming, tool execution, 12-step cap, truncation notice",
+            "LLM proxy: server-side key injection and tier-to-model routing",
+            "Error-to-message mapping",
+            "Pre-model intent shortcuts in run.js: document-step verification, job-research nudge, open application link"
+          ],
+          "outOfScope": [
+            "Internals of individual tools, such as Library, Goals, Ideas, Gmail and the Chrome extension",
+            "Approval workflow logic in workflow/approvals.js (not read)",
+            "Prompt content in agent/prompt.js and the intent regexes in agent/intent.js (not read in detail)",
+            "Tracing and observability backend",
+            "Settings page, memory and reset"
+          ],
+          "functionalRequirements": [
+            "Pressing Enter without Shift submits the composer text; Shift+Enter inserts a newline; empty text or a busy state does nothing.",
+            "While a turn runs, the Send button is hidden, the Stop button is shown, and the input and check-in button are disabled.",
+            "The agent loop repeats model calls while the model requests tools, up to 12 steps.",
+            "Tool errors and unknown tools are returned to the model as 'Error: …' tool results instead of crashing the turn.",
+            "The browser sends only a tier; the server pins the model (quick = gpt-4o-mini, default = gpt-4o unless overridden by env).",
+            "If the server has no API key, the proxy returns 503 code no_api_key and the UI shows the 'assistant isn't available' message and disables the composer.",
+            "A reply that ends at the token limit shows 'The reply was cut short. Ask for less at once.'",
+            "Pending approvals are rendered as cards with Allow and Don't allow buttons.",
+            "When the user asks to apply, the Gmail tools (mail_search, mail_send) are withheld from the model for that turn."
+          ],
+          "acceptanceCriteria": [
+            {
+              "surface": "web",
+              "given": "The chat composer is focused with text entered",
+              "when": "The user presses Enter without Shift",
+              "then": "The form is submitted and the message is sent; Shift+Enter does not send.",
+              "evidence": [
+                {
+                  "path": "public/js/features/chat/chat.js",
+                  "startLine": 67,
+                  "endLine": 67,
+                  "quote": "e.key === \"Enter\" && !e.shiftKey && !e.isComposing"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A turn is in progress",
+              "when": "The user clicks Stop",
+              "then": "The request is aborted. No error banner is shown for the cancellation.",
+              "evidence": [
+                {
+                  "path": "public/js/features/chat/chat.js",
+                  "startLine": 69,
+                  "endLine": 69,
+                  "quote": "rt.ctl?.abort()"
+                },
+                {
+                  "path": "public/js/agent/run.js",
+                  "startLine": 174,
+                  "endLine": 174,
+                  "quote": "if (e?.code !== \"cancelled\")"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "The model replies with tool calls",
+              "when": "A turn runs",
+              "then": "Each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached.",
+              "evidence": [
+                {
+                  "path": "public/js/agent/loop.js",
+                  "startLine": 8,
+                  "endLine": 8,
+                  "quote": "export const MAX_STEPS = 12;"
+                },
+                {
+                  "path": "public/js/agent/loop.js",
+                  "startLine": 102,
+                  "endLine": 102,
+                  "quote": "const out = await tool.execute(tu.input, { signal });"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "The server has no OPENAI_API_KEY",
+              "when": "The browser calls /api/llm",
+              "then": "The server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message \"The assistant isn't available on this account…\".",
+              "evidence": [
+                {
+                  "path": "server/proxy.js",
+                  "startLine": 16,
+                  "endLine": 16,
+                  "quote": "status: 503, body: { code: \"no_api_key\""
+                },
+                {
+                  "path": "public/js/agent/transport.js",
+                  "startLine": 27,
+                  "endLine": 27,
+                  "quote": "if (serverCode === \"no_api_key\") code = \"sampling_disabled\";"
+                },
+                {
+                  "path": "public/js/agent/run.js",
+                  "startLine": 175,
+                  "endLine": 175,
+                  "quote": "disableChat(ERR[e.code])"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "A request carries tier \"default\" or any other value",
+              "when": "The proxy builds the upstream request",
+              "then": "\"default\" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored.",
+              "evidence": [
+                {
+                  "path": "server/routing.js",
+                  "startLine": 31,
+                  "endLine": 31,
+                  "quote": "const tier = body && body.tier === \"default\" ? \"default\" : \"quick\";"
+                },
+                {
+                  "path": "server/proxy.js",
+                  "startLine": 19,
+                  "endLine": 19,
+                  "quote": "Strip our 'tier' field and any client-sent model"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "The provider returns HTTP 429",
+              "when": "A turn runs",
+              "then": "The assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.'.",
+              "evidence": [
+                {
+                  "path": "public/js/agent/transport.js",
+                  "startLine": 30,
+                  "endLine": 30,
+                  "quote": "res.status === 429) code = \"rate_limited\""
+                },
+                {
+                  "path": "public/js/agent/errors.js",
+                  "startLine": 5,
+                  "endLine": 5,
+                  "quote": "Muse hit a usage limit. Wait a minute, then send again."
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "The chat is empty",
+              "when": "The Chat page renders",
+              "then": "A welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle.",
+              "evidence": [
+                {
+                  "path": "public/js/features/chat/chat.js",
+                  "startLine": 40,
+                  "endLine": 40,
+                  "quote": "Tell Muse what you want done"
+                },
+                {
+                  "path": "public/js/features/chat/chat.js",
+                  "startLine": 71,
+                  "endLine": 71,
+                  "quote": "if (rt.sample && !rt.busy) $(\"form\").requestSubmit();"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A tool action needs approval",
+              "when": "The assistant message renders",
+              "then": "A card with the heading, detail rows, and Allow / Don't allow buttons is shown.",
+              "evidence": [
+                {
+                  "path": "public/js/features/chat/chat.js",
+                  "startLine": 19,
+                  "endLine": 19,
+                  "quote": "a.approval === \"pending\" && a.card"
+                },
+                {
+                  "path": "public/js/features/chat/chat.js",
+                  "startLine": 23,
+                  "endLine": 23,
+                  "quote": "Don't allow</button>"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "The user asks to apply for a job and the message is not an email request",
+              "when": "The model is called",
+              "then": "mail_search and mail_send are removed from the tools offered for that turn.",
+              "evidence": [
+                {
+                  "path": "public/js/agent/run.js",
+                  "startLine": 160,
+                  "endLine": 160,
+                  "quote": "tool.name !== \"mail_search\" && tool.name !== \"mail_send\""
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A reply stops because of the token limit",
+              "when": "The turn finishes",
+              "then": "The message shows 'The reply was cut short. Ask for less at once.'.",
+              "evidence": [
+                {
+                  "path": "public/js/agent/run.js",
+                  "startLine": 169,
+                  "endLine": 169,
+                  "quote": "The reply was cut short. Ask for less at once."
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "run.js uses regex intent heuristics (affirmations, 'again', 'continue') to force deterministic paths, and these may misfire on ordinary messages.",
+            "The 12-step cap ends a turn with whatever text exists, and the user gets no specific notice.",
+            "The composer note says 'Connectors use sample data; nothing leaves this page', which may contradict the real Gmail/Google connectors and the server-side LLM calls.",
+            "Chat history is persisted client-side via save(). I did not check how large it can grow or how it is protected.",
+            "No test or QA evidence for this feature was reviewed, so it is shipped but unverified."
+          ],
+          "openQuestions": [
+            "Is the 'Connectors use sample data' note still accurate now that Google OAuth connectors exist?",
+            "Should the user be told when the 12-step cap is reached?",
+            "Is /api/llm protected by authentication or rate limiting? server/auth.js was not read."
+          ],
+          "limitations": [
+            "I did not read prompt.js, tools.js, intent.js, policy.js, core/*, workflow/approvals.js, server/index.js or api/llm.js.",
+            "The clickable-link rendering (core/format.js rich) was not read.",
+            "No tests were read, so nothing here is verified by QA.",
+            "The quotes were copied from the numbered lines I read, but I did not run the app."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 10,
+          "verified": 10
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -179,7 +442,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-21T20:19:42.855Z"
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -438,7 +701,7 @@
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-21T20:19:42.855Z"
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -450,7 +713,175 @@
         "module:public/js/workflow/checkin.js"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given the Goals page is open, when the user clicks the check-in button, then Muse runs a check-in turn.",
+          "AC2: Given \"Every day\" is on and a check-in already ran today, when the five-minute timer fires, then no second check-in runs that day.",
+          "AC3: Given \"Every day\" is on and it is before 9am, when the timer fires, then the check-in waits until 9am.",
+          "AC4: Given \"Every day\" is on but Muse is busy or there are no goals, when the timer fires, then no check-in runs.",
+          "AC5: Given a check-in runs, when Muse gets its instruction, then it is told the user is away and not to send emails.",
+          "AC6: Given a check-in finishes, when Muse writes its reply, then it leaves a three-line progress brief and what needs the user's decision."
+        ],
+        "document": {
+          "objective": "Lets Muse work on the user's goals while they're away: once a day, or from a button, it reviews goals, ideas and connected services, does what it can without the user, and leaves a short progress brief in chat.",
+          "summary": "The check-in is an agent turn with a fixed instruction: check Gmail for application confirmations and replies, update tracked applications, work out pace against a job-search target, search for more postings when behind, never send email or submit applications, and end with a three-line brief. With \"Every day\" on, it runs once a day from 9am while the app is open and Muse is free, checked every five minutes and shortly after the app opens.",
+          "userStories": [
+            "As a job seeker, I want Muse to make progress on my goals each day without me asking, so that I don't fall behind.",
+            "As a user, I want a short brief of what changed and what needs my decision when I come back."
+          ],
+          "inScope": [
+            "The check-in button and the \"Every day\" setting",
+            "When the daily check-in runs",
+            "What the check-in instruction asks Muse to do and not do"
+          ],
+          "outOfScope": [
+            "A server-side scheduler (the app must be open)",
+            "The goal and connector tools the check-in uses (their own specs)"
+          ],
+          "functionalRequirements": [
+            "The system runs a check-in when the user clicks the check-in button.",
+            "The system runs the daily check-in at most once a day, after 9am, only when it is switched on, Muse is free, and there is at least one goal.",
+            "The system tells Muse not to send emails or submit applications during a check-in."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "the Goals page is open",
+              "when": "the user clicks the check-in button",
+              "then": "Muse runs a check-in turn",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/checkin.js",
+                  "startLine": 41,
+                  "endLine": 41,
+                  "quote": "$(\"checkinBtn\").addEventListener(\"click\", runCheckin);"
+                }
+              ]
+            },
+            {
+              "given": "\"Every day\" is on and a check-in already ran today",
+              "when": "the five-minute timer fires",
+              "then": "no second check-in runs that day",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/checkin.js",
+                  "startLine": 29,
+                  "endLine": 29,
+                  "quote": "if (!p.dailyCheckin || p.lastCheckin === today() || now.getHours() < START_HOUR) return false;"
+                }
+              ]
+            },
+            {
+              "given": "\"Every day\" is on and it is before 9am",
+              "when": "the timer fires",
+              "then": "the check-in waits until 9am",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/checkin.js",
+                  "startLine": 18,
+                  "endLine": 18,
+                  "quote": "const START_HOUR = 9;"
+                }
+              ]
+            },
+            {
+              "given": "\"Every day\" is on but Muse is busy or there are no goals",
+              "when": "the timer fires",
+              "then": "no check-in runs",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/checkin.js",
+                  "startLine": 30,
+                  "endLine": 30,
+                  "quote": "if (!rt.sample || rt.busy || !state.plans.length) return false;"
+                }
+              ]
+            },
+            {
+              "given": "a check-in runs",
+              "when": "Muse gets its instruction",
+              "then": "it is told the user is away and not to send emails",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/checkin.js",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "quote": "the user is away. Review my goals, ideas, and any connected services"
+                }
+              ]
+            },
+            {
+              "given": "a check-in finishes",
+              "when": "Muse writes its reply",
+              "then": "it leaves a three-line progress brief and what needs the user's decision",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/workflow/checkin.js",
+                  "startLine": 16,
+                  "endLine": 16,
+                  "quote": "Then write a progress brief of 3 short lines, list what needs my decision"
+                }
+              ]
+            }
+          ],
+          "scenarios": [
+            {
+              "title": "Daily progress while away",
+              "kind": "main",
+              "steps": [
+                {
+                  "actor": "system",
+                  "action": "Starts the check-in after 9am, once that day",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Checks Gmail for confirmations and replies, and updates tracked applications",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Leaves a three-line brief and what needs the user's decision",
+                  "approval": false
+                }
+              ]
+            },
+            {
+              "title": "App closed",
+              "kind": "failure",
+              "steps": [
+                {
+                  "actor": "system",
+                  "action": "Has no timer running because the app is closed",
+                  "approval": false
+                },
+                {
+                  "actor": "system",
+                  "action": "Runs the check-in the next time the app is open after 9am",
+                  "approval": false
+                }
+              ]
+            }
+          ],
+          "risks": [
+            "The check-in only runs while the app is open in a browser tab."
+          ],
+          "openQuestions": [
+            "Is a server-side scheduler planned so check-ins run with the app closed?"
+          ],
+          "limitations": []
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 6,
+          "verified": 6
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -465,8 +896,240 @@
         "doc:docs/specs/ideas.md"
       ],
       "spec": {
-        "status": "not_checked",
-        "existingDoc": "docs/specs/ideas.md"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given An API client, when it POSTs /api/ideas with a blank or missing title, then the response is 400 with 'title is required'..",
+          "AC2: Given An API client, when it POSTs a valid idea, then the response is 201 with the created idea, and the title is capped at 200 characters..",
+          "AC3: Given An idea id that does not exist for the user, when the client sends PATCH or DELETE, then the response is 404 'no such idea'..",
+          "AC4: Given An unsupported HTTP method on /api/ideas, when the request is made, then the response is 405 'method not allowed'..",
+          "AC5: Given A user opens the Ideas page and has no 'new' ideas, when the page renders, then rule-based starter ideas appear under 'Starter ideas'..",
+          "AC6: Given A user with an active LLM session, when they press 'Update with Muse', then Muse creates ideas with status 'new', and the page shows them under 'New from Muse'..",
+          "AC7: Given A stored idea, when the user presses Save, then its status is set to 'saved' and it moves to the Saved group..",
+          "AC8: Given An idea card, when the user presses 'Not for me' on a stored idea, then its status becomes dismissed and the card disappears..",
+          "AC9: Given An idea card, when the user presses 'Do it', then the idea is marked done and Muse is sent a message to carry it out..",
+          "AC10: Given A chat where the user shares an idea, when Muse calls save_idea with a title already on the page, then nothing is created and the tool replies 'Already on the Ideas page.'.."
+        ],
+        "document": {
+          "objective": "The Ideas feature gives a user a page of suggested and saved ideas, backed by a per-user ideas API. Users can save, act on, promote to goals, or dismiss ideas. Muse can also add ideas through chat.",
+          "summary": "The API has GET and POST on /api/ideas, and PATCH and DELETE on /api/ideas/:id. Both share handlers in server/ideas.js, which store ideas per user. In the browser, the Ideas page shows rule-based starter ideas until Muse generates personalised ideas (status 'new') through the LLM. Cards are grouped as New or Starter, Saved, and Acted on. The user can press Do it, Save, Make it a goal, or Not for me. Chat uses a save_idea tool to store ideas the user shares or Muse suggests.",
+          "userStories": [
+            "As a user, I want to see suggested ideas so that I get prompts for things I could do soon.",
+            "As a user, I want to save or dismiss ideas so that the list reflects what I care about.",
+            "As a user, I want to tell Muse to do an idea or turn it into a goal so that I can act on it quickly.",
+            "As a user, I want to say 'idea: ...' in chat so that Muse stores it on my Ideas page."
+          ],
+          "inScope": [
+            "Ideas REST API: list, create, update, delete",
+            "Ideas page rendering and grouping by status",
+            "Muse-generated ideas ('Update with Muse')",
+            "Starter ideas from rules, saved to the server when acted on",
+            "Card actions: Do it, Save, Make it a goal, Not for me, Remove",
+            "save_idea chat tool"
+          ],
+          "outOfScope": [
+            "Goal planning after 'Make it a goal' (Goals feature)",
+            "The content of rule-based starter ideas (rules.js not read)",
+            "Building the ideaContext prompt (context.js not read)",
+            "Database schema and auth internals"
+          ],
+          "functionalRequirements": [
+            "GET /api/ideas returns the current user's ideas as { ideas }.",
+            "POST /api/ideas requires a non-empty title, truncates it to 200 characters, and returns 201 with { idea }.",
+            "PATCH /api/ideas/:id returns the updated idea, or 404 'no such idea'.",
+            "DELETE /api/ideas/:id returns { removed: id }, or 404 when the idea is missing.",
+            "Methods other than those listed return 405 on the Vercel functions.",
+            "The Ideas page hides dismissed ideas and groups the rest into New or Starter, Saved, and Acted on (done or goal).",
+            "Update with Muse asks the LLM for 4 ideas, keeps at most 6, and saves each as status 'new' with by 'muse'.",
+            "Not for me on a starter idea only records its rule key locally; on a stored idea it sets status to dismissed.",
+            "save_idea skips a title that already exists, ignoring case, and otherwise stores the idea as saved."
+          ],
+          "acceptanceCriteria": [
+            {
+              "surface": "API",
+              "given": "An API client",
+              "when": "it POSTs /api/ideas with a blank or missing title",
+              "then": "the response is 400 with 'title is required'.",
+              "evidence": [
+                {
+                  "path": "server/ideas.js",
+                  "startLine": 19,
+                  "endLine": 19,
+                  "quote": "if (!title) return err(400, \"title is required\");"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An API client",
+              "when": "it POSTs a valid idea",
+              "then": "the response is 201 with the created idea, and the title is capped at 200 characters.",
+              "evidence": [
+                {
+                  "path": "server/ideas.js",
+                  "startLine": 21,
+                  "endLine": 21,
+                  "quote": "title: title.slice(0, TITLE_CAP),"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An idea id that does not exist for the user",
+              "when": "the client sends PATCH or DELETE",
+              "then": "the response is 404 'no such idea'.",
+              "evidence": [
+                {
+                  "path": "server/ideas.js",
+                  "startLine": 38,
+                  "endLine": 38,
+                  "quote": "if (!idea) return err(404, \"no such idea\");"
+                },
+                {
+                  "path": "server/ideas.js",
+                  "startLine": 44,
+                  "endLine": 44,
+                  "quote": "if (!removed) return err(404, \"no such idea\");"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An unsupported HTTP method on /api/ideas",
+              "when": "the request is made",
+              "then": "the response is 405 'method not allowed'.",
+              "evidence": [
+                {
+                  "path": "api/ideas/index.js",
+                  "startLine": 23,
+                  "endLine": 23,
+                  "quote": "return send(res, { status: 405, json: { error: \"method not allowed\" } });"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A user opens the Ideas page and has no 'new' ideas",
+              "when": "the page renders",
+              "then": "rule-based starter ideas appear under 'Starter ideas'.",
+              "evidence": [
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 51,
+                  "endLine": 51,
+                  "quote": "Starter ideas <span>${gen.busy ? \"Muse is personalizing these…\" : \"from simple rules\"}</span>"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A user with an active LLM session",
+              "when": "they press 'Update with Muse'",
+              "then": "Muse creates ideas with status 'new', and the page shows them under 'New from Muse'.",
+              "evidence": [
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 93,
+                  "endLine": 93,
+                  "quote": "status: \"new\", by: \"muse\" }));"
+                },
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 50,
+                  "endLine": 50,
+                  "quote": "'New from Muse <span>updated"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A stored idea",
+              "when": "the user presses Save",
+              "then": "its status is set to 'saved' and it moves to the Saved group.",
+              "evidence": [
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 131,
+                  "endLine": 131,
+                  "quote": "replaceIdea(i = await updateIdea(i.id, { status: \"saved\" }))"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "An idea card",
+              "when": "the user presses 'Not for me' on a stored idea",
+              "then": "its status becomes dismissed and the card disappears.",
+              "evidence": [
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 137,
+                  "endLine": 137,
+                  "quote": "replaceIdea(await updateIdea(i.id, { status: \"dismissed\" }))"
+                },
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 47,
+                  "endLine": 47,
+                  "quote": "filter(i => ideaStatus(i) !== \"dismissed\")"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "An idea card",
+              "when": "the user presses 'Do it'",
+              "then": "the idea is marked done and Muse is sent a message to carry it out.",
+              "evidence": [
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 120,
+                  "endLine": 120,
+                  "quote": "updateIdea(i.id, { status: \"done\" })"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "A chat where the user shares an idea",
+              "when": "Muse calls save_idea with a title already on the page",
+              "then": "nothing is created and the tool replies 'Already on the Ideas page.'.",
+              "evidence": [
+                {
+                  "path": "public/js/features/ideas/ideas.js",
+                  "startLine": 158,
+                  "endLine": 158,
+                  "quote": "return \"Already on the Ideas page.\";"
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "PATCH passes the body straight to updateIdea; server/ideas.js does no field validation (db.js not read).",
+            "The Not for me action on a starter idea is stored only in client state (skippedRules), so it may not persist across devices.",
+            "Failures to persist a status change (Do it, Save, dismiss) are silently swallowed by empty catch blocks, so the UI can drift from the server.",
+            "Muse-generated idea persistence also swallows errors, so some of the 4 to 6 ideas can be lost silently.",
+            "The page's Delete action is a soft dismissal (status dismissed). Whether the API ever hard-deletes from the UI is unclear.",
+            "No automated tests for Ideas were found in the files I read."
+          ],
+          "openQuestions": [
+            "What rules produce starter ideas, and when does the fingerprint trigger regeneration (rules.js was not read)?",
+            "How does currentUserId identify users when there is no login?",
+            "Should dismissed ideas be permanently removed, or do they still feed the 'avoid ideas like this' behavior?",
+            "Is a QA verification pass wanted? There is no QA evidence in the repository, so a QA Engineer task to verify these criteria is recommended."
+          ],
+          "limitations": [
+            "I did not read rules.js, context.js, server/db.js, db/schema.sql, core/api.js, or the tests.",
+            "The Express route wiring in server/index.js was not verified, so local server behavior is assumed to match the Vercel handlers.",
+            "Nothing was run, so all criteria are static code observations and not verified behavior."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 10,
+          "verified": 10
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -482,8 +1145,188 @@
         "doc:docs/specs/library.md"
       ],
       "spec": {
-        "status": "not_checked",
-        "existingDoc": "docs/specs/library.md"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given A signed-in user with stored documents, when The client sends GET /api/docs, then The response is 200 with { docs: [...] }..",
+          "AC2: Given A pasted-text request with title and text, when The client sends POST /api/docs, then The document is created and the response is 201 with { doc }..",
+          "AC3: Given A POST without a title, when The client sends it without a file, then The response is 400 \"title is required\"..",
+          "AC4: Given An uploaded file larger than 3MB, when The client sends POST /api/docs, then The response is 413 \"file is too large (max 3MB)\"..",
+          "AC5: Given An uploaded file that yields no text, when The client sends POST /api/docs, then The response is 422 \"no readable text could be extracted from this file\"..",
+          "AC6: Given An uploaded file with no title, when The client sends POST /api/docs, then The title defaults to the filename without its extension..",
+          "AC7: Given A document id that does not exist for the user, when The client sends DELETE /api/docs/:id, then The response is 404 \"no such document\"..",
+          "AC8: Given An unsupported HTTP method, when The client sends it to /api/docs/:id, then The response is 405.."
+        ],
+        "document": {
+          "objective": "The Library lets a user store documents (pasted text or uploaded files such as a résumé) through the /api/docs endpoints. The agent can then search and cite those documents.",
+          "summary": "The Library API is exposed as Vercel Node functions: GET and POST /api/docs, and DELETE /api/docs/:id. The local Express server shares the same handlers in server/docs.js. Each request is scoped to a user id. Pasted text needs a title and text, and the text is capped at 60,000 characters. Uploaded files arrive base64-encoded, are limited to 3MB, and have their text extracted. Only the extracted text is stored in Postgres, and the original file is not kept. I read only the API layer and server/docs.js, so the UI and agent search tools are not described here.",
+          "userStories": [
+            "As a user I want to paste or upload a document so that the agent can use it.",
+            "As a user I want to list my documents so that I can see what is stored.",
+            "As a user I want to delete a document so that it is no longer stored or searchable."
+          ],
+          "inScope": [
+            "List a user's documents",
+            "Create a document from pasted text",
+            "Create a document from an uploaded file with text extraction",
+            "Delete a document by id",
+            "Per-user scoping of document operations"
+          ],
+          "outOfScope": [
+            "Library UI and the agent's search, read and cite tools (not read)",
+            "Storage of the original uploaded file",
+            "Editing an existing document",
+            "Text extraction internals (server/extract.js, not read)",
+            "Database layer internals (server/db.js, not read)"
+          ],
+          "functionalRequirements": [
+            "GET /api/docs returns { docs } for the current user.",
+            "POST /api/docs with title and text creates a document and returns 201 with { doc }.",
+            "POST /api/docs without a title or without text returns 400.",
+            "Pasted text is truncated to 60,000 characters.",
+            "An uploaded file over 3MB is rejected with 413.",
+            "An empty uploaded file is rejected with 400.",
+            "An uploaded file with no extractable text is rejected with 422.",
+            "An uploaded file without a title uses its filename without the extension as the title.",
+            "DELETE /api/docs/:id returns the removed title, or 404 if the document does not exist.",
+            "Methods other than GET and POST on /api/docs, and other than DELETE on /api/docs/:id, return 405."
+          ],
+          "acceptanceCriteria": [
+            {
+              "surface": "API",
+              "given": "A signed-in user with stored documents",
+              "when": "The client sends GET /api/docs",
+              "then": "The response is 200 with { docs: [...] }.",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 22,
+                  "endLine": 22,
+                  "quote": "return { status: 200, json: { docs: await listDocs(userId) } };"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "A pasted-text request with title and text",
+              "when": "The client sends POST /api/docs",
+              "then": "The document is created and the response is 201 with { doc }.",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 34,
+                  "endLine": 34,
+                  "quote": "const doc = await createDoc(userId, { title, text: text.slice(0, TEXT_CAP) });"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "A POST without a title",
+              "when": "The client sends it without a file",
+              "then": "The response is 400 \"title is required\".",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 32,
+                  "endLine": 32,
+                  "quote": "if (!title) return err(400, \"title is required\");"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An uploaded file larger than 3MB",
+              "when": "The client sends POST /api/docs",
+              "then": "The response is 413 \"file is too large (max 3MB)\".",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 43,
+                  "endLine": 43,
+                  "quote": "return err(413, \"file is too large (max 3MB)\");"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An uploaded file that yields no text",
+              "when": "The client sends POST /api/docs",
+              "then": "The response is 422 \"no readable text could be extracted from this file\".",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 51,
+                  "endLine": 51,
+                  "quote": "no readable text could be extracted from this file"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An uploaded file with no title",
+              "when": "The client sends POST /api/docs",
+              "then": "The title defaults to the filename without its extension.",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 47,
+                  "endLine": 47,
+                  "quote": "const fileTitle = title || filename.replace(/\\.[^.]+$/, \"\") || filename;"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "A document id that does not exist for the user",
+              "when": "The client sends DELETE /api/docs/:id",
+              "then": "The response is 404 \"no such document\".",
+              "evidence": [
+                {
+                  "path": "server/docs.js",
+                  "startLine": 64,
+                  "endLine": 64,
+                  "quote": "if (!removed) return err(404, \"no such document\");"
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "An unsupported HTTP method",
+              "when": "The client sends it to /api/docs/:id",
+              "then": "The response is 405.",
+              "evidence": [
+                {
+                  "path": "api/docs/[id].js",
+                  "startLine": 12,
+                  "endLine": 12,
+                  "quote": "if (req.method !== \"DELETE\") return res.status(405).json({ error: \"method not allowed\" });"
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "Only extracted text is stored, so a file whose text cannot be extracted is lost and the original cannot be recovered.",
+            "Text from pasted documents is silently truncated at 60,000 characters, and nothing tells the user.",
+            "The cap on extracted text from uploaded files is not visible in server/docs.js, so long files may be stored in full.",
+            "Per-user isolation depends on currentUserId in server/auth.js and on the db.js queries, neither of which I read."
+          ],
+          "openQuestions": [
+            "Should users be told when pasted text is truncated?",
+            "How does currentUserId identify users, and is there real authentication?"
+          ],
+          "limitations": [
+            "I did not read server/db.js, server/extract.js, server/auth.js, the client code in public/js, or the Library feature's search and read tools.",
+            "Supported file types and the database schema were not confirmed.",
+            "No tests were reviewed, so nothing is verified by QA evidence."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 8,
+          "verified": 8
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -499,8 +1342,195 @@
         "doc:docs/specs/connectors.md"
       ],
       "spec": {
-        "status": "not_checked",
-        "existingDoc": "docs/specs/connectors.md"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given A connector is not connected, when The user clicks Continue with Google in the consent panel, then The browser navigates to /api/google/authorize..",
+          "AC2: Given The Gmail connector is connected, when The user views its permission controls, then The Allow button is disabled with the note that sending email always needs approval..",
+          "AC3: Given The Google status endpoint reports connected, when initConnectors runs at boot or after the redirect, then Both Gmail and Calendar are marked on together..",
+          "AC4: Given Google is connected, when The user clicks Disconnect Google, then Gmail and Calendar are turned off and the disconnect is audited..",
+          "AC5: Given Gmail is connected and Muse calls mail_send, when The tool runs, then An approval card asks the user to allow the send, and the message is sent only after approval..",
+          "AC6: Given Calendar permission is Ask me first, when Muse calls calendar_add, then An approval card shows the event and time before the event is added..",
+          "AC7: Given Contacts include the two seeded example contacts, when Muse calls contacts_lookup with a name that matches nobody, then The tool returns 'No contact found.'..",
+          "AC8: Given The Google routes are served, when The client requests Gmail search, then POST /api/google/mail/search is handled by the Google module.."
+        ],
+        "document": {
+          "objective": "Let a user connect Gmail, Google Calendar and a local Contacts list to Mini Muse, control what Muse may change, and give the chat agent tools to read and act on those services with approval.",
+          "summary": "The Connectors page (public/js/features/connectors) lists three connectors: Gmail, Google Calendar and Contacts. Gmail and Calendar share one Google OAuth consent. The browser is sent to /api/google/authorize, and the server keeps the tokens in an HttpOnly cookie. At boot and after the redirect, initConnectors reads /api/google/status and turns both Google connectors on or off together. Each connector adds tools to the agent. Reads run directly. Writes go through an approval card unless the user has set that connector to Allow. Gmail send always asks. Contacts are stored in app state, seeded with two example contacts, and the user can add or remove them on the page. The server exposes /api/google/* routes for status, authorize, callback, disconnect, mail and calendar. The folders named in the request, api/web and chrome-extension, are adjacent: web search/open endpoints and a development Chrome browser bridge. I only read their READMEs and entry points, not the extension's code.",
+          "userStories": [
+            "As a user, I want to connect my Google account so that Muse can read my Gmail and Calendar instead of guessing.",
+            "As a user, I want to see what access I am granting before I continue so that I can consent knowingly.",
+            "As a user, I want Muse to ask before it changes my calendar or contacts, and always before it sends email, so that I stay in control.",
+            "As a user, I want to disconnect Google so that Muse's Gmail and Calendar tools are removed.",
+            "As a user, I want to manage a contacts list so that Muse can look up an email address before sending mail."
+          ],
+          "inScope": [
+            "Connectors page: connect, consent, disconnect, See data, and per-connector write permission",
+            "Gmail tools: mail_search, mail_read, mail_send",
+            "Google Calendar tools: calendar_list, calendar_add, calendar_remove",
+            "Contacts tools: contacts_lookup, contacts_add, plus manual add/remove on the page",
+            "Server Google routes in server/index.js",
+            "Connection status shown as a nav badge and a pill"
+          ],
+          "outOfScope": [
+            "Web search and open-page tools (api/web), which are a separate web-browsing feature",
+            "Chrome extension browser bridge internals (chrome-extension/), which I did not read",
+            "Real Google Contacts sync; Contacts are local sample or user-entered data",
+            "Google OAuth server implementation details (server/google.js was not read)",
+            "Packaging or publishing the extension"
+          ],
+          "functionalRequirements": [
+            "The Connectors page shows one card per connector in the order Gmail, Google Calendar, Contacts, with a Connected or Not connected pill and the list of tools, marking write tools differently from read tools.",
+            "Clicking Connect on a Google connector shows a consent panel listing its scopes; Continue with Google navigates to /api/google/authorize and Cancel dismisses the panel.",
+            "On boot and after the OAuth redirect, the app queries Google status and sets Gmail and Calendar on or off together.",
+            "Disconnect Google calls the disconnect endpoint, turns off Gmail and Calendar, and records an audit entry.",
+            "Gmail permission is locked to Ask me first and the Allow button is disabled.",
+            "Calendar and Contacts write tools prompt for approval when the permission is Ask me first, and run without a prompt when it is Allow.",
+            "mail_send always shows an approval card with To, Subject and body and sends only if the user approves.",
+            "contacts_lookup matches contacts by name or email and returns a 'No contact found.' message on no match.",
+            "The nav badge shows the number of connected connectors."
+          ],
+          "acceptanceCriteria": [
+            {
+              "surface": "web",
+              "given": "A connector is not connected",
+              "when": "The user clicks Continue with Google in the consent panel",
+              "then": "The browser navigates to /api/google/authorize.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/index.js",
+                  "startLine": 51,
+                  "endLine": 51,
+                  "quote": "window.location.assign(\"/api/google/authorize\")"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "The Gmail connector is connected",
+              "when": "The user views its permission controls",
+              "then": "The Allow button is disabled with the note that sending email always needs approval.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/index.js",
+                  "startLine": 37,
+                  "endLine": 37,
+                  "quote": "Sending email always needs your approval."
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "The Google status endpoint reports connected",
+              "when": "initConnectors runs at boot or after the redirect",
+              "then": "Both Gmail and Calendar are marked on together.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/index.js",
+                  "startLine": 77,
+                  "endLine": 77,
+                  "quote": "for (const key of [\"mail\", \"calendar\"]) state.connectors[key].on = on;"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "Google is connected",
+              "when": "The user clicks Disconnect Google",
+              "then": "Gmail and Calendar are turned off and the disconnect is audited.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/index.js",
+                  "startLine": 55,
+                  "endLine": 55,
+                  "quote": "Disconnected Gmail and Google Calendar · tools removed"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "Gmail is connected and Muse calls mail_send",
+              "when": "The tool runs",
+              "then": "An approval card asks the user to allow the send, and the message is sent only after approval.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/mail.js",
+                  "startLine": 13,
+                  "endLine": 13,
+                  "quote": "Muse wants to send this Gmail message. Allow it?"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "Calendar permission is Ask me first",
+              "when": "Muse calls calendar_add",
+              "then": "An approval card shows the event and time before the event is added.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/calendar.js",
+                  "startLine": 13,
+                  "endLine": 13,
+                  "quote": "Muse wants to add this to Google Calendar. Allow it?"
+                }
+              ]
+            },
+            {
+              "surface": "web",
+              "given": "Contacts include the two seeded example contacts",
+              "when": "Muse calls contacts_lookup with a name that matches nobody",
+              "then": "The tool returns 'No contact found.'.",
+              "evidence": [
+                {
+                  "path": "public/js/features/connectors/contacts.js",
+                  "startLine": 40,
+                  "endLine": 40,
+                  "quote": "\"No contact found.\""
+                }
+              ]
+            },
+            {
+              "surface": "API",
+              "given": "The Google routes are served",
+              "when": "The client requests Gmail search",
+              "then": "POST /api/google/mail/search is handled by the Google module.",
+              "evidence": [
+                {
+                  "path": "server/index.js",
+                  "startLine": 88,
+                  "endLine": 88,
+                  "quote": "app.post(\"/api/google/mail/search\""
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "Contacts are stored in client state only. Whether state persists across devices or browsers is unconfirmed.",
+            "Gmail and Calendar share one OAuth grant, so the user cannot connect only one of them.",
+            "The Disconnect action ignores errors from the server (try/catch with an empty catch). The UI can show Disconnected even if the server-side revocation failed.",
+            "No tests or QA evidence tied to Connectors were seen. The features are shipped but not verified.",
+            "Only the local Express server's routes were read. The Vercel route consolidation was not checked for parity.",
+            "Gmail read and send scopes are sensitive and may trigger Google OAuth app verification."
+          ],
+          "openQuestions": [
+            "Does the Contacts connector need real Google Contacts sync, or are local contacts intended?",
+            "Should users be able to connect Gmail and Calendar independently?",
+            "Do api/web and chrome-extension belong to the Connectors feature, or should they be specified as web-browsing and browser-bridge features?",
+            "What does server/google.js do for token refresh and scope errors?"
+          ],
+          "limitations": [
+            "I did not read server/google.js, core/api.js, core/registry.js, or the Chrome extension code, so OAuth, token handling, and bridge behavior are not described.",
+            "I did not run the app or tests, so no behavior has been verified.",
+            "I did not read api/web/search.js or server/web.js. I read api/web/open.js, which only forwards to handleOpen.",
+            "I did not read the Vercel api/google handlers."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 8,
+          "verified": 8
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -512,7 +1542,133 @@
         "module:public/js/features/memory"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given Muse already remembers a fact, when it calls remember with the same fact in different case, then nothing new is saved and it is told it is already remembered.",
+          "AC2: Given Muse calls remember, when the fact is empty, then the tool refuses.",
+          "AC3: Given several facts mention a keyword, when Muse calls forget with that keyword, then every fact containing it is removed and listed back.",
+          "AC4: Given no fact matches, when Muse calls forget, then nothing is removed and it says no memory matched.",
+          "AC5: Given Settings → Memory lists facts, when the user clicks × on one, then it is removed and the deletion is audited as by the user.",
+          "AC6: Given Muse remembers nothing yet, when the Memory list renders, then it suggests telling Muse a preference in Chat."
+        ],
+        "document": {
+          "objective": "Lets Muse remember lasting facts and preferences about the user, and forget them on request; the user sees and deletes them in Settings.",
+          "summary": "Muse calls remember to save one fact (duplicates are ignored, case-insensitively) and forget to delete every fact containing a keyword. Settings → Memory lists the facts with a count and a delete button on each; deleting one is recorded in the activity audit as done by the user.",
+          "userStories": [
+            "As a user, I want Muse to remember my preferences so that I don't repeat myself.",
+            "As a user, I want to see and delete what Muse remembers about me."
+          ],
+          "inScope": [
+            "The remember and forget tools",
+            "The Memory list in Settings"
+          ],
+          "outOfScope": [
+            "How memory is used in the prompt"
+          ],
+          "functionalRequirements": [
+            "The system saves a fact only once, ignoring case.",
+            "The system forgets every fact containing the keyword.",
+            "The system lets the user delete any fact from Settings."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "Muse already remembers a fact",
+              "when": "it calls remember with the same fact in different case",
+              "then": "nothing new is saved and it is told it is already remembered",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/memory/memory.js",
+                  "startLine": 28,
+                  "endLine": 28,
+                  "quote": "if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return \"Already remembered.\";"
+                }
+              ]
+            },
+            {
+              "given": "Muse calls remember",
+              "when": "the fact is empty",
+              "then": "the tool refuses",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/memory/memory.js",
+                  "startLine": 27,
+                  "endLine": 27,
+                  "quote": "if (!fact) throw new Error(\"fact is empty\");"
+                }
+              ]
+            },
+            {
+              "given": "several facts mention a keyword",
+              "when": "Muse calls forget with that keyword",
+              "then": "every fact containing it is removed and listed back",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/memory/memory.js",
+                  "startLine": 35,
+                  "endLine": 35,
+                  "quote": "const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));"
+                }
+              ]
+            },
+            {
+              "given": "no fact matches",
+              "when": "Muse calls forget",
+              "then": "nothing is removed and it says no memory matched",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/memory/memory.js",
+                  "startLine": 37,
+                  "endLine": 37,
+                  "quote": "if (!gone.length) return \"No memory matched '\" + keyword + \"'.\";"
+                }
+              ]
+            },
+            {
+              "given": "Settings → Memory lists facts",
+              "when": "the user clicks × on one",
+              "then": "it is removed and the deletion is audited as by the user",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/memory/memory.js",
+                  "startLine": 17,
+                  "endLine": 17,
+                  "quote": "audit(\"forget\", { fact: f?.fact }, \"Deleted by you\", \"you\");"
+                }
+              ]
+            },
+            {
+              "given": "Muse remembers nothing yet",
+              "when": "the Memory list renders",
+              "then": "it suggests telling Muse a preference in Chat",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/memory/memory.js",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "quote": "Muse doesn't know anything about you yet. Tell it a preference in Chat"
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "forget deletes every fact containing the keyword, so a short keyword can remove more than intended."
+          ],
+          "openQuestions": [],
+          "limitations": []
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 6,
+          "verified": 6
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -526,7 +1682,133 @@
         "module:server/web.js"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given Muse calls web_search, when with an empty query, then the tool refuses.",
+          "AC2: Given a search runs, when the server calls Tavily, then it asks for at most five results.",
+          "AC3: Given Muse calls web_open, when with a URL that isn't http(s), then the tool refuses.",
+          "AC4: Given a page is opened, when its text is long, then the text is cut to 20,000 characters.",
+          "AC5: Given the server has no TAVILY_API_KEY, when a search or open is requested, then it returns 503 no_api_key.",
+          "AC6: Given the page can't be read, when web_open runs, then the server returns 422 with the reason."
+        ],
+        "document": {
+          "objective": "Lets Muse search the web and read pages, through the server, so it can research current information and cite sources.",
+          "summary": "web_search returns up to five results (title, URL, snippet) from Tavily's search API; web_open returns a page's readable text, capped at 20,000 characters, from Tavily's extract API. The server holds the Tavily key; without it, both return 503 no_api_key.",
+          "userStories": [
+            "As a user, I want Muse to look up current information and tell me where it came from."
+          ],
+          "inScope": [
+            "web_search and web_open tools",
+            "The /api/web search and open handlers"
+          ],
+          "outOfScope": [
+            "Job-board search (Goals)"
+          ],
+          "functionalRequirements": [
+            "The system returns at most five search results.",
+            "The system only opens http(s) URLs.",
+            "The system caps a page's text at 20,000 characters.",
+            "The system returns 503 when the search key is missing."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "Muse calls web_search",
+              "when": "with an empty query",
+              "then": "the tool refuses",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/web/web.js",
+                  "startLine": 15,
+                  "endLine": 15,
+                  "quote": "if (!q) throw new Error(\"need a search query\");"
+                }
+              ]
+            },
+            {
+              "given": "a search runs",
+              "when": "the server calls Tavily",
+              "then": "it asks for at most five results",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/web.js",
+                  "startLine": 43,
+                  "endLine": 43,
+                  "quote": "max_results: 5, search_depth: \"basic\""
+                }
+              ]
+            },
+            {
+              "given": "Muse calls web_open",
+              "when": "with a URL that isn't http(s)",
+              "then": "the tool refuses",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/web/web.js",
+                  "startLine": 25,
+                  "endLine": 25,
+                  "quote": "if (!/^https?:\\/\\//i.test(u)) throw new Error(\"need a valid http(s) url\");"
+                }
+              ]
+            },
+            {
+              "given": "a page is opened",
+              "when": "its text is long",
+              "then": "the text is cut to 20,000 characters",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/web.js",
+                  "startLine": 16,
+                  "endLine": 16,
+                  "quote": "const TEXT_CAP = 20000;"
+                }
+              ]
+            },
+            {
+              "given": "the server has no TAVILY_API_KEY",
+              "when": "a search or open is requested",
+              "then": "it returns 503 no_api_key",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/web.js",
+                  "startLine": 21,
+                  "endLine": 21,
+                  "quote": "const noKey = () => err(503, \"no_api_key\", \"TAVILY_API_KEY is not set on the server.\");"
+                }
+              ]
+            },
+            {
+              "given": "the page can't be read",
+              "when": "web_open runs",
+              "then": "the server returns 422 with the reason",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/web.js",
+                  "startLine": 89,
+                  "endLine": 89,
+                  "quote": "return err(422, \"open_failed\", reason ? String(reason) : \"The page could not be read.\");"
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "Page text is untrusted input to the model."
+          ],
+          "openQuestions": [],
+          "limitations": []
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 6,
+          "verified": 6
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -539,7 +1821,164 @@
         "module:chrome-extension"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given the extension isn't installed, when Muse calls a browser tool, then it fails with a message that the bridge did not respond.",
+          "AC2: Given Muse calls browser_fill, when with no fields, then the tool refuses.",
+          "AC3: Given Muse wants to click a Submit or Apply button, when it calls browser_click, then the user is asked whether they reviewed every field before it submits.",
+          "AC4: Given an approval card is showing for a click, when the user does not approve, then nothing is clicked.",
+          "AC5: Given a form has a password, SSN or card number field, when the extension reads the fields, then those fields are marked sensitive and not filled."
+        ],
+        "document": {
+          "objective": "Lets Muse fill in a job application in the user's own Chrome tab through an optional extension, and submit it only after the user has reviewed it and approved.",
+          "summary": "The page talks to the Mini Muse Browser Bridge extension by window messages. Muse can open an application URL, read the tab's text and form fields, fill fields from the Library résumé, and click; every click needs approval, and a submit click gets a card that asks whether every field was reviewed. The extension never fills passwords, SSNs, card or account numbers. Without the extension, requests time out with a message pointing to web_open.",
+          "userStories": [
+            "As a job seeker, I want Muse to fill in an application for me so that I only review and submit.",
+            "As a user, I want nothing submitted without my approval."
+          ],
+          "inScope": [
+            "browser_open, browser_snapshot, browser_fields, browser_fill, browser_click",
+            "The approval card on clicks",
+            "Sensitive-field skipping in the extension"
+          ],
+          "outOfScope": [
+            "Finding jobs (Goals and Web search)"
+          ],
+          "functionalRequirements": [
+            "The system asks the user before any click in their tab.",
+            "The system warns that a submit click submits the form.",
+            "The system never fills sensitive fields."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "the extension isn't installed",
+              "when": "Muse calls a browser tool",
+              "then": "it fails with a message that the bridge did not respond",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/browser/browser.js",
+                  "startLine": 8,
+                  "endLine": 8,
+                  "quote": "Mini Muse Browser Bridge did not respond: the Chrome extension isn't installed or enabled."
+                }
+              ]
+            },
+            {
+              "given": "Muse calls browser_fill",
+              "when": "with no fields",
+              "then": "the tool refuses",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/browser/browser.js",
+                  "startLine": 27,
+                  "endLine": 27,
+                  "quote": "if (!list.length) throw new Error(\"No fields to fill.\");"
+                }
+              ]
+            },
+            {
+              "given": "Muse wants to click a Submit or Apply button",
+              "when": "it calls browser_click",
+              "then": "the user is asked whether they reviewed every field before it submits",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/browser/browser.js",
+                  "startLine": 37,
+                  "endLine": 37,
+                  "quote": "heading: \"This will submit the form in your Chrome tab. Did you review every field?\""
+                }
+              ]
+            },
+            {
+              "given": "an approval card is showing for a click",
+              "when": "the user does not approve",
+              "then": "nothing is clicked",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/browser/browser.js",
+                  "startLine": 39,
+                  "endLine": 39,
+                  "quote": "if (ok !== true) return h.refusal(ok);"
+                }
+              ]
+            },
+            {
+              "given": "a form has a password, SSN or card number field",
+              "when": "the extension reads the fields",
+              "then": "those fields are marked sensitive and not filled",
+              "surface": "extension",
+              "evidence": [
+                {
+                  "path": "chrome-extension/target.js",
+                  "startLine": 8,
+                  "endLine": 8,
+                  "quote": "const SENSITIVE = /password|passwd|ssn|social.?security|card.?number|cvv|cvc|routing|account.?number/i;"
+                }
+              ]
+            }
+          ],
+          "scenarios": [
+            {
+              "title": "Fill and submit an application",
+              "kind": "main",
+              "steps": [
+                {
+                  "actor": "agent",
+                  "action": "Opens the chosen application and reads its fields",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Fills the fields the résumé supports",
+                  "approval": false
+                },
+                {
+                  "actor": "user",
+                  "action": "Reviews the filled form in Chrome",
+                  "approval": false
+                },
+                {
+                  "actor": "agent",
+                  "action": "Clicks Submit once the user approves",
+                  "approval": true
+                }
+              ]
+            },
+            {
+              "title": "No extension",
+              "kind": "failure",
+              "steps": [
+                {
+                  "actor": "agent",
+                  "action": "Calls a browser tool",
+                  "approval": false
+                },
+                {
+                  "actor": "system",
+                  "action": "Times out and tells Muse to use web_open or ask the user to install the extension",
+                  "approval": false
+                }
+              ]
+            }
+          ],
+          "risks": [
+            "Only the last non–Mini Muse Chrome tab is controlled; the wrong tab can be targeted if the user switches."
+          ],
+          "openQuestions": [],
+          "limitations": [
+            "Did not read the extension's click and fill handlers in full."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 5,
+          "verified": 5
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -551,7 +1990,138 @@
         "module:public/js/features/settings"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given the user has never chosen a style, when the app loads, then Fast is selected.",
+          "AC2: Given Settings is open, when the user picks Thorough, then the note says replies can take up to a minute.",
+          "AC3: Given web search is on, when the user clicks the web search switch, then it turns off and is saved.",
+          "AC4: Given the How Muse works panel is shown on a phone, when the user turns it off, then the app returns to Chat.",
+          "AC5: Given Settings is open, when the user clicks Erase everything…, then they are asked to confirm before anything is erased.",
+          "AC6: Given the user confirms erasing, when Muse is mid-turn, then the turn is stopped and all data except preferences is reset."
+        ],
+        "document": {
+          "objective": "Lets the user choose how Muse replies (Fast or Thorough), turn web search and the How Muse works panel on or off, and erase everything to start over.",
+          "summary": "Settings holds the response-style switch (Fast maps to the quick model tier, Thorough to the default tier), the web search switch, the How Muse works switch, and Erase everything, which asks for confirmation in the page, stops any running turn and resets all data except preferences. Memory and Activity sections on the same page belong to their own features.",
+          "userStories": [
+            "As a user, I want to trade speed for care in Muse's replies.",
+            "As a user, I want to wipe my data and start over without losing my settings."
+          ],
+          "inScope": [
+            "Fast / Thorough",
+            "Web search switch",
+            "How Muse works switch",
+            "Erase everything"
+          ],
+          "outOfScope": [
+            "Memory list (Memory)",
+            "Activity list (How Muse works)"
+          ],
+          "functionalRequirements": [
+            "The system defaults to Fast.",
+            "The system asks for confirmation before erasing.",
+            "The system keeps preferences when erasing everything else."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "the user has never chosen a style",
+              "when": "the app loads",
+              "then": "Fast is selected",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/settings/settings.js",
+                  "startLine": 45,
+                  "endLine": 45,
+                  "quote": "beforeRenderAll() { rt.mode = state.prefs?.mode || \"quick\"; setLearn(!!state.prefs?.learn); }"
+                }
+              ]
+            },
+            {
+              "given": "Settings is open",
+              "when": "the user picks Thorough",
+              "then": "the note says replies can take up to a minute",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/settings/settings.js",
+                  "startLine": 12,
+                  "endLine": 12,
+                  "quote": "rt.mode === \"quick\" ? \"Fast: replies in seconds. Good for most things.\" : \"Thorough: a stronger model that plans more carefully. Replies can take up to a minute.\";"
+                }
+              ]
+            },
+            {
+              "given": "web search is on",
+              "when": "the user clicks the web search switch",
+              "then": "it turns off and is saved",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/settings/settings.js",
+                  "startLine": 33,
+                  "endLine": 33,
+                  "quote": "$(\"webSearch\")?.addEventListener(\"click\", () => { state.prefs.webSearch = state.prefs.webSearch === false; renderSettings(); save(); });"
+                }
+              ]
+            },
+            {
+              "given": "the How Muse works panel is shown on a phone",
+              "when": "the user turns it off",
+              "then": "the app returns to Chat",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/settings/settings.js",
+                  "startLine": 23,
+                  "endLine": 23,
+                  "quote": "if (!on && $(\"panes\").dataset.mobile === \"hood\") go(\"chat\");"
+                }
+              ]
+            },
+            {
+              "given": "Settings is open",
+              "when": "the user clicks Erase everything…",
+              "then": "they are asked to confirm before anything is erased",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/settings/settings.js",
+                  "startLine": 36,
+                  "endLine": 36,
+                  "quote": "Are you sure? <button class=\"btn\" id=\"resetYes\""
+                }
+              ]
+            },
+            {
+              "given": "the user confirms erasing",
+              "when": "Muse is mid-turn",
+              "then": "the turn is stopped and all data except preferences is reset",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/settings/settings.js",
+                  "startLine": 37,
+                  "endLine": 37,
+                  "quote": "else if (id === \"resetYes\") { if (rt.busy) rt.ctl?.abort(); const prefs = state.prefs; replaceState(blank()); state.prefs = prefs; renderAll(); go(\"settings\"); flush(); restoreReset(); }"
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [],
+          "openQuestions": [
+            "Should Erase everything also delete server-side data (traces, saved goals) or only this browser's data?"
+          ],
+          "limitations": [
+            "Did not check what blank() resets beyond local state."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 6,
+          "verified": 6
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -563,7 +2133,131 @@
         "module:public/js/features/hood"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given Muse moves to a new loop phase, when a phase event fires, then that phase is highlighted.",
+          "AC2: Given a service is connected, when the tool list renders, then its tools appear after the core tools.",
+          "AC3: Given there are more than 150 audit entries, when Settings → Activity renders, then only the latest 150 are shown.",
+          "AC4: Given the user deleted something, when the activity renders, then that entry is labelled as done by you.",
+          "AC5: Given the panel is open, when Muse has used tools, then its six latest calls show, excluding the user's.",
+          "AC6: Given nothing has happened yet, when the activity renders, then it explains every tool call will show up here."
+        ],
+        "document": {
+          "objective": "Shows the user what Muse is doing and has done: the step of the agent loop it is in, the tools it can use right now, and a log of every tool call with what went in and came out.",
+          "summary": "A side panel (switched on in Settings) highlights the current loop phase, lists core tools plus tools of connected services, and shows Muse's six most recent tool calls. Settings → Activity shows up to 150 audit entries, marking ones done by the user and ones from connectors.",
+          "userStories": [
+            "As a user, I want to see what Muse actually did so that I can trust or correct it."
+          ],
+          "inScope": [
+            "Loop phase highlight",
+            "Live tool list",
+            "Recent activity and Settings → Activity"
+          ],
+          "outOfScope": [
+            "Traces and timings (Observability)"
+          ],
+          "functionalRequirements": [
+            "The system lists only tools of connected services alongside core tools.",
+            "The system shows at most 150 activity entries.",
+            "The system marks entries the user did."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "Muse moves to a new loop phase",
+              "when": "a phase event fires",
+              "then": "that phase is highlighted",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/hood/hood.js",
+                  "startLine": 9,
+                  "endLine": 9,
+                  "quote": "function setPhase(p) { document.querySelectorAll(\"#loop li\").forEach(li => li.classList.toggle(\"on\", li.dataset.p === p)); }"
+                }
+              ]
+            },
+            {
+              "given": "a service is connected",
+              "when": "the tool list renders",
+              "then": "its tools appear after the core tools",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/hood/hood.js",
+                  "startLine": 21,
+                  "endLine": 21,
+                  "quote": "const list = [...coreToolNames().map(n => [n, \"\"]), ...Object.keys(CONNECTORS).filter(isOn).flatMap(k => CONNECTORS[k].tools.map(t => [t.name, \"c\"]))];"
+                }
+              ]
+            },
+            {
+              "given": "there are more than 150 audit entries",
+              "when": "Settings → Activity renders",
+              "then": "only the latest 150 are shown",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/hood/hood.js",
+                  "startLine": 16,
+                  "endLine": 16,
+                  "quote": "$(\"audit\").innerHTML = a.length ? a.slice(0, 150).map(auditItem).join(\"\") : empty;"
+                }
+              ]
+            },
+            {
+              "given": "the user deleted something",
+              "when": "the activity renders",
+              "then": "that entry is labelled as done by you",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/hood/hood.js",
+                  "startLine": 11,
+                  "endLine": 11,
+                  "quote": "${x.by === \"you\" ? \"you · \" : isConnTool(x.tool) ? \"connector · \" : \"\"}"
+                }
+              ]
+            },
+            {
+              "given": "the panel is open",
+              "when": "Muse has used tools",
+              "then": "its six latest calls show, excluding the user's",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/hood/hood.js",
+                  "startLine": 17,
+                  "endLine": 17,
+                  "quote": "const mine = a.filter(x => x.by !== \"you\").slice(0, 6);"
+                }
+              ]
+            },
+            {
+              "given": "nothing has happened yet",
+              "when": "the activity renders",
+              "then": "it explains every tool call will show up here",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/hood/hood.js",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "quote": "Nothing yet. Every tool Muse uses shows up here, with what it sent and what came back."
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [],
+          "openQuestions": [],
+          "limitations": []
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 6,
+          "verified": 6
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     },
     {
@@ -580,7 +2274,170 @@
         "module:server/trace-store.js"
       ],
       "spec": {
-        "status": "not_started"
+        "status": "complete",
+        "acceptanceCriteria": [
+          "AC1: Given OBS_ENABLED is off, when a batch is posted, then nothing is written and the reply says disabled.",
+          "AC2: Given a signed-in user posts traces, when the server ingests them, then each trace carries the server's user id, not the browser's.",
+          "AC3: Given a post has no traces, spans or logs, when the server ingests it, then it returns 400.",
+          "AC4: Given content capture is off, when a prompt is recorded, then only its length is stored.",
+          "AC5: Given a captured string is longer than the cap, when it is stored, then it is cut to 10,000 characters with a truncated marker.",
+          "AC6: Given a trace is open, when its spans load, then the header says whether any tool ran.",
+          "AC7: Given no traces exist yet, when the page loads, then it says to send a chat message and refresh.",
+          "AC8: Given an unknown trace id is requested, when the server reads it, then it returns 404."
+        ],
+        "document": {
+          "objective": "Lets the builder see each agent turn as a trace: a list of recent traces and a timing waterfall of spans with prompts, responses, token use and tool inputs and outputs, to catch problems such as Muse claiming work no tool did.",
+          "summary": "The browser and server send spans and logs to /api/trace, which stores them in Postgres (Neon). The Observability page lists the 50 latest traces and, for one trace, shows a waterfall, whether any tool ran, and each span's attributes. Env flags turn tracing off, stop content capture (keeping only lengths), and set sampling and retention. Captured text is capped at 10,000 characters.",
+          "userStories": [
+            "As the builder, I want to see what the model was sent and what tools ran in a turn, so that I can debug wrong answers."
+          ],
+          "inScope": [
+            "Trace ingest and reads (/api/trace)",
+            "The Observability page",
+            "Content capture and caps"
+          ],
+          "outOfScope": [
+            "The user-facing activity log (How Muse works)"
+          ],
+          "functionalRequirements": [
+            "The system stamps the signed-in user's id on ingested traces and logs.",
+            "The system stores only a length when content capture is off.",
+            "The system caps captured text at 10,000 characters.",
+            "The system says whether a trace ran any tools."
+          ],
+          "acceptanceCriteria": [
+            {
+              "given": "OBS_ENABLED is off",
+              "when": "a batch is posted",
+              "then": "nothing is written and the reply says disabled",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/trace.js",
+                  "startLine": 62,
+                  "endLine": 62,
+                  "quote": "if (!enabled) return { status: 202, json: { written: { traces: 0, spans: 0, logs: 0 }, disabled: true } };"
+                }
+              ]
+            },
+            {
+              "given": "a signed-in user posts traces",
+              "when": "the server ingests them",
+              "then": "each trace carries the server's user id, not the browser's",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/trace.js",
+                  "startLine": 64,
+                  "endLine": 64,
+                  "quote": "const traces = asArray(body && body.traces).map(t => ({ ...t, user_id: userId || t.user_id || null }));"
+                }
+              ]
+            },
+            {
+              "given": "a post has no traces, spans or logs",
+              "when": "the server ingests it",
+              "then": "it returns 400",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/trace.js",
+                  "startLine": 68,
+                  "endLine": 68,
+                  "quote": "return { status: 400, json: { error: \"no traces, spans or logs in body\" } };"
+                }
+              ]
+            },
+            {
+              "given": "content capture is off",
+              "when": "a prompt is recorded",
+              "then": "only its length is stored",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/trace-core.js",
+                  "startLine": 66,
+                  "endLine": 66,
+                  "quote": "if (!capture) return { redacted: true, length: str.length };"
+                }
+              ]
+            },
+            {
+              "given": "a captured string is longer than the cap",
+              "when": "it is stored",
+              "then": "it is cut to 10,000 characters with a truncated marker",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/trace-core.js",
+                  "startLine": 28,
+                  "endLine": 28,
+                  "quote": "export const CONTENT_CAP = 10000;"
+                }
+              ]
+            },
+            {
+              "given": "a trace is open",
+              "when": "its spans load",
+              "then": "the header says whether any tool ran",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/observability/observability.js",
+                  "startLine": 105,
+                  "endLine": 105,
+                  "quote": "<div class=\"obs-flags\">${statusDot(trace.status)} ${spans.length} spans · ${hasTools ? \"ran tools\" : \"no tool calls\"}</div>"
+                }
+              ]
+            },
+            {
+              "given": "no traces exist yet",
+              "when": "the page loads",
+              "then": "it says to send a chat message and refresh",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "public/js/features/observability/observability.js",
+                  "startLine": 53,
+                  "endLine": 53,
+                  "quote": "`<p class=\"empty\">No traces yet. Send a chat message, then refresh.</p>`;"
+                }
+              ]
+            },
+            {
+              "given": "an unknown trace id is requested",
+              "when": "the server reads it",
+              "then": "it returns 404",
+              "surface": "API",
+              "evidence": [
+                {
+                  "path": "server/trace.js",
+                  "startLine": 95,
+                  "endLine": 95,
+                  "quote": "if (!trace) return { status: 404, json: { error: \"trace not found\" } };"
+                }
+              ]
+            }
+          ],
+          "scenarios": [],
+          "risks": [
+            "Reading one trace by id does not check who owns it, so anyone with a trace id can read its prompts and tool outputs.",
+            "Listing traces without a signed-in user returns every user's traces.",
+            "Trace ids come from Math.random, so they are guessable in principle."
+          ],
+          "openQuestions": [
+            "Is the Observability page meant only for the builder, and if so should /api/trace reads be restricted?"
+          ],
+          "limitations": [
+            "Did not check whether retentionDays is enforced anywhere."
+          ]
+        },
+        "problems": [],
+        "counts": {
+          "criteria": 8,
+          "verified": 8
+        },
+        "checkedAt": "2026-11-21T21:46:15.239Z"
       }
     }
   ]
