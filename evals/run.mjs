@@ -1,12 +1,15 @@
 /*
  * Opt-in live agent evaluation runner.
  *
- * Run: npm run evals
+ * Run: npm run evals                 the product cases (evals/cases.js)
+ *      npm run evals -- --general    general-assistant cases (evals/general-cases.js)
+ *      npm run evals -- --all        both
  * Requires OPENAI_API_KEY in .env. It makes a few paid model requests and
  * exits non-zero when an agent behavior regresses.
  */
 import "dotenv/config";
 import { EVAL_CASES } from "./cases.js";
+import { GENERAL_EVAL_CASES } from "./general-cases.js";
 import { SAFETY_RULES } from "../public/js/agent/policy.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
@@ -180,8 +183,13 @@ async function runCase(testCase) {
   return { id: testCase.id, pass: failures.length === 0, failures, text: message.content || "", toolCalls: calls.length };
 }
 
+const args = process.argv.slice(2);
+const set = args.includes("--all") ? "all" : args.includes("--general") ? "general" : "product";
+const selected = set === "all" ? [...EVAL_CASES, ...GENERAL_EVAL_CASES] : set === "general" ? GENERAL_EVAL_CASES : EVAL_CASES;
+console.log("Running " + selected.length + " " + (set === "all" ? "product and general" : set) + " eval cases.\n");
+
 const results = [];
-for (const testCase of EVAL_CASES) {
+for (const testCase of selected) {
   const result = await runCase(testCase);
   results.push(result);
   console.log((result.pass ? "PASS" : "FAIL") + "  " + result.id);

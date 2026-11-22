@@ -97,6 +97,10 @@ Run the live model checks with:
 
     npm run evals
 
+That runs the product cases in evals/cases.js. General-assistant cases that aren't
+Mini Muse features (weight-management planning, Black Friday shopping) live in
+evals/general-cases.js and run with `npm run evals -- --general` (or `--all` for both).
+
 The live runner uses OPENAI_API_KEY, makes a few paid API requests, and exits
 non-zero if the agent claims to have an unprovided résumé or marks goal progress
 without evidence. Add cases in evals/cases.js whenever users report a failure.
