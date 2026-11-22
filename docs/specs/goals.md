@@ -53,17 +53,17 @@ The user creates a goal from the Goals page or in chat. Muse only marks a step i
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | muse is connected and not busy | the user submits a goal in the Goals form | muse is asked to plan it with every step left as todo | web | ✓ |
-| AC2 | muse calls create_goal | it passes more than 8 steps or none | at most 8 steps are kept, and a goal with no steps is refused | web | ✓ |
-| AC3 | only bookkeeping tools ran this turn | muse calls update_step with status done | the tool refuses because no tool did any work this turn | web | ✓ |
-| AC4 | a web_search ran this turn | muse marks a step done citing a different tool | the tool refuses and lists the tools that did run | web | ✓ |
-| AC5 | muse calls jobs_search | it passes neither keywords nor company boards | the tool refuses and asks for a job title or boards | web | ✓ |
-| AC6 | the Library has no résumé | muse calls score_fit for a posting | the tool refuses and asks the user to add a résumé | web | ✓ |
-| AC7 | a tracked job is drafted | muse marks it applied with no approved Submit click and no confirmation email this turn | the tool refuses and points to Gmail or the Goals page | web | ✓ |
-| AC8 | muse found the employer's email this turn | it marks a job as interview | the user is asked to confirm before it counts | web | ✓ |
-| AC9 | a goal exists | muse calls revise_plan with changed steps | the user sees a before/after card and nothing changes unless they approve | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | muse is connected and not busy | the user submits a goal in the Goals form | muse is asked to plan it with every step left as todo | web | ✓ | — no test |
+| AC2 | muse calls create_goal | it passes more than 8 steps or none | at most 8 steps are kept, and a goal with no steps is refused | web | ✓ | — no test |
+| AC3 | only bookkeeping tools ran this turn | muse calls update_step with status done | the tool refuses because no tool did any work this turn | web | ✓ | ✓ passes |
+| AC4 | a web_search ran this turn | muse marks a step done citing a different tool | the tool refuses and lists the tools that did run | web | ✓ | — no test |
+| AC5 | muse calls jobs_search | it passes neither keywords nor company boards | the tool refuses and asks for a job title or boards | web | ✓ | — no test |
+| AC6 | the Library has no résumé | muse calls score_fit for a posting | the tool refuses and asks the user to add a résumé | web | ✓ | — no test |
+| AC7 | a tracked job is drafted | muse marks it applied with no approved Submit click and no confirmation email this turn | the tool refuses and points to Gmail or the Goals page | web | ✓ | — no test |
+| AC8 | muse found the employer's email this turn | it marks a job as interview | the user is asked to confirm before it counts | web | ✓ | — no test |
+| AC9 | a goal exists | muse calls revise_plan with changed steps | the user sees a before/after card and nothing changes unless they approve | web | ✓ | — no test |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -109,6 +109,12 @@ The Goals form sends Muse a prompt and Muse calls create_goal, defined with the 
 | AC7 | `server/agent/tools/goals.js:104` | `there's no proof it was submitted this turn` |
 | AC8 | `server/agent/tools/goals.js:110` | `Count this as ${app.status === "offer" ? "an offer" : "an interview"}?` |
 | AC9 | `server/agent/tools/goals.js:80` | `yes: "Update plan"` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC3 | update_step's evidence rule is enforced on the server | `test/agent-runtime.test.js` |
 
 ## Not confirmed from the code
 

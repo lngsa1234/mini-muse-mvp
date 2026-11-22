@@ -42,13 +42,13 @@ Before Muse does something that changes or sends anything, the chat shows a card
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | a tool asks for approval | the card appears | the chat shows that Muse is waiting for the user's approval | web | ✓ |
-| AC2 | an approval card is showing | the user clicks Approve | the tool continues with a yes | web | ✓ |
-| AC3 | an approval card is showing | the user clicks Decline | the tool continues with a no | web | ✓ |
-| AC4 | an approval card is still waiting | the turn ends | the card resolves as no answer | web | ✓ |
-| AC5 | the user answered a card | the tool resumes | the outcome is written to the activity audit | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | a tool asks for approval | the card appears | the chat shows that Muse is waiting for the user's approval | web | ✓ | — no test |
+| AC2 | an approval card is showing | the user clicks Approve | the tool continues with a yes | web | ✓ | ✓ passes |
+| AC3 | an approval card is showing | the user clicks Decline | the tool continues with a no | web | ✓ | — no test |
+| AC4 | an approval card is still waiting | the turn ends | the card resolves as no answer | web | ✓ | ✓ passes |
+| AC5 | the user answered a card | the tool resumes | the outcome is written to the activity audit | web | ✓ | — no test |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -79,5 +79,12 @@ Tools that change something call the approval helper in workflow/approvals.js, w
 | AC1 | `server/agent/runtime.js:220` | `msg.status = "Waiting for your approval…"` |
 | AC2 | `public/js/workflow/approvals.js:24` | `onClick("approve", id => answer(id, true));` |
 | AC3 | `public/js/workflow/approvals.js:25` | `onClick("decline", id => answer(id, false));` |
-| AC4 | `.agentforge/feature-map.json:378` | `export function expireApprovals() { for (const [, res] of approvals) res(null); }` |
+| AC4 | `.agentforge/feature-map.json:477` | `export function expireApprovals() { for (const [, res] of approvals) res(null); }` |
 | AC5 | `server/agent/runtime.js:229` | `audit("approval", { [tool]: card.summary }, a.approval, "you");` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC2 | an approval waits for the user's answer, which can come from any device | `test/agent-runtime.test.js` |
+| AC4 | an unanswered approval expires and nothing is sent | `test/agent-runtime.test.js` |

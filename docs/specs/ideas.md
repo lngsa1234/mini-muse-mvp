@@ -107,7 +107,7 @@ server/ideas.js holds the handlers for GET/POST /api/ideas and PATCH/DELETE /api
 | AC4 | `api/ideas/index.js:23` | `return send(res, { status: 405, json: { error: "method not allowed" } });` |
 | AC5 | `public/js/features/ideas/ideas.js:51` | `Starter ideas <span>${gen.busy ? "Muse is personalizing these…" : "from simple rules"}</span>` |
 | AC6 | `public/js/features/ideas/ideas.js:93` | `status: "new", by: "muse" }));` |
-|  | `.agentforge/feature-map.json:1049` | `'New from Muse <span>updated` |
+|  | `.agentforge/feature-map.json:1273` | `'New from Muse <span>updated` |
 | AC7 | `public/js/features/ideas/ideas.js:131` | `replaceIdea(i = await updateIdea(i.id, { status: "saved" }))` |
 | AC8 | `public/js/features/ideas/ideas.js:137` | `replaceIdea(await updateIdea(i.id, { status: "dismissed" }))` |
 |  | `public/js/features/ideas/ideas.js:47` | `filter(i => ideaStatus(i) !== "dismissed")` |

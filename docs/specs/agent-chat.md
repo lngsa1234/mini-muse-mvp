@@ -61,18 +61,18 @@ Replies stream in as Muse writes them, and the user can stop a reply from any de
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | the chat composer is focused with text entered | the user presses Enter without Shift | the form is submitted and the message is sent; Shift+Enter does not send | web | ✓ |
-| AC2 | a turn is in progress | the user clicks Stop | the request is aborted. No error banner is shown for the cancellation | web | ✓ |
-| AC3 | the model replies with tool calls | a turn runs | each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ |
-| AC4 | the server has no OPENAI_API_KEY | the browser calls /api/llm | the server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…" | API | ✓ |
-| AC5 | a request carries tier "default" or any other value | the proxy builds the upstream request | "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored | API | ✓ |
-| AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ |
-| AC7 | the chat is empty | the Chat page renders | a welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle | web | ✓ |
-| AC8 | a tool action needs approval | the assistant message renders | a card with the heading, detail rows, and Allow / Don't allow buttons is shown | web | ✓ |
-| AC9 | the user asks to apply for a job and the message is not an email request | the model is called | mail_search and mail_send are removed from the tools offered for that turn | web | ✓ |
-| AC10 | a reply stops because of the token limit | the turn finishes | the message shows 'The reply was cut short. Ask for less at once.' | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | the chat composer is focused with text entered | the user presses Enter without Shift | the form is submitted and the message is sent; Shift+Enter does not send | web | ✓ | — no test |
+| AC2 | a turn is in progress | the user clicks Stop | the request is aborted. No error banner is shown for the cancellation | web | ✓ | ✓ passes |
+| AC3 | the model replies with tool calls | a turn runs | each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ | — no test |
+| AC4 | the server has no OPENAI_API_KEY | the browser calls /api/llm | the server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…" | API | ✓ | — no test |
+| AC5 | a request carries tier "default" or any other value | the proxy builds the upstream request | "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored | API | ✓ | ✓ passes |
+| AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ | — no test |
+| AC7 | the chat is empty | the Chat page renders | a welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle | web | ✓ | — no test |
+| AC8 | a tool action needs approval | the assistant message renders | a card with the heading, detail rows, and Allow / Don't allow buttons is shown | web | ✓ | — no test |
+| AC9 | the user asks to apply for a job and the message is not an email request | the model is called | mail_search and mail_send are removed from the tools offered for that turn | web | ✓ | — no test |
+| AC10 | a reply stops because of the token limit | the turn finishes | the message shows 'The reply was cut short. Ask for less at once.' | web | ✓ | — no test |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -105,12 +105,12 @@ The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn 
 | AC2 | `public/js/agent/run.js:126` | `rt.ctl?.abort()` |
 |  | `server/agent/runtime.js:256` | `if (e?.code !== "cancelled")` |
 | AC3 | `server/agent/loop.js:6` | `export const MAX_STEPS = 12;` |
-|  | `.agentforge/feature-map.json:119` | `const out = await tool.execute(tu.input, { signal });` |
+|  | `.agentforge/feature-map.json:129` | `const out = await tool.execute(tu.input, { signal });` |
 | AC4 | `server/proxy.js:16` | `status: 503, body: { code: "no_api_key"` |
 |  | `public/js/agent/transport.js:27` | `if (serverCode === "no_api_key") code = "sampling_disabled";` |
-|  | `.agentforge/feature-map.json:145` | `disableChat(ERR[e.code])` |
+|  | `.agentforge/feature-map.json:156` | `disableChat(ERR[e.code])` |
 | AC5 | `server/routing.js:31` | `const tier = body && body.tier === "default" ? "default" : "quick";` |
-|  | `.agentforge/feature-map.json:165` | `Strip our 'tier' field and any client-sent model` |
+|  | `.agentforge/feature-map.json:177` | `Strip our 'tier' field and any client-sent model` |
 | AC6 | `public/js/agent/transport.js:30` | `res.status === 429) code = "rate_limited"` |
 |  | `public/js/agent/errors.js:5` | `Muse hit a usage limit. Wait a minute, then send again.` |
 | AC7 | `public/js/features/chat/chat.js:40` | `Tell Muse what you want done` |
@@ -119,6 +119,14 @@ The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn 
 |  | `public/js/features/chat/chat.js:23` | `Don't allow</button>` |
 | AC9 | `server/agent/runtime.js:322` | `const loopTools = application ? tools.filter(t => t.name !== "mail_search" && t.name !== "mail_send") : tools;` |
 | AC10 | `server/agent/runtime.js:330` | `The reply was cut short. Ask for less at once.` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC2 | only one turn runs at a time per user, across devices | `test/agent-runtime.test.js` |
+| AC5 | routing: tier picks the model, defaults to quick | `test/server.test.js` |
+|  | proxy: pins the model and strips client fields | `test/server.test.js` |
 
 ## Not confirmed from the code
 

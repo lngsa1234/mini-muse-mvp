@@ -45,16 +45,16 @@ The Observability page lists the 50 latest traces. Opening one shows a timeline 
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | OBS_ENABLED is off | a batch is posted | nothing is written and the reply says disabled | API | ✓ |
-| AC2 | a signed-in user posts traces | the server ingests them | each trace carries the server's user id, not the browser's | API | ✓ |
-| AC3 | a post has no traces, spans or logs | the server ingests it | it returns 400 | API | ✓ |
-| AC4 | content capture is off | a prompt is recorded | only its length is stored | API | ✓ |
-| AC5 | a captured string is longer than the cap | it is stored | it is cut to 10,000 characters with a truncated marker | API | ✓ |
-| AC6 | a trace is open | its spans load | the header says whether any tool ran | web | ✓ |
-| AC7 | no traces exist yet | the page loads | it says to send a chat message and refresh | web | ✓ |
-| AC8 | an unknown trace id is requested | the server reads it | it returns 404 | API | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | OBS_ENABLED is off | a batch is posted | nothing is written and the reply says disabled | API | ✓ | — no test |
+| AC2 | a signed-in user posts traces | the server ingests them | each trace carries the server's user id, not the browser's | API | ✓ | — no test |
+| AC3 | a post has no traces, spans or logs | the server ingests it | it returns 400 | API | ✓ | — no test |
+| AC4 | content capture is off | a prompt is recorded | only its length is stored | API | ✓ | ✓ passes |
+| AC5 | a captured string is longer than the cap | it is stored | it is cut to 10,000 characters with a truncated marker | API | ✓ | ✓ passes |
+| AC6 | a trace is open | its spans load | the header says whether any tool ran | web | ✓ | — no test |
+| AC7 | no traces exist yet | the page loads | it says to send a chat message and refresh | web | ✓ | — no test |
+| AC8 | an unknown trace id is requested | the server reads it | it returns 404 | API | ✓ | — no test |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -86,6 +86,13 @@ The browser tracer (core/trace.js) and the server send spans and logs to /api/tr
 | AC6 | `public/js/features/observability/observability.js:105` | `<div class="obs-flags">${statusDot(trace.status)} ${spans.length} spans · ${hasTools ? "ran tools" : "no tool calls"}</d` |
 | AC7 | `public/js/features/observability/observability.js:53` | `'<p class="empty">No traces yet. Send a chat message, then refresh.</p>';` |
 | AC8 | `server/trace.js:95` | `if (!trace) return { status: 404, json: { error: "trace not found" } };` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC4 | capContent: redacts to a size hint when capture is off | `test/trace-core.test.js` |
+| AC5 | capContent: truncates past the cap with a marker | `test/trace-core.test.js` |
 
 ## Not confirmed from the code
 

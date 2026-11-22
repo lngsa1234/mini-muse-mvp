@@ -71,7 +71,7 @@ The remember and forget tools are in server/agent/tools/memory.js and run in the
 |---|---|---|
 | AC1 | `docs/reference/original-prototype.html:878` | `if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return "Already remembered.";` |
 | AC2 | `server/agent/tools/memory.js:15` | `if (!fact) throw new Error("fact is empty");` |
-| AC3 | `.agentforge/feature-map.json:1627` | `const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));` |
+| AC3 | `.agentforge/feature-map.json:1928` | `const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));` |
 | AC4 | `server/agent/tools/memory.js:27` | `if (!gone.length) return "No memory matched '" + keyword + "'.";` |
 | AC5 | `public/js/features/memory/memory.js:17` | `audit("forget", { fact: f?.fact }, "Deleted by you", "you");` |
 | AC6 | `public/js/features/memory/memory.js:14` | `Muse doesn't know anything about you yet. Tell it a preference in Chat` |

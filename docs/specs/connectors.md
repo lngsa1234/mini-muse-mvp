@@ -61,16 +61,16 @@ Gmail and Calendar connect together with one Google sign-in. Muse can read from 
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | a connector is not connected | the user clicks Continue with Google in the consent panel | the browser navigates to /api/google/authorize | web | ✓ |
-| AC2 | the Gmail connector is connected | the user views its permission controls | the Allow button is disabled with the note that sending email always needs approval | web | ✓ |
-| AC3 | the Google status endpoint reports connected | initConnectors runs at boot or after the redirect | both Gmail and Calendar are marked on together | web | ✓ |
-| AC4 | google is connected | the user clicks Disconnect Google | gmail and Calendar are turned off and the disconnect is audited | web | ✓ |
-| AC5 | gmail is connected and Muse calls mail_send | the tool runs | an approval card asks the user to allow the send, and the message is sent only after approval | web | ✓ |
-| AC6 | calendar permission is Ask me first | muse calls calendar_add | an approval card shows the event and time before the event is added | web | ✓ |
-| AC7 | contacts include the two seeded example contacts | muse calls contacts_lookup with a name that matches nobody | the tool returns 'No contact found.' | web | ✓ |
-| AC8 | the Google routes are served | the client requests Gmail search | POST /api/google/mail/search is handled by the Google module | API | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | a connector is not connected | the user clicks Continue with Google in the consent panel | the browser navigates to /api/google/authorize | web | ✓ | — no test |
+| AC2 | the Gmail connector is connected | the user views its permission controls | the Allow button is disabled with the note that sending email always needs approval | web | ✓ | — no test |
+| AC3 | the Google status endpoint reports connected | initConnectors runs at boot or after the redirect | both Gmail and Calendar are marked on together | web | ✓ | — no test |
+| AC4 | google is connected | the user clicks Disconnect Google | gmail and Calendar are turned off and the disconnect is audited | web | ✓ | — no test |
+| AC5 | gmail is connected and Muse calls mail_send | the tool runs | an approval card asks the user to allow the send, and the message is sent only after approval | web | ✓ | ✓ passes |
+| AC6 | calendar permission is Ask me first | muse calls calendar_add | an approval card shows the event and time before the event is added | web | ✓ | — no test |
+| AC7 | contacts include the two seeded example contacts | muse calls contacts_lookup with a name that matches nobody | the tool returns 'No contact found.' | web | ✓ | — no test |
+| AC8 | the Google routes are served | the client requests Gmail search | POST /api/google/mail/search is handled by the Google module | API | ✓ | — no test |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -108,6 +108,13 @@ The Connectors page (features/connectors) sends the browser to /api/google/autho
 | AC6 | `server/agent/tools/connectors.js:40` | `Muse wants to add this to Google Calendar. Allow it?` |
 | AC7 | `server/agent/tools/connectors.js:63` | `"No contact found."` |
 | AC8 | `server/index.js:88` | `app.post("/api/google/mail/search"` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC5 | an approval waits for the user's answer, which can come from any device | `test/agent-runtime.test.js` |
+|  | an unanswered approval expires and nothing is sent | `test/agent-runtime.test.js` |
 
 ## Not confirmed from the code
 

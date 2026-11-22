@@ -80,7 +80,8 @@
                   "endLine": 67,
                   "quote": "e.key === \"Enter\" && !e.shiftKey && !e.isComposing"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -100,7 +101,14 @@
                   "endLine": 256,
                   "quote": "if (e?.code !== \"cancelled\")"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/agent-runtime.test.js",
+                  "name": "only one turn runs at a time per user, across devices"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "web",
@@ -116,11 +124,12 @@
                 },
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 119,
-                  "endLine": 119,
+                  "startLine": 129,
+                  "endLine": 129,
                   "quote": "const out = await tool.execute(tu.input, { signal });"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "API",
@@ -142,11 +151,12 @@
                 },
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 145,
-                  "endLine": 145,
+                  "startLine": 156,
+                  "endLine": 156,
                   "quote": "disableChat(ERR[e.code])"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "API",
@@ -162,11 +172,22 @@
                 },
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 165,
-                  "endLine": 165,
+                  "startLine": 177,
+                  "endLine": 177,
                   "quote": "Strip our 'tier' field and any client-sent model"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/server.test.js",
+                  "name": "routing: tier picks the model, defaults to quick"
+                },
+                {
+                  "path": "test/server.test.js",
+                  "name": "proxy: pins the model and strips client fields"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "web",
@@ -186,7 +207,8 @@
                   "endLine": 5,
                   "quote": "Muse hit a usage limit. Wait a minute, then send again."
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -206,7 +228,8 @@
                   "endLine": 71,
                   "quote": "if (rt.sample && !rt.busy) $(\"form\").requestSubmit();"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -226,7 +249,8 @@
                   "endLine": 23,
                   "quote": "Don't allow</button>"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -240,7 +264,8 @@
                   "endLine": 322,
                   "quote": "const loopTools = application ? tools.filter(t => t.name !== \"mail_search\" && t.name !== \"mail_send\") : tools;"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -254,7 +279,8 @@
                   "endLine": 330,
                   "quote": "The reply was cut short. Ask for less at once."
                 }
-              ]
+              ],
+              "qa": "untested"
             }
           ],
           "scenarios": [],
@@ -284,7 +310,71 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "counts": {
+          "criteria": 10,
+          "passing": 2,
+          "failing": 0,
+          "missing": 0,
+          "untested": 8
+        },
+        "gaps": [
+          {
+            "id": "AC1",
+            "qa": "untested"
+          },
+          {
+            "id": "AC3",
+            "qa": "untested"
+          },
+          {
+            "id": "AC4",
+            "qa": "untested"
+          },
+          {
+            "id": "AC6",
+            "qa": "untested"
+          },
+          {
+            "id": "AC7",
+            "qa": "untested"
+          },
+          {
+            "id": "AC8",
+            "qa": "untested"
+          },
+          {
+            "id": "AC9",
+            "qa": "untested"
+          },
+          {
+            "id": "AC10",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "branch": "main",
+          "fingerprints": {
+            "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
+            "api/llm.js": "eba07f1d87da6abf9924f996916d15af49b1018c",
+            "public/js/agent": "18e767cfc32aed3bfdfc0f7fedc2e738c20e93c2",
+            "public/js/features/chat": "79724a4569a9c96bb156cc9947b3ceee7aca365c",
+            "server/agent": "d5858bc1b1824e67d9094a35d6fc0565cbafacfa",
+            "server/proxy.js": "385cb0ede0ba19eeb0b528dfccc464f459960a03",
+            "server/routing.js": "de88364d6deb723a73b71525cc96e4a0dec1f898"
+          },
+          "files": [
+            "test/agent-runtime.test.js",
+            "test/server.test.js"
+          ]
+        }
       }
     },
     {
@@ -335,7 +425,8 @@
                   "endLine": 220,
                   "quote": "msg.status = \"Waiting for your approval…\""
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "an approval card is showing",
@@ -349,7 +440,14 @@
                   "endLine": 24,
                   "quote": "onClick(\"approve\", id => answer(id, true));"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/agent-runtime.test.js",
+                  "name": "an approval waits for the user's answer, which can come from any device"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "an approval card is showing",
@@ -363,7 +461,8 @@
                   "endLine": 25,
                   "quote": "onClick(\"decline\", id => answer(id, false));"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "an approval card is still waiting",
@@ -373,11 +472,18 @@
               "evidence": [
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 378,
-                  "endLine": 378,
+                  "startLine": 477,
+                  "endLine": 477,
                   "quote": "export function expireApprovals() { for (const [, res] of approvals) res(null); }"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/agent-runtime.test.js",
+                  "name": "an unanswered approval expires and nothing is sent"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the user answered a card",
@@ -391,7 +497,8 @@
                   "endLine": 229,
                   "quote": "audit(\"approval\", { [tool]: card.summary }, a.approval, \"you\");"
                 }
-              ]
+              ],
+              "qa": "untested"
             }
           ],
           "scenarios": [
@@ -448,7 +555,45 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "counts": {
+          "criteria": 5,
+          "passing": 2,
+          "failing": 0,
+          "missing": 0,
+          "untested": 3
+        },
+        "gaps": [
+          {
+            "id": "AC1",
+            "qa": "untested"
+          },
+          {
+            "id": "AC3",
+            "qa": "untested"
+          },
+          {
+            "id": "AC5",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "branch": "main",
+          "fingerprints": {
+            "public/js/workflow/approvals.js": "539b562c97c5e6296e7d9fd8ca6d8abf9940f400",
+            "server/agent/runtime.js": "8c18f82b5ee9c9eb52b38d274d4c0b3e5d575a27"
+          },
+          "files": [
+            "test/agent-runtime.test.js"
+          ]
+        }
       }
     },
     {
@@ -520,7 +665,8 @@
                   "endLine": 49,
                   "quote": "say(\"New goal: \" + t + \". Make a plan for it."
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "Muse calls create_goal",
@@ -534,7 +680,8 @@
                   "endLine": 31,
                   "quote": ".map(String).filter(Boolean).slice(0, 8);"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "only bookkeeping tools ran this turn",
@@ -548,7 +695,14 @@
                   "endLine": 57,
                   "quote": "no tool did any work this turn"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/agent-runtime.test.js",
+                  "name": "update_step's evidence rule is enforced on the server"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a web_search ran this turn",
@@ -562,7 +716,8 @@
                   "endLine": 63,
                   "quote": "set \"evidence\" to the tool you used this turn for THIS step"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "Muse calls jobs_search",
@@ -576,7 +731,8 @@
                   "endLine": 26,
                   "quote": "give keywords (the job title) to search the hiring sites, or name company boards"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "the Library has no résumé",
@@ -590,7 +746,8 @@
                   "endLine": 37,
                   "quote": "No résumé in the Library."
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "a tracked job is drafted",
@@ -604,7 +761,8 @@
                   "endLine": 104,
                   "quote": "there's no proof it was submitted this turn"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "Muse found the employer's email this turn",
@@ -618,7 +776,8 @@
                   "endLine": 110,
                   "quote": "Count this as ${app.status === \"offer\" ? \"an offer\" : \"an interview\"}?"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "a goal exists",
@@ -632,7 +791,8 @@
                   "endLine": 80,
                   "quote": "yes: \"Update plan\""
                 }
-              ]
+              ],
+              "qa": "untested"
             }
           ],
           "scenarios": [
@@ -709,7 +869,70 @@
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "counts": {
+          "criteria": 9,
+          "passing": 1,
+          "failing": 0,
+          "missing": 0,
+          "untested": 8
+        },
+        "gaps": [
+          {
+            "id": "AC1",
+            "qa": "untested"
+          },
+          {
+            "id": "AC2",
+            "qa": "untested"
+          },
+          {
+            "id": "AC4",
+            "qa": "untested"
+          },
+          {
+            "id": "AC5",
+            "qa": "untested"
+          },
+          {
+            "id": "AC6",
+            "qa": "untested"
+          },
+          {
+            "id": "AC7",
+            "qa": "untested"
+          },
+          {
+            "id": "AC8",
+            "qa": "untested"
+          },
+          {
+            "id": "AC9",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "branch": "main",
+          "fingerprints": {
+            "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
+            "api/jobs": "b9379d67779dd0cf1f42bd632c874113dcfea79b",
+            "public/js/features/goals": "96e73a38bc7e8021e3b3d405e206afb881a1c65f",
+            "server/agent/tools/goals.js": "cef22f671a07f8bd3a0324cb17aa3efc8dd4a54c",
+            "server/agent/tools/jobs.js": "db936ab5248ab42fdd5a8c5e8a80688397b086b2",
+            "server/goals.js": "8ec4574cb4ad497dde11eeff937aadcdf6f356c5",
+            "server/jobs.js": "76bef6edb81ddbc19b72938d55d087e077abc80f"
+          },
+          "files": [
+            "test/agent-runtime.test.js"
+          ]
+        }
       }
     },
     {
@@ -891,7 +1114,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -1045,8 +1268,8 @@
                 },
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 1049,
-                  "endLine": 1049,
+                  "startLine": 1273,
+                  "endLine": 1273,
                   "quote": "'New from Muse <span>updated"
                 }
               ]
@@ -1141,7 +1364,7 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -1340,7 +1563,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -1417,7 +1640,8 @@
                   "endLine": 51,
                   "quote": "window.location.assign(\"/api/google/authorize\")"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1431,7 +1655,8 @@
                   "endLine": 37,
                   "quote": "Sending email always needs your approval."
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1445,7 +1670,8 @@
                   "endLine": 77,
                   "quote": "for (const key of [\"mail\", \"calendar\"]) state.connectors[key].on = on;"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1459,7 +1685,8 @@
                   "endLine": 55,
                   "quote": "Disconnected Gmail and Google Calendar · tools removed"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1473,7 +1700,18 @@
                   "endLine": 27,
                   "quote": "Muse wants to send this Gmail message. Allow it?"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/agent-runtime.test.js",
+                  "name": "an approval waits for the user's answer, which can come from any device"
+                },
+                {
+                  "path": "test/agent-runtime.test.js",
+                  "name": "an unanswered approval expires and nothing is sent"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "web",
@@ -1487,7 +1725,8 @@
                   "endLine": 40,
                   "quote": "Muse wants to add this to Google Calendar. Allow it?"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1501,7 +1740,8 @@
                   "endLine": 63,
                   "quote": "\"No contact found.\""
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "API",
@@ -1515,7 +1755,8 @@
                   "endLine": 88,
                   "quote": "app.post(\"/api/google/mail/search\""
                 }
-              ]
+              ],
+              "qa": "untested"
             }
           ],
           "scenarios": [],
@@ -1546,7 +1787,64 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "counts": {
+          "criteria": 8,
+          "passing": 1,
+          "failing": 0,
+          "missing": 0,
+          "untested": 7
+        },
+        "gaps": [
+          {
+            "id": "AC1",
+            "qa": "untested"
+          },
+          {
+            "id": "AC2",
+            "qa": "untested"
+          },
+          {
+            "id": "AC3",
+            "qa": "untested"
+          },
+          {
+            "id": "AC4",
+            "qa": "untested"
+          },
+          {
+            "id": "AC6",
+            "qa": "untested"
+          },
+          {
+            "id": "AC7",
+            "qa": "untested"
+          },
+          {
+            "id": "AC8",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "branch": "main",
+          "fingerprints": {
+            "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
+            "public/js/features/connectors": "3484b397c45d0757efc8611a69b27e817733f277",
+            "server/agent/tools/connectors.js": "0363f9488c499557c32141fcf6ecd074313e3b09",
+            "server/google-route.js": "88d0bb5ee3e8a221772690ba5d57f10c7bd1121d",
+            "server/google.js": "90be1a2745f2d0e5fb0ff09b4aca10284e1d1e0a"
+          },
+          "files": [
+            "test/agent-runtime.test.js"
+          ]
+        }
       }
     },
     {
@@ -1625,8 +1923,8 @@
               "evidence": [
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 1627,
-                  "endLine": 1627,
+                  "startLine": 1928,
+                  "endLine": 1928,
                   "quote": "const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));"
                 }
               ]
@@ -1687,7 +1985,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -1828,7 +2126,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -2000,7 +2298,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -2142,7 +2440,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -2279,7 +2577,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
       }
     },
     {
@@ -2340,7 +2638,8 @@
                   "endLine": 62,
                   "quote": "if (!enabled) return { status: 202, json: { written: { traces: 0, spans: 0, logs: 0 }, disabled: true } };"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "a signed-in user posts traces",
@@ -2354,7 +2653,8 @@
                   "endLine": 64,
                   "quote": "const traces = asArray(body && body.traces).map(t => ({ ...t, user_id: userId || t.user_id || null }));"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "a post has no traces, spans or logs",
@@ -2368,7 +2668,8 @@
                   "endLine": 68,
                   "quote": "return { status: 400, json: { error: \"no traces, spans or logs in body\" } };"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "content capture is off",
@@ -2382,7 +2683,14 @@
                   "endLine": 66,
                   "quote": "if (!capture) return { redacted: true, length: str.length };"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/trace-core.test.js",
+                  "name": "capContent: redacts to a size hint when capture is off"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a captured string is longer than the cap",
@@ -2396,7 +2704,14 @@
                   "endLine": 28,
                   "quote": "export const CONTENT_CAP = 10000;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/trace-core.test.js",
+                  "name": "capContent: truncates past the cap with a marker"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a trace is open",
@@ -2410,7 +2725,8 @@
                   "endLine": 105,
                   "quote": "<div class=\"obs-flags\">${statusDot(trace.status)} ${spans.length} spans · ${hasTools ? \"ran tools\" : \"no tool calls\"}</div>"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "no traces exist yet",
@@ -2424,7 +2740,8 @@
                   "endLine": 53,
                   "quote": "`<p class=\"empty\">No traces yet. Send a chat message, then refresh.</p>`;"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "an unknown trace id is requested",
@@ -2438,7 +2755,8 @@
                   "endLine": 95,
                   "quote": "if (!trace) return { status: 404, json: { error: \"trace not found\" } };"
                 }
-              ]
+              ],
+              "qa": "untested"
             }
           ],
           "scenarios": [],
@@ -2460,7 +2778,61 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:31:16.686Z"
+        "checkedAt": "2026-11-22T02:46:33.241Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "counts": {
+          "criteria": 8,
+          "passing": 2,
+          "failing": 0,
+          "missing": 0,
+          "untested": 6
+        },
+        "gaps": [
+          {
+            "id": "AC1",
+            "qa": "untested"
+          },
+          {
+            "id": "AC2",
+            "qa": "untested"
+          },
+          {
+            "id": "AC3",
+            "qa": "untested"
+          },
+          {
+            "id": "AC6",
+            "qa": "untested"
+          },
+          {
+            "id": "AC7",
+            "qa": "untested"
+          },
+          {
+            "id": "AC8",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "branch": "main",
+          "fingerprints": {
+            "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",
+            "public/js/features/observability": "acdfe166281d2be39b0127eeebdfa2fdbfdaf4e9",
+            "server/trace-core.js": "bc0f171b7760a98a8c350816f5a632593393886c",
+            "server/trace-node.js": "9995b3f73775cde50fc1392c071308628a777779",
+            "server/trace-store.js": "389615dca3ed6072339d80a5e9fe9c77c8231a00",
+            "server/trace.js": "da0febe2b7eddbe3b3419da81c991223e8e5e32b"
+          },
+          "files": [
+            "test/trace-core.test.js"
+          ]
+        }
       }
     }
   ]
