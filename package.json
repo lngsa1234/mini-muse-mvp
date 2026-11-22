@@ -10,7 +10,8 @@
     "db:init": "node scripts/db-init.mjs",
     "obs:purge": "node scripts/obs-purge.mjs",
     "test": "node --test --experimental-test-module-mocks",
-    "evals": "node evals/run.mjs"
+    "evals": "node evals/run.mjs",
+    "test:browser": "playwright test"
   },
   "engines": {
     "node": ">=18"
@@ -21,5 +22,8 @@
     "express": "^4.19.2",
     "mammoth": "^1.8.0",
     "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
   }
 }

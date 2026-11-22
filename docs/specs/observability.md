@@ -52,8 +52,8 @@ The Observability page lists the 50 latest traces. Opening one shows a timeline 
 | AC3 | a post has no traces, spans or logs | the server ingests it | it returns 400 | API | ✓ | ✓ passes |
 | AC4 | content capture is off | a prompt is recorded | only its length is stored | API | ✓ | ✓ passes |
 | AC5 | a captured string is longer than the cap | it is stored | it is cut to 10,000 characters with a truncated marker | API | ✓ | ✓ passes |
-| AC6 | a trace is open | its spans load | the header says whether any tool ran | web | ✓ | — no test |
-| AC7 | no traces exist yet | the page loads | it says to send a chat message and refresh | web | ✓ | — no test |
+| AC6 | a trace is open | its spans load | the header says whether any tool ran | web | ✓ | ✓ passes |
+| AC7 | no traces exist yet | the page loads | it says to send a chat message and refresh | web | ✓ | ✓ passes |
 | AC8 | an unknown trace id is requested | the server reads it | it returns 404 | API | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
@@ -96,6 +96,8 @@ The browser tracer (core/trace.js) and the server send spans and logs to /api/tr
 | AC3 | observability AC3: a post with no traces, spans or logs returns 400 | `test/accept-observability.test.js` |
 | AC4 | capContent: redacts to a size hint when capture is off | `test/trace-core.test.js` |
 | AC5 | capContent: truncates past the cap with a marker | `test/trace-core.test.js` |
+| AC6 | observability AC6: an open trace's header says whether any tool ran | `e2e/observability.spec.mjs` |
+| AC7 | observability AC7: with no traces yet, it says to send a chat message and refresh | `e2e/observability.spec.mjs` |
 | AC8 | observability AC8: an unknown trace id returns 404 | `test/accept-observability.test.js` |
 
 ## Not confirmed from the code

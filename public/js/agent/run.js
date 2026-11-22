@@ -114,6 +114,8 @@ export async function run(userMsg) {
     }
   }
   rt.busy = false; rt.turnId = null; setBusy(false); setPhase(null);
+  // setBusy(false) re-enables the composer; keep it off after an error that ends chat.
+  if (err && FATAL.includes(err.code)) disableChat(ERR[err.code]);
   // The stream dropped while the server was still working: follow it by polling.
   const mine = turn.msgId && state.chat.find(x => x.id === turn.msgId);
   if (mine?.live) followLive();

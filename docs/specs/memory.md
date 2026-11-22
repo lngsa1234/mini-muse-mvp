@@ -50,8 +50,8 @@ Muse saves lasting facts and preferences when the user shares them (the same fac
 | AC2 | Muse calls remember | the fact is empty | the tool refuses | web | ✓ | ✓ passes |
 | AC3 | several facts mention a keyword | Muse calls forget with that keyword | the user is shown the matching facts and asked to confirm; only when they approve are the facts removed and listed back | web | ✓ | ✓ passes |
 | AC4 | no fact matches | Muse calls forget | nothing is removed and it says no memory matched | web | ✓ | ✓ passes |
-| AC5 | Settings → Memory lists facts | the user clicks × on one | it is removed and the deletion is audited as by the user | web | ✓ | — no test |
-| AC6 | Muse remembers nothing yet | the Memory list renders | it suggests telling Muse a preference in Chat | web | ✓ | — no test |
+| AC5 | Settings → Memory lists facts | the user clicks × on one | it is removed and the deletion is audited as by the user | web | ✓ | ✓ passes |
+| AC6 | Muse remembers nothing yet | the Memory list renders | it suggests telling Muse a preference in Chat | web | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -84,3 +84,5 @@ The remember and forget tools are in server/agent/tools/memory.js and run in the
 | AC2 | memory AC2: remember refuses an empty fact | `test/accept-memory.test.js` |
 | AC3 | memory AC3: forgetting a keyword that matches several facts asks first, then removes and lists them | `test/accept-memory.test.js` |
 | AC4 | memory AC4: forget with no matching fact removes nothing and says so | `test/accept-memory.test.js` |
+| AC5 | memory AC5: deleting a fact in Settings removes it and audits it as by you | `e2e/memory.spec.mjs` |
+| AC6 | memory AC6: with nothing remembered, the list suggests telling Muse a preference in Chat | `e2e/memory.spec.mjs` |

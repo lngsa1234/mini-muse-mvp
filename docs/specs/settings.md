@@ -47,14 +47,14 @@ Settings holds the response-style switch (Fast maps to the quick model tier, Tho
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | the user has never chosen a style | the app loads | Fast is selected | web | ✓ |
-| AC2 | Settings is open | the user picks Thorough | the note says replies can take up to a minute | web | ✓ |
-| AC3 | web search is on | the user clicks the web search switch | it turns off and is saved | web | ✓ |
-| AC4 | the How Muse works panel is shown on a phone | the user turns it off | the app returns to Chat | web | ✓ |
-| AC5 | Settings is open | the user clicks Erase everything… | they are asked to confirm before anything is erased | web | ✓ |
-| AC6 | the user confirms erasing | Muse is mid-turn | the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | the user has never chosen a style | the app loads | Fast is selected | web | ✓ | ✓ passes |
+| AC2 | Settings is open | the user picks Thorough | the note says replies can take up to a minute | web | ✓ | ✓ passes |
+| AC3 | web search is on | the user clicks the web search switch | it turns off and is saved | web | ✓ | ✓ passes |
+| AC4 | the How Muse works panel is shown on a phone | the user turns it off | the app returns to Chat | web | ✓ | ✓ passes |
+| AC5 | Settings is open | the user clicks Erase everything… | they are asked to confirm before anything is erased | web | ✓ | ✓ passes |
+| AC6 | the user confirms erasing | Muse is mid-turn | the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences | web | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -74,6 +74,17 @@ features/settings/settings.js renders the page and stores choices in state.prefs
 | AC4 | `public/js/features/settings/settings.js:23` | `if (!on && $("panes").dataset.mobile === "hood") go("chat");` |
 | AC5 | `public/js/features/settings/settings.js:36` | `Are you sure? <button class="btn" id="resetYes"` |
 | AC6 | `public/js/features/settings/settings.js:42` | `resetAll({ prefs }); // the chat, memory and settings on the server, for every device` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC1 | settings AC1: with no style chosen, Fast is selected | `e2e/settings.spec.mjs` |
+| AC2 | settings AC2: choosing Thorough says replies can take up to a minute | `e2e/settings.spec.mjs` |
+| AC3 | settings AC3: the web search switch turns web search off and saves it | `e2e/settings.spec.mjs` |
+| AC4 | settings AC4: on a phone, turning How Muse works off returns to Chat | `e2e/settings.spec.mjs` |
+| AC5 | settings AC5: Erase everything asks for confirmation before erasing | `e2e/settings.spec.mjs` |
+| AC6 | settings AC6: confirming the erase stops a running turn and erases chat, memory and settings, keeping preferences | `e2e/settings.spec.mjs` |
 
 ## Not confirmed from the code
 
