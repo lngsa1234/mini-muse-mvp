@@ -47,9 +47,9 @@ Through the optional Mini Muse Browser Bridge extension, Muse can open an applic
 
 | # | Given | When | Then | Where | In code |
 |---|---|---|---|---|---|
-| AC1 | the extension isn't installed | muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ |
-| AC2 | muse calls browser_fill | with no fields | the tool refuses | web | ✓ |
-| AC3 | muse wants to click a Submit or Apply button | it calls browser_click | the user is asked whether they reviewed every field before it submits | web | ✓ |
+| AC1 | the extension isn't installed | Muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ |
+| AC2 | Muse calls browser_fill | with no fields | the tool refuses | web | ✓ |
+| AC3 | Muse wants to click a Submit or Apply button | it calls browser_click | the user is asked whether they reviewed every field before it submits | web | ✓ |
 | AC4 | an approval card is showing for a click | the user does not approve | nothing is clicked | web | ✓ |
 | AC5 | a form has a password, SSN or card number field | the extension reads the fields | those fields are marked sensitive and not filled | extension | ✓ |
 

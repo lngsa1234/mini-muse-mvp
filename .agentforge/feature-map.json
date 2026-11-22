@@ -310,13 +310,13 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "checkedAt": "2026-11-22T02:47:10.267Z",
         "counts": {
           "criteria": 10,
           "passing": 2,
@@ -359,7 +359,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
           "branch": "main",
           "fingerprints": {
             "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
@@ -555,13 +555,13 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "checkedAt": "2026-11-22T02:47:10.267Z",
         "counts": {
           "criteria": 5,
           "passing": 2,
@@ -584,7 +584,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
           "branch": "main",
           "fingerprints": {
             "public/js/workflow/approvals.js": "539b562c97c5e6296e7d9fd8ca6d8abf9940f400",
@@ -869,13 +869,13 @@
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "checkedAt": "2026-11-22T02:47:10.267Z",
         "counts": {
           "criteria": 9,
           "passing": 1,
@@ -918,7 +918,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
           "branch": "main",
           "fingerprints": {
             "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
@@ -1114,7 +1114,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -1364,7 +1364,7 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -1563,7 +1563,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -1787,13 +1787,13 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "checkedAt": "2026-11-22T02:47:10.267Z",
         "counts": {
           "criteria": 8,
           "passing": 1,
@@ -1832,7 +1832,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
           "branch": "main",
           "fingerprints": {
             "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
@@ -1985,7 +1985,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -2126,7 +2126,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -2298,7 +2298,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -2440,7 +2440,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -2577,7 +2577,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       }
     },
     {
@@ -2778,13 +2778,13 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:46:33.241Z"
+        "checkedAt": "2026-11-22T02:47:10.220Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:46:25.234Z",
+        "checkedAt": "2026-11-22T02:47:10.267Z",
         "counts": {
           "criteria": 8,
           "passing": 2,
@@ -2819,7 +2819,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "f3f7951318da609058e716f1e44d4faf51dfb42a",
+          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
           "branch": "main",
           "fingerprints": {
             "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",

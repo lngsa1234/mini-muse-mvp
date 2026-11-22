@@ -66,11 +66,11 @@ Until Muse has learned enough to suggest ideas of its own, the page shows starte
 | AC3 | an idea id that does not exist for the user | the client sends PATCH or DELETE | the response is 404 'no such idea' | API | ✓ |
 | AC4 | an unsupported HTTP method on /api/ideas | the request is made | the response is 405 'method not allowed' | API | ✓ |
 | AC5 | a user opens the Ideas page and has no 'new' ideas | the page renders | rule-based starter ideas appear under 'Starter ideas' | web | ✓ |
-| AC6 | a user with an active LLM session | they press 'Update with Muse' | muse creates ideas with status 'new', and the page shows them under 'New from Muse' | web | ✓ |
+| AC6 | a user with an active LLM session | they press 'Update with Muse' | Muse creates ideas with status 'new', and the page shows them under 'New from Muse' | web | ✓ |
 | AC7 | a stored idea | the user presses Save | its status is set to 'saved' and it moves to the Saved group | web | ✓ |
 | AC8 | an idea card | the user presses 'Not for me' on a stored idea | its status becomes dismissed and the card disappears | web | ✓ |
 | AC9 | an idea card | the user presses 'Do it' | the idea is marked done and Muse is sent a message to carry it out | web | ✓ |
-| AC10 | a chat where the user shares an idea | muse calls save_idea with a title already on the page | nothing is created and the tool replies 'Already on the Ideas page.' | web | ✓ |
+| AC10 | a chat where the user shares an idea | Muse calls save_idea with a title already on the page | nothing is created and the tool replies 'Already on the Ideas page.' | web | ✓ |
 
 _The code each criterion rests on is under Evidence, at the end._
 

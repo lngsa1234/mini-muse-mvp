@@ -48,12 +48,12 @@ The check-in is an agent turn with a fixed instruction: check Gmail for applicat
 
 | # | Given | When | Then | Where | In code |
 |---|---|---|---|---|---|
-| AC1 | the Goals page is open | the user clicks the check-in button | muse runs a check-in turn | web | ✓ |
+| AC1 | the Goals page is open | the user clicks the check-in button | Muse runs a check-in turn | web | ✓ |
 | AC2 | "Every day" is on and a check-in already ran today | the five-minute timer fires | no second check-in runs that day | web | ✓ |
 | AC3 | "Every day" is on and it is before 9am | the timer fires | the check-in waits until 9am | web | ✓ |
 | AC4 | "Every day" is on but Muse is busy or there are no goals | the timer fires | no check-in runs | web | ✓ |
-| AC5 | a check-in runs | muse gets its instruction | it is told the user is away and not to send emails | web | ✓ |
-| AC6 | a check-in finishes | muse writes its reply | it leaves a three-line progress brief and what needs the user's decision | web | ✓ |
+| AC5 | a check-in runs | Muse gets its instruction | it is told the user is away and not to send emails | web | ✓ |
+| AC6 | a check-in finishes | Muse writes its reply | it leaves a three-line progress brief and what needs the user's decision | web | ✓ |
 
 _The code each criterion rests on is under Evidence, at the end._
 

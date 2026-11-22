@@ -46,9 +46,9 @@ web_search returns up to five results (title, URL, snippet) from Tavily's search
 
 | # | Given | When | Then | Where | In code |
 |---|---|---|---|---|---|
-| AC1 | muse calls web_search | with an empty query | the tool refuses | web | ✓ |
+| AC1 | Muse calls web_search | with an empty query | the tool refuses | web | ✓ |
 | AC2 | a search runs | the server calls Tavily | it asks for at most five results | API | ✓ |
-| AC3 | muse calls web_open | with a URL that isn't http(s) | the tool refuses | web | ✓ |
+| AC3 | Muse calls web_open | with a URL that isn't http(s) | the tool refuses | web | ✓ |
 | AC4 | a page is opened | its text is long | the text is cut to 20,000 characters | API | ✓ |
 | AC5 | the server has no TAVILY_API_KEY | a search or open is requested | it returns 503 no_api_key | API | ✓ |
 | AC6 | the page can't be read | web_open runs | the server returns 422 with the reason | API | ✓ |

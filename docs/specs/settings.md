@@ -49,12 +49,12 @@ Settings holds the response-style switch (Fast maps to the quick model tier, Tho
 
 | # | Given | When | Then | Where | In code |
 |---|---|---|---|---|---|
-| AC1 | the user has never chosen a style | the app loads | fast is selected | web | ✓ |
-| AC2 | settings is open | the user picks Thorough | the note says replies can take up to a minute | web | ✓ |
+| AC1 | the user has never chosen a style | the app loads | Fast is selected | web | ✓ |
+| AC2 | Settings is open | the user picks Thorough | the note says replies can take up to a minute | web | ✓ |
 | AC3 | web search is on | the user clicks the web search switch | it turns off and is saved | web | ✓ |
 | AC4 | the How Muse works panel is shown on a phone | the user turns it off | the app returns to Chat | web | ✓ |
-| AC5 | settings is open | the user clicks Erase everything… | they are asked to confirm before anything is erased | web | ✓ |
-| AC6 | the user confirms erasing | muse is mid-turn | the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences | web | ✓ |
+| AC5 | Settings is open | the user clicks Erase everything… | they are asked to confirm before anything is erased | web | ✓ |
+| AC6 | the user confirms erasing | Muse is mid-turn | the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences | web | ✓ |
 
 _The code each criterion rests on is under Evidence, at the end._
 

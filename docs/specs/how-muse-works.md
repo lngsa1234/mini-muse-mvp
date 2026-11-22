@@ -46,11 +46,11 @@ A side panel (switched on in Settings) highlights the current loop phase, lists 
 
 | # | Given | When | Then | Where | In code |
 |---|---|---|---|---|---|
-| AC1 | muse moves to a new loop phase | a phase event fires | that phase is highlighted | web | ✓ |
+| AC1 | Muse moves to a new loop phase | a phase event fires | that phase is highlighted | web | ✓ |
 | AC2 | a service is connected | the tool list renders | its tools appear after the core tools | web | ✓ |
-| AC3 | there are more than 150 audit entries | settings → Activity renders | only the latest 150 are shown | web | ✓ |
+| AC3 | there are more than 150 audit entries | Settings → Activity renders | only the latest 150 are shown | web | ✓ |
 | AC4 | the user deleted something | the activity renders | that entry is labelled as done by you | web | ✓ |
-| AC5 | the panel is open | muse has used tools | its six latest calls show, excluding the user's | web | ✓ |
+| AC5 | the panel is open | Muse has used tools | its six latest calls show, excluding the user's | web | ✓ |
 | AC6 | nothing has happened yet | the activity renders | it explains every tool call will show up here | web | ✓ |
 
 _The code each criterion rests on is under Evidence, at the end._

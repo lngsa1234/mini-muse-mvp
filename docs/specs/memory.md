@@ -46,12 +46,12 @@ Muse saves lasting facts and preferences when the user shares them (the same fac
 
 | # | Given | When | Then | Where | In code |
 |---|---|---|---|---|---|
-| AC1 | muse already remembers a fact | it calls remember with the same fact in different case | nothing new is saved and it is told it is already remembered | web | ✓ |
-| AC2 | muse calls remember | the fact is empty | the tool refuses | web | ✓ |
-| AC3 | several facts mention a keyword | muse calls forget with that keyword | every fact containing it is removed and listed back | web | ✓ |
-| AC4 | no fact matches | muse calls forget | nothing is removed and it says no memory matched | web | ✓ |
-| AC5 | settings → Memory lists facts | the user clicks × on one | it is removed and the deletion is audited as by the user | web | ✓ |
-| AC6 | muse remembers nothing yet | the Memory list renders | it suggests telling Muse a preference in Chat | web | ✓ |
+| AC1 | Muse already remembers a fact | it calls remember with the same fact in different case | nothing new is saved and it is told it is already remembered | web | ✓ |
+| AC2 | Muse calls remember | the fact is empty | the tool refuses | web | ✓ |
+| AC3 | several facts mention a keyword | Muse calls forget with that keyword | every fact containing it is removed and listed back | web | ✓ |
+| AC4 | no fact matches | Muse calls forget | nothing is removed and it says no memory matched | web | ✓ |
+| AC5 | Settings → Memory lists facts | the user clicks × on one | it is removed and the deletion is audited as by the user | web | ✓ |
+| AC6 | Muse remembers nothing yet | the Memory list renders | it suggests telling Muse a preference in Chat | web | ✓ |
 
 _The code each criterion rests on is under Evidence, at the end._
 
