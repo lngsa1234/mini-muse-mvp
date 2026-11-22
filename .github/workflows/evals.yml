@@ -1,0 +1,61 @@
+name: Evals
+
+# Live model evals (evals/): Muse's real prompt and tools against the real model.
+# They cost a little per run and the model's answers vary, so they don't run on
+# every PR: only on PRs that change what Muse is told or can do, and by hand.
+# (No nightly run for now; add a schedule trigger to catch the model provider
+# changing behavior with no code change.)
+# Needs the OPENAI_API_KEY repository secret; without it the run is skipped with a note.
+on:
+  pull_request:
+    paths:
+      - "server/agent/**"
+      - "public/js/agent/policy.js"
+      - "public/js/workflow/checkin-prompt.js"
+      - "server/routing.js"
+      - "server/proxy.js"
+      - "evals/**"
+  workflow_dispatch:
+    inputs:
+      set:
+        description: "Which cases: product, general or all"
+        default: product
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check for the OpenAI key
+        id: key
+        env:
+          KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "No OPENAI_API_KEY secret: evals skipped. Add it under Settings → Secrets and variables → Actions." >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.key.outputs.present == 'true'
+      - name: Run the evals
+        if: steps.key.outputs.present == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Optional repository variables, to test another model than production's.
+          OPENAI_MODEL_QUICK: ${{ vars.OPENAI_MODEL_QUICK }}
+          OPENAI_EVAL_MODEL: ${{ vars.OPENAI_EVAL_MODEL }}
+          SET: ${{ github.event.inputs.set || 'product' }}
+        run: |
+          set -o pipefail
+          { echo '```'; npm run --silent evals -- "--$SET" 2>&1; status=$?; echo '```'; exit $status; } | tee -a "$GITHUB_STEP_SUMMARY"
