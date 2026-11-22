@@ -71,8 +71,8 @@ Replies stream in as Muse writes them, and the user can stop a reply from any de
 | AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ | — no test |
 | AC7 | the chat is empty | the Chat page renders | a welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle | web | ✓ | — no test |
 | AC8 | a tool action needs approval | the assistant message renders | a card with the heading, detail rows, and Allow / Don't allow buttons is shown | web | ✓ | — no test |
-| AC9 | the user asks to apply for a job and the message is not an email request | the model is called | mail_search and mail_send are removed from the tools offered for that turn | web | ✓ | — no test |
-| AC10 | a reply stops because of the token limit | the turn finishes | the message shows 'The reply was cut short. Ask for less at once.' | web | ✓ | — no test |
+| AC9 | the user asks to apply for a job and the message is not an email request | the model is called | mail_search and mail_send are removed from the tools offered for that turn | web | ✓ | ✓ passes |
+| AC10 | a reply stops because of the token limit | the turn finishes | the message shows 'The reply was cut short. Ask for less at once.' | web | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -127,6 +127,8 @@ The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn 
 | AC2 | only one turn runs at a time per user, across devices | `test/agent-runtime.test.js` |
 | AC5 | routing: tier picks the model, defaults to quick | `test/server.test.js` |
 |  | proxy: pins the model and strips client fields | `test/server.test.js` |
+| AC9 | agent-chat AC9: an apply request removes mail_search and mail_send from the turn's tools | `test/accept-agent-chat.test.js` |
+| AC10 | agent-chat AC10: a reply stopped by the token limit says it was cut short | `test/accept-agent-chat.test.js` |
 
 ## Not confirmed from the code
 

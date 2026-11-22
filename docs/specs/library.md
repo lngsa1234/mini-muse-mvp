@@ -59,16 +59,16 @@ The user pastes text with a title or uploads a file of up to 3 MB. Only the text
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | a signed-in user with stored documents | the client sends GET /api/docs | the response is 200 with { docs: [...] } | API | ✓ |
-| AC2 | a pasted-text request with title and text | the client sends POST /api/docs | the document is created and the response is 201 with { doc } | API | ✓ |
-| AC3 | a POST without a title | the client sends it without a file | the response is 400 "title is required" | API | ✓ |
-| AC4 | an uploaded file larger than 3MB | the client sends POST /api/docs | the response is 413 "file is too large (max 3MB)" | API | ✓ |
-| AC5 | an uploaded file that yields no text | the client sends POST /api/docs | the response is 422 "no readable text could be extracted from this file" | API | ✓ |
-| AC6 | an uploaded file with no title | the client sends POST /api/docs | the title defaults to the filename without its extension | API | ✓ |
-| AC7 | a document id that does not exist for the user | the client sends DELETE /api/docs/:id | the response is 404 "no such document" | API | ✓ |
-| AC8 | an unsupported HTTP method | the client sends it to /api/docs/:id | the response is 405 | API | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | a signed-in user with stored documents | the client sends GET /api/docs | the response is 200 with { docs: [...] } | API | ✓ | ✓ passes |
+| AC2 | a pasted-text request with title and text | the client sends POST /api/docs | the document is created and the response is 201 with { doc } | API | ✓ | ✓ passes |
+| AC3 | a POST without a title | the client sends it without a file | the response is 400 "title is required" | API | ✓ | ✓ passes |
+| AC4 | an uploaded file larger than 3MB | the client sends POST /api/docs | the response is 413 "file is too large (max 3MB)" | API | ✓ | ✓ passes |
+| AC5 | an uploaded file that yields no text | the client sends POST /api/docs | the response is 422 "no readable text could be extracted from this file" | API | ✓ | ✓ passes |
+| AC6 | an uploaded file with no title | the client sends POST /api/docs | the title defaults to the filename without its extension | API | ✓ | ✓ passes |
+| AC7 | a document id that does not exist for the user | the client sends DELETE /api/docs/:id | the response is 404 "no such document" | API | ✓ | ✓ passes |
+| AC8 | an unsupported HTTP method | the client sends it to /api/docs/:id | the response is 405 | API | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -102,6 +102,19 @@ The API is GET/POST /api/docs and DELETE /api/docs/:id, as Vercel Node functions
 | AC6 | `server/docs.js:47` | `const fileTitle = title \|\| filename.replace(/\.[^.]+$/, "") \|\| filename;` |
 | AC7 | `server/docs.js:64` | `if (!removed) return err(404, "no such document");` |
 | AC8 | `api/docs/[id].js:12` | `if (req.method !== "DELETE") return res.status(405).json({ error: "method not allowed" });` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC1 | library AC1: GET /api/docs returns 200 with the user's docs | `test/accept-library.test.js` |
+| AC2 | library AC2: posting pasted text creates the document with 201 | `test/accept-library.test.js` |
+| AC3 | library AC3: a post without a title or file is refused with 400 | `test/accept-library.test.js` |
+| AC4 | library AC4: a file over 3MB is refused with 413 | `test/accept-library.test.js` |
+| AC5 | library AC5: a file with no readable text is refused with 422 | `test/accept-library.test.js` |
+| AC6 | library AC6: an uploaded file with no title is named after the file | `test/accept-library.test.js` |
+| AC7 | library AC7: deleting an unknown document returns 404 | `test/accept-library.test.js` |
+| AC8 | library AC8: an unsupported method on /api/docs/:id returns 405 | `test/accept-library.test.js` |
 
 ## Not confirmed from the code
 

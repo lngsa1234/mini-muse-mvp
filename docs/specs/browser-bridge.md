@@ -45,13 +45,13 @@ Through the optional Mini Muse Browser Bridge extension, Muse can open an applic
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | the extension isn't installed | Muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ |
-| AC2 | Muse calls browser_fill | with no fields | the tool refuses | web | ✓ |
-| AC3 | Muse wants to click a Submit or Apply button | it calls browser_click | the user is asked whether they reviewed every field before it submits | web | ✓ |
-| AC4 | an approval card is showing for a click | the user does not approve | nothing is clicked | web | ✓ |
-| AC5 | a form has a password, SSN or card number field | the extension reads the fields | those fields are marked sensitive and not filled | extension | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | the extension isn't installed | Muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ | — no test |
+| AC2 | Muse calls browser_fill | with no fields | the tool refuses | web | ✓ | ✓ passes |
+| AC3 | Muse wants to click a Submit or Apply button | it calls browser_click | the user is asked whether they reviewed every field before it submits | web | ✓ | ✓ passes |
+| AC4 | an approval card is showing for a click | the user does not approve | nothing is clicked | web | ✓ | ✓ passes |
+| AC5 | a form has a password, SSN or card number field | the extension reads the fields | those fields are marked sensitive and not filled | extension | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -88,6 +88,15 @@ features/browser/browser.js talks to the Chrome extension with window.postMessag
 | AC3 | `server/agent/tools/browser.js:33` | `heading: "This will submit the form in your Chrome tab. Did you review every field?"` |
 | AC4 | `server/agent/tools/browser.js:35` | `if (ok !== true) return h.refusal(ok);` |
 | AC5 | `chrome-extension/target.js:8` | `const SENSITIVE = /password\|passwd\|ssn\|social.?security\|card.?number\|cvv\|cvc\|routing\|account.?number/i;` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC2 | browser-bridge AC2: browser_fill refuses when there are no fields | `test/accept-browser-bridge.test.js` |
+| AC3 | browser-bridge AC3: clicking Submit asks whether every field was reviewed | `test/accept-browser-bridge.test.js` |
+| AC4 | browser-bridge AC4: a click the user doesn't approve clicks nothing | `test/accept-browser-bridge.test.js` |
+| AC5 | browser-bridge AC5: password, SSN and card number fields are marked sensitive and not filled | `test/accept-browser-bridge.test.js` |
 
 ## Not confirmed from the code
 

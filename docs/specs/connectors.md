@@ -68,9 +68,9 @@ Gmail and Calendar connect together with one Google sign-in. Muse can read from 
 | AC3 | the Google status endpoint reports connected | initConnectors runs at boot or after the redirect | both Gmail and Calendar are marked on together | web | ✓ | — no test |
 | AC4 | Google is connected | the user clicks Disconnect Google | Gmail and Calendar are turned off and the disconnect is audited | web | ✓ | — no test |
 | AC5 | Gmail is connected and Muse calls mail_send | the tool runs | an approval card asks the user to allow the send, and the message is sent only after approval | web | ✓ | ✓ passes |
-| AC6 | Calendar permission is Ask me first | Muse calls calendar_add | an approval card shows the event and time before the event is added | web | ✓ | — no test |
-| AC7 | Contacts include the two seeded example contacts | Muse calls contacts_lookup with a name that matches nobody | the tool returns 'No contact found.' | web | ✓ | — no test |
-| AC8 | the Google routes are served | the client requests Gmail search | POST /api/google/mail/search is handled by the Google module | API | ✓ | — no test |
+| AC6 | Calendar permission is Ask me first | Muse calls calendar_add | an approval card shows the event and time before the event is added | web | ✓ | ✓ passes |
+| AC7 | Contacts include the two seeded example contacts | Muse calls contacts_lookup with a name that matches nobody | the tool returns 'No contact found.' | web | ✓ | ✓ passes |
+| AC8 | the Google routes are served | the client requests Gmail search | POST /api/google/mail/search is handled by the Google module | API | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -115,6 +115,9 @@ The Connectors page (features/connectors) sends the browser to /api/google/autho
 |---|---|---|
 | AC5 | an approval waits for the user's answer, which can come from any device | `test/agent-runtime.test.js` |
 |  | an unanswered approval expires and nothing is sent | `test/agent-runtime.test.js` |
+| AC6 | connectors AC6: calendar_add shows an approval card with the event and time before adding | `test/accept-connectors.test.js` |
+| AC7 | connectors AC7: contacts_lookup with a name that matches nobody returns 'No contact found.' | `test/accept-connectors.test.js` |
+| AC8 | connectors AC8: POST /api/google/mail/search is handled by the Google module | `test/accept-connectors.test.js` |
 
 ## Not confirmed from the code
 

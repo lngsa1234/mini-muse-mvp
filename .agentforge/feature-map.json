@@ -265,7 +265,13 @@
                   "quote": "const loopTools = application ? tools.filter(t => t.name !== \"mail_search\" && t.name !== \"mail_send\") : tools;"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-agent-chat.test.js",
+                  "name": "agent-chat AC9: an apply request removes mail_search and mail_send from the turn's tools"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -280,7 +286,13 @@
                   "quote": "The reply was cut short. Ask for less at once."
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-agent-chat.test.js",
+                  "name": "agent-chat AC10: a reply stopped by the token limit says it was cut short"
+                }
+              ]
             }
           ],
           "scenarios": [],
@@ -310,19 +322,19 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:47:10.267Z",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
         "counts": {
           "criteria": 10,
-          "passing": 2,
+          "passing": 4,
           "failing": 0,
           "missing": 0,
-          "untested": 8
+          "untested": 6
         },
         "gaps": [
           {
@@ -348,18 +360,10 @@
           {
             "id": "AC8",
             "qa": "untested"
-          },
-          {
-            "id": "AC9",
-            "qa": "untested"
-          },
-          {
-            "id": "AC10",
-            "qa": "untested"
           }
         ],
         "evidence": {
-          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
           "branch": "main",
           "fingerprints": {
             "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
@@ -372,7 +376,8 @@
           },
           "files": [
             "test/agent-runtime.test.js",
-            "test/server.test.js"
+            "test/server.test.js",
+            "test/accept-agent-chat.test.js"
           ]
         }
       }
@@ -472,8 +477,8 @@
               "evidence": [
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 477,
-                  "endLine": 477,
+                  "startLine": 482,
+                  "endLine": 482,
                   "quote": "export function expireApprovals() { for (const [, res] of approvals) res(null); }"
                 }
               ],
@@ -555,13 +560,13 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:47:10.267Z",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
         "counts": {
           "criteria": 5,
           "passing": 2,
@@ -584,7 +589,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
           "branch": "main",
           "fingerprints": {
             "public/js/workflow/approvals.js": "539b562c97c5e6296e7d9fd8ca6d8abf9940f400",
@@ -869,13 +874,13 @@
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:47:10.267Z",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
         "counts": {
           "criteria": 9,
           "passing": 1,
@@ -918,7 +923,7 @@
           }
         ],
         "evidence": {
-          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
           "branch": "main",
           "fingerprints": {
             "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
@@ -1114,7 +1119,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       }
     },
     {
@@ -1190,7 +1195,14 @@
                   "endLine": 19,
                   "quote": "if (!title) return err(400, \"title is required\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-ideas.test.js",
+                  "name": "ideas AC1: posting an idea with a blank or missing title returns 400"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1204,7 +1216,14 @@
                   "endLine": 21,
                   "quote": "title: title.slice(0, TITLE_CAP),"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-ideas.test.js",
+                  "name": "ideas AC2: a valid idea is created with 201 and its title capped at 200 characters"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1224,7 +1243,14 @@
                   "endLine": 44,
                   "quote": "if (!removed) return err(404, \"no such idea\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-ideas.test.js",
+                  "name": "ideas AC3: PATCH or DELETE of an unknown idea returns 404"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1238,7 +1264,14 @@
                   "endLine": 23,
                   "quote": "return send(res, { status: 405, json: { error: \"method not allowed\" } });"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-ideas.test.js",
+                  "name": "ideas AC4: an unsupported method on /api/ideas returns 405"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "web",
@@ -1252,7 +1285,8 @@
                   "endLine": 51,
                   "quote": "Starter ideas <span>${gen.busy ? \"Muse is personalizing these…\" : \"from simple rules\"}</span>"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1268,11 +1302,12 @@
                 },
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 1273,
-                  "endLine": 1273,
+                  "startLine": 1307,
+                  "endLine": 1307,
                   "quote": "'New from Muse <span>updated"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1286,7 +1321,8 @@
                   "endLine": 131,
                   "quote": "replaceIdea(i = await updateIdea(i.id, { status: \"saved\" }))"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1306,7 +1342,8 @@
                   "endLine": 47,
                   "quote": "filter(i => ideaStatus(i) !== \"dismissed\")"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1320,7 +1357,8 @@
                   "endLine": 120,
                   "quote": "updateIdea(i.id, { status: \"done\" })"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "surface": "web",
@@ -1334,7 +1372,14 @@
                   "endLine": 13,
                   "quote": "return \"Already on the Ideas page.\";"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-ideas.test.js",
+                  "name": "ideas AC10: save_idea with a title already on the page creates nothing"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [],
@@ -1364,7 +1409,55 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "counts": {
+          "criteria": 10,
+          "passing": 5,
+          "failing": 0,
+          "missing": 0,
+          "untested": 5
+        },
+        "gaps": [
+          {
+            "id": "AC5",
+            "qa": "untested"
+          },
+          {
+            "id": "AC6",
+            "qa": "untested"
+          },
+          {
+            "id": "AC7",
+            "qa": "untested"
+          },
+          {
+            "id": "AC8",
+            "qa": "untested"
+          },
+          {
+            "id": "AC9",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
+          "branch": "main",
+          "fingerprints": {
+            "api/ideas": "d4f2abb813eafc0985590905cbd74f0987ceed96",
+            "public/js/features/ideas": "7fa895a15e1230a993fc3dd95223eac7e74a0fa7",
+            "server/agent/tools/ideas.js": "829021acb9fbdf1f4c26ff3343ef6c10af4f305b",
+            "server/ideas.js": "aeb56f3b7bab83d6333cb25c4e1d32342130bbdf"
+          },
+          "files": [
+            "test/accept-ideas.test.js"
+          ]
+        }
       }
     },
     {
@@ -1439,7 +1532,14 @@
                   "endLine": 22,
                   "quote": "return { status: 200, json: { docs: await listDocs(userId) } };"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC1: GET /api/docs returns 200 with the user's docs"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1453,7 +1553,14 @@
                   "endLine": 34,
                   "quote": "const doc = await createDoc(userId, { title, text: text.slice(0, TEXT_CAP) });"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC2: posting pasted text creates the document with 201"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1467,7 +1574,14 @@
                   "endLine": 32,
                   "quote": "if (!title) return err(400, \"title is required\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC3: a post without a title or file is refused with 400"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1481,7 +1595,14 @@
                   "endLine": 43,
                   "quote": "return err(413, \"file is too large (max 3MB)\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC4: a file over 3MB is refused with 413"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1495,7 +1616,14 @@
                   "endLine": 51,
                   "quote": "no readable text could be extracted from this file"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC5: a file with no readable text is refused with 422"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1509,7 +1637,14 @@
                   "endLine": 47,
                   "quote": "const fileTitle = title || filename.replace(/\\.[^.]+$/, \"\") || filename;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC6: an uploaded file with no title is named after the file"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1523,7 +1658,14 @@
                   "endLine": 64,
                   "quote": "if (!removed) return err(404, \"no such document\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC7: deleting an unknown document returns 404"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "surface": "API",
@@ -1537,7 +1679,14 @@
                   "endLine": 12,
                   "quote": "if (req.method !== \"DELETE\") return res.status(405).json({ error: \"method not allowed\" });"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-library.test.js",
+                  "name": "library AC8: an unsupported method on /api/docs/:id returns 405"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [],
@@ -1563,7 +1712,35 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
+      },
+      "qa": {
+        "status": "complete",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "counts": {
+          "criteria": 8,
+          "passing": 8,
+          "failing": 0,
+          "missing": 0,
+          "untested": 0
+        },
+        "gaps": [],
+        "evidence": {
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
+          "branch": "main",
+          "fingerprints": {
+            "api/docs": "02a86113cc7b1d25740e5f93606e0f954705dc23",
+            "public/js/features/library": "42a2a7cd6a63777fac99f0abe9fb816ced108759",
+            "server/agent/tools/library.js": "b102b6edbd62b1f8235bfeb5b33df55dd83956be",
+            "server/docs.js": "3237a8602c7cc5e1d51849ab79e4f8cc8690cef9",
+            "server/extract.js": "f0f048cb2b1ca767d9bf905fd81225ad7a241a90"
+          },
+          "files": [
+            "test/accept-library.test.js"
+          ]
+        }
       }
     },
     {
@@ -1726,7 +1903,13 @@
                   "quote": "Muse wants to add this to Google Calendar. Allow it?"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-connectors.test.js",
+                  "name": "connectors AC6: calendar_add shows an approval card with the event and time before adding"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1741,7 +1924,13 @@
                   "quote": "\"No contact found.\""
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-connectors.test.js",
+                  "name": "connectors AC7: contacts_lookup with a name that matches nobody returns 'No contact found.'"
+                }
+              ]
             },
             {
               "surface": "API",
@@ -1756,7 +1945,13 @@
                   "quote": "app.post(\"/api/google/mail/search\""
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-connectors.test.js",
+                  "name": "connectors AC8: POST /api/google/mail/search is handled by the Google module"
+                }
+              ]
             }
           ],
           "scenarios": [],
@@ -1787,19 +1982,19 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:47:10.267Z",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
         "counts": {
           "criteria": 8,
-          "passing": 1,
+          "passing": 4,
           "failing": 0,
           "missing": 0,
-          "untested": 7
+          "untested": 4
         },
         "gaps": [
           {
@@ -1817,22 +2012,10 @@
           {
             "id": "AC4",
             "qa": "untested"
-          },
-          {
-            "id": "AC6",
-            "qa": "untested"
-          },
-          {
-            "id": "AC7",
-            "qa": "untested"
-          },
-          {
-            "id": "AC8",
-            "qa": "untested"
           }
         ],
         "evidence": {
-          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
           "branch": "main",
           "fingerprints": {
             "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
@@ -1842,7 +2025,8 @@
             "server/google.js": "90be1a2745f2d0e5fb0ff09b4aca10284e1d1e0a"
           },
           "files": [
-            "test/agent-runtime.test.js"
+            "test/agent-runtime.test.js",
+            "test/accept-connectors.test.js"
           ]
         }
       }
@@ -1923,8 +2107,8 @@
               "evidence": [
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 1928,
-                  "endLine": 1928,
+                  "startLine": 2112,
+                  "endLine": 2112,
                   "quote": "const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));"
                 }
               ]
@@ -1985,7 +2169,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       }
     },
     {
@@ -2040,7 +2224,14 @@
                   "endLine": 17,
                   "quote": "if (!q) throw new Error(\"need a search query\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-web-search.test.js",
+                  "name": "web-search AC1: web_search refuses an empty query"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a search runs",
@@ -2054,7 +2245,14 @@
                   "endLine": 43,
                   "quote": "max_results: 5, search_depth: \"basic\""
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-web-search.test.js",
+                  "name": "web-search AC2: a search asks Tavily for at most five results"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Muse calls web_open",
@@ -2068,7 +2266,14 @@
                   "endLine": 27,
                   "quote": "if (!/^https?:\\/\\//i.test(u)) throw new Error(\"need a valid http(s) url\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-web-search.test.js",
+                  "name": "web-search AC3: web_open refuses a URL that isn't http(s)"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a page is opened",
@@ -2082,7 +2287,14 @@
                   "endLine": 16,
                   "quote": "const TEXT_CAP = 20000;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-web-search.test.js",
+                  "name": "web-search AC4: an opened page's text is cut to 20,000 characters"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the server has no TAVILY_API_KEY",
@@ -2096,7 +2308,14 @@
                   "endLine": 21,
                   "quote": "const noKey = () => err(503, \"no_api_key\", \"TAVILY_API_KEY is not set on the server.\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-web-search.test.js",
+                  "name": "web-search AC5: with no TAVILY_API_KEY, search and open return 503 no_api_key"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the page can't be read",
@@ -2110,7 +2329,14 @@
                   "endLine": 89,
                   "quote": "return err(422, \"open_failed\", reason ? String(reason) : \"The page could not be read.\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-web-search.test.js",
+                  "name": "web-search AC6: a page that can't be read returns 422 with the reason"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [],
@@ -2126,7 +2352,33 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
+      },
+      "qa": {
+        "status": "complete",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "counts": {
+          "criteria": 6,
+          "passing": 6,
+          "failing": 0,
+          "missing": 0,
+          "untested": 0
+        },
+        "gaps": [],
+        "evidence": {
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
+          "branch": "main",
+          "fingerprints": {
+            "api/web": "23dd029dbf1bd46cac9751734598b9f7183ee53c",
+            "server/agent/tools/web.js": "2550eb6dc3e1b44ec1aa8175612bb084b0320b88",
+            "server/web.js": "8bd80f698bd806d4c592740da3fa2a2b6e56cb38"
+          },
+          "files": [
+            "test/accept-web-search.test.js"
+          ]
+        }
       }
     },
     {
@@ -2181,7 +2433,8 @@
                   "endLine": 8,
                   "quote": "Mini Muse Browser Bridge did not respond: the Chrome extension isn't installed or enabled."
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "Muse calls browser_fill",
@@ -2195,7 +2448,14 @@
                   "endLine": 22,
                   "quote": "if (!list.length) throw new Error(\"No fields to fill.\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-browser-bridge.test.js",
+                  "name": "browser-bridge AC2: browser_fill refuses when there are no fields"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Muse wants to click a Submit or Apply button",
@@ -2209,7 +2469,14 @@
                   "endLine": 33,
                   "quote": "heading: \"This will submit the form in your Chrome tab. Did you review every field?\""
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-browser-bridge.test.js",
+                  "name": "browser-bridge AC3: clicking Submit asks whether every field was reviewed"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "an approval card is showing for a click",
@@ -2223,7 +2490,14 @@
                   "endLine": 35,
                   "quote": "if (ok !== true) return h.refusal(ok);"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-browser-bridge.test.js",
+                  "name": "browser-bridge AC4: a click the user doesn't approve clicks nothing"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a form has a password, SSN or card number field",
@@ -2237,7 +2511,14 @@
                   "endLine": 8,
                   "quote": "const SENSITIVE = /password|passwd|ssn|social.?security|card.?number|cvv|cvc|routing|account.?number/i;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-browser-bridge.test.js",
+                  "name": "browser-bridge AC5: password, SSN and card number fields are marked sensitive and not filled"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [
@@ -2298,7 +2579,38 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "counts": {
+          "criteria": 5,
+          "passing": 4,
+          "failing": 0,
+          "missing": 0,
+          "untested": 1
+        },
+        "gaps": [
+          {
+            "id": "AC1",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
+          "branch": "main",
+          "fingerprints": {
+            "chrome-extension": "22812145e902dea5314d060c70351d60d583bd50",
+            "public/js/features/browser": "f2861db4457e67f23d734de044d58343337cb230",
+            "server/agent/tools/browser.js": "6282963b8ed77d55230ba2f002dab644de7fcec6"
+          },
+          "files": [
+            "test/accept-browser-bridge.test.js"
+          ]
+        }
       }
     },
     {
@@ -2440,7 +2752,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       }
     },
     {
@@ -2577,7 +2889,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       }
     },
     {
@@ -2639,7 +2951,13 @@
                   "quote": "if (!enabled) return { status: 202, json: { written: { traces: 0, spans: 0, logs: 0 }, disabled: true } };"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-observability.test.js",
+                  "name": "observability AC1: with OBS_ENABLED off, nothing is written and the reply says disabled"
+                }
+              ]
             },
             {
               "given": "a signed-in user posts traces",
@@ -2654,7 +2972,13 @@
                   "quote": "const traces = asArray(body && body.traces).map(t => ({ ...t, user_id: userId || t.user_id || null }));"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-observability.test.js",
+                  "name": "observability AC2: ingested traces carry the server's user id, not the browser's"
+                }
+              ]
             },
             {
               "given": "a post has no traces, spans or logs",
@@ -2669,7 +2993,13 @@
                   "quote": "return { status: 400, json: { error: \"no traces, spans or logs in body\" } };"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-observability.test.js",
+                  "name": "observability AC3: a post with no traces, spans or logs returns 400"
+                }
+              ]
             },
             {
               "given": "content capture is off",
@@ -2756,7 +3086,13 @@
                   "quote": "if (!trace) return { status: 404, json: { error: \"trace not found\" } };"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-observability.test.js",
+                  "name": "observability AC8: an unknown trace id returns 404"
+                }
+              ]
             }
           ],
           "scenarios": [],
@@ -2778,33 +3114,21 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T02:47:10.220Z"
+        "checkedAt": "2026-11-22T03:24:15.999Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T02:47:10.267Z",
+        "checkedAt": "2026-11-22T03:24:16.066Z",
         "counts": {
           "criteria": 8,
-          "passing": 2,
+          "passing": 6,
           "failing": 0,
           "missing": 0,
-          "untested": 6
+          "untested": 2
         },
         "gaps": [
-          {
-            "id": "AC1",
-            "qa": "untested"
-          },
-          {
-            "id": "AC2",
-            "qa": "untested"
-          },
-          {
-            "id": "AC3",
-            "qa": "untested"
-          },
           {
             "id": "AC6",
             "qa": "untested"
@@ -2812,14 +3136,10 @@
           {
             "id": "AC7",
             "qa": "untested"
-          },
-          {
-            "id": "AC8",
-            "qa": "untested"
           }
         ],
         "evidence": {
-          "commitSha": "059ba3927db36b2b17ba8f982395ddc45949dc0f",
+          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
           "branch": "main",
           "fingerprints": {
             "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",
@@ -2830,6 +3150,7 @@
             "server/trace.js": "da0febe2b7eddbe3b3419da81c991223e8e5e32b"
           },
           "files": [
+            "test/accept-observability.test.js",
             "test/trace-core.test.js"
           ]
         }

@@ -79,7 +79,7 @@ Tools that change something call the approval helper in workflow/approvals.js, w
 | AC1 | `server/agent/runtime.js:220` | `msg.status = "Waiting for your approval…"` |
 | AC2 | `public/js/workflow/approvals.js:24` | `onClick("approve", id => answer(id, true));` |
 | AC3 | `public/js/workflow/approvals.js:25` | `onClick("decline", id => answer(id, false));` |
-| AC4 | `.agentforge/feature-map.json:477` | `export function expireApprovals() { for (const [, res] of approvals) res(null); }` |
+| AC4 | `.agentforge/feature-map.json:482` | `export function expireApprovals() { for (const [, res] of approvals) res(null); }` |
 | AC5 | `server/agent/runtime.js:229` | `audit("approval", { [tool]: card.summary }, a.approval, "you");` |
 
 ## Tests
