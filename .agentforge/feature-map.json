@@ -368,7 +368,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright+node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 10,
           "passing": 10,
@@ -378,7 +378,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
@@ -651,7 +651,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 7,
           "passing": 7,
@@ -661,7 +661,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "public/js/workflow/approvals.js": "9bd452d7beb02727372e7f8b3c47199c1e17c512",
@@ -1067,7 +1067,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright+node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 12,
           "passing": 12,
@@ -1077,7 +1077,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
@@ -1323,7 +1323,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright+node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -1333,7 +1333,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "public/js/workflow/checkin-prompt.js": "d6785a53c7c4cd4d8ad457c054dcad82caf63d8d",
@@ -1669,7 +1669,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node+playwright",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 10,
           "passing": 10,
@@ -1679,7 +1679,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/ideas": "d4f2abb813eafc0985590905cbd74f0987ceed96",
@@ -1952,7 +1952,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 8,
           "passing": 8,
@@ -1962,7 +1962,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/docs": "02a86113cc7b1d25740e5f93606e0f954705dc23",
@@ -2246,7 +2246,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright+node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 8,
           "passing": 8,
@@ -2256,7 +2256,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
@@ -2459,7 +2459,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node+playwright",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -2469,7 +2469,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "public/js/features/memory": "e6276efd8f3c74a936ce167a9717dc0f91de1846",
@@ -2669,7 +2669,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -2679,7 +2679,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/web": "23dd029dbf1bd46cac9751734598b9f7183ee53c",
@@ -2902,7 +2902,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright+node",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 5,
           "passing": 5,
@@ -2912,7 +2912,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "chrome-extension": "22812145e902dea5314d060c70351d60d583bd50",
@@ -3113,7 +3113,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -3123,7 +3123,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "public/js/features/settings": "b54743df8dfcc282c7779e20a8ffc5576d4c1d2b"
@@ -3316,7 +3316,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "playwright",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -3326,7 +3326,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "public/js/features/hood": "c546944c1581f05334a8866a3cd4a761e0ccc06f"
@@ -3577,7 +3577,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node+playwright",
-        "checkedAt": "2026-11-22T16:50:55.080Z",
+        "checkedAt": "2026-11-22T19:23:54.362Z",
         "counts": {
           "criteria": 8,
           "passing": 8,
@@ -3587,7 +3587,7 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "65c543052bd5410b4901fa970aa20b6272e3a974",
+          "commitSha": "579e430fc7054fe47e851829d893b48c7ff38caf",
           "branch": "main",
           "fingerprints": {
             "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",
