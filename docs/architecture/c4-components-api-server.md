@@ -11,16 +11,13 @@ Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-22 · 
 C4 level 3: the components inside API server, with the agent kept apart from each feature’s tools, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).
 
 ```mermaid
-flowchart TB
+flowchart LR
+  subgraph clients["Clients"]
+    browser_app["<b>Browser app</b><br/>Container: ES modules"]
+  end
   subgraph app["API server"]
     subgraph k_shell["Endpoints"]
       agent_http["<b>Agent endpoints</b><br/>Component: Node HTTP, SSE"]
-    end
-    subgraph k_feature["Feature tools"]
-      goal_tools["<b>Goal and job tools</b><br/>Component: JS"]
-      library_tools["<b>Library and ideas tools</b><br/>Component: JS"]
-      connector_tools["<b>Connector tools</b><br/>Component: JS"]
-      memory_web_tools["<b>Memory and web tools</b><br/>Component: JS"]
     end
     subgraph k_agent["Agent"]
       agent_runtime["<b>Agent runtime</b><br/>Component: JS"]
@@ -33,25 +30,27 @@ flowchart TB
     subgraph k_state["Data access"]
       user_data["<b>User data and records</b><br/>Component: Neon driver"]
     end
+    subgraph k_feature["Feature tools"]
+      goal_tools["<b>Goal and job tools</b><br/>Component: JS"]
+      library_tools["<b>Library and ideas tools</b><br/>Component: JS"]
+      connector_tools["<b>Connector tools</b><br/>Component: JS"]
+      memory_web_tools["<b>Memory and web tools</b><br/>Component: JS"]
+    end
   end
-  subgraph others["Other containers"]
-    browser_app["<b>Browser app</b><br/>Container: ES modules"]
+  subgraph services["Services and data"]
     openai["<b>OpenAI API</b><br/>Software system"]
     google_apis["<b>Google Gmail and Calendar</b><br/>Software system"]
-    tavily["<b>Tavily web search</b><br/>Software system"]
     neon_postgres[("<b>Neon Postgres</b><br/>Container: Postgres")]
+    tavily["<b>Tavily web search</b><br/>Software system"]
   end
-  browser_app -.->|"Posts turns and answers"| agent_http
+  browser_app -->|"Posts turns and answers"| agent_http
   agent_http -->|"Starts a turn"| agent_runtime
   agent_runtime -->|"Asks the model"| prompt_model
   prompt_model -->|"Streams completions"| openai
   agent_runtime -->|"Runs requested tools"| tool_set
-  tool_set -.->|"Includes"| goal_tools
-  tool_set -.->|"Includes"| library_tools
-  tool_set -.->|"Includes"| connector_tools
-  tool_set -.->|"Includes"| memory_web_tools
+  tool_set -->|"Includes"| k_feature
   tool_set -->|"Includes"| browser_relay
-  browser_relay -->|"Asks the tab to run it"| browser_app
+  browser_relay -.->|"Asks the tab to run it"| browser_app
   connector_tools -->|"Reads and writes"| google_apis
   memory_web_tools -->|"Searches pages"| tavily
   agent_runtime -->|"Saves messages and waits"| user_data
@@ -64,8 +63,8 @@ flowchart TB
   classDef boundary fill:none,stroke:#888888,stroke-dasharray:6 4,color:#555555
   class agent_http,tool_set,goal_tools,library_tools,connector_tools,memory_web_tools,browser_relay,user_data component
   class agent_runtime,prompt_model agent
-  class browser_app,openai,google_apis,tavily,neon_postgres container
-  class app,k_shell,k_feature,k_agent,k_tools,k_state,others boundary
+  class browser_app,openai,google_apis,neon_postgres,tavily container
+  class app,k_shell,k_agent,k_tools,k_state,k_feature,clients,services boundary
 ```
 
 ## Components
