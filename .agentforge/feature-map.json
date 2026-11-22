@@ -260,8 +260,8 @@
               "evidence": [
                 {
                   "path": "server/agent/runtime.js",
-                  "startLine": 322,
-                  "endLine": 322,
+                  "startLine": 374,
+                  "endLine": 374,
                   "quote": "const loopTools = application ? tools.filter(t => t.name !== \"mail_search\" && t.name !== \"mail_send\") : tools;"
                 }
               ],
@@ -281,8 +281,8 @@
               "evidence": [
                 {
                   "path": "server/agent/runtime.js",
-                  "startLine": 330,
-                  "endLine": 330,
+                  "startLine": 382,
+                  "endLine": 382,
                   "quote": "The reply was cut short. Ask for less at once."
                 }
               ],
@@ -322,13 +322,13 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 10,
           "passing": 4,
@@ -363,17 +363,9 @@
           }
         ],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
-          "fingerprints": {
-            "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
-            "api/llm.js": "eba07f1d87da6abf9924f996916d15af49b1018c",
-            "public/js/agent": "18e767cfc32aed3bfdfc0f7fedc2e738c20e93c2",
-            "public/js/features/chat": "79724a4569a9c96bb156cc9947b3ceee7aca365c",
-            "server/agent": "d5858bc1b1824e67d9094a35d6fc0565cbafacfa",
-            "server/proxy.js": "385cb0ede0ba19eeb0b528dfccc464f459960a03",
-            "server/routing.js": "de88364d6deb723a73b71525cc96e4a0dec1f898"
-          },
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
+          "uncommitted": true,
           "files": [
             "test/agent-runtime.test.js",
             "test/server.test.js",
@@ -397,12 +389,14 @@
           "AC1: Given a tool asks for approval, when the card appears, then the chat shows that Muse is waiting for the user's approval.",
           "AC2: Given an approval card is showing, when the user clicks Approve, then the tool continues with a yes.",
           "AC3: Given an approval card is showing, when the user clicks Decline, then the tool continues with a no.",
-          "AC4: Given an approval card is still waiting, when the turn ends, then the card resolves as no answer.",
-          "AC5: Given the user answered a card, when the tool resumes, then the outcome is written to the activity audit."
+          "AC4: Given an approval card gets no answer, when its 4 minutes run out, then the card resolves as no answer and nothing is done.",
+          "AC5: Given the user approved, declined or never answered a card, when the tool resumes, then the outcome is written to the activity audit as by the user.",
+          "AC6: Given a card is still open when the turn reaches its time limit, when the user answers within 4 minutes of the card appearing, then Muse runs the answered action in a follow-up turn and carries on.",
+          "AC7: Given a paused card's 4 minutes have passed, when the user answers it, then the answer is refused and nothing runs."
         ],
         "document": {
           "objective": "Makes Muse stop and ask before a sensitive action: a tool pauses, an approval card appears in chat, and the action goes ahead only if the user approves.",
-          "summary": "Before Muse does something that changes or sends anything, the chat shows a card saying what it wants to do, and Muse waits. The user approves or declines; if nobody answers before the turn ends, nothing happens. Each answer is shown on the card and written to the activity log. Cards are saved on the server, so the user can answer from any device, and a turn waits up to 4 minutes for an answer.",
+          "summary": "Before Muse changes or sends anything, the chat shows a card saying what it wants to do, and Muse waits. The user approves or declines; a card with no answer after 4 minutes resolves as no answer and nothing happens. If the turn runs out of time first, the card stays open, and an answer within the 4 minutes lets Muse carry on in a follow-up turn. Every outcome is shown on the card and written to the activity log, and cards can be answered from any device.",
           "userStories": [
             "As a user, I want Muse to ask before sending, submitting or changing things so that nothing happens on my behalf without my say-so."
           ],
@@ -414,8 +408,9 @@
             "Which tools ask (each tool decides)"
           ],
           "functionalRequirements": [
-            "The system pauses a tool until the user approves, declines or the turn ends.",
-            "The system records each approval outcome in the activity audit."
+            "The system pauses a tool until the user approves, declines, or the card's 4 minutes run out.",
+            "The system keeps a card open past the end of its turn and resumes the work when the card is answered in time.",
+            "The system records every approval outcome, approved, declined or unanswered, in the activity audit."
           ],
           "acceptanceCriteria": [
             {
@@ -426,12 +421,18 @@
               "evidence": [
                 {
                   "path": "server/agent/runtime.js",
-                  "startLine": 220,
-                  "endLine": 220,
+                  "startLine": 253,
+                  "endLine": 253,
                   "quote": "msg.status = \"Waiting for your approval…\""
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-approvals.test.js",
+                  "name": "approvals AC1: while a card waits, the chat says Muse is waiting for approval"
+                }
+              ]
             },
             {
               "given": "an approval card is showing",
@@ -441,8 +442,8 @@
               "evidence": [
                 {
                   "path": "public/js/workflow/approvals.js",
-                  "startLine": 24,
-                  "endLine": 24,
+                  "startLine": 28,
+                  "endLine": 28,
                   "quote": "onClick(\"approve\", id => answer(id, true));"
                 }
               ],
@@ -462,24 +463,30 @@
               "evidence": [
                 {
                   "path": "public/js/workflow/approvals.js",
-                  "startLine": 25,
-                  "endLine": 25,
+                  "startLine": 29,
+                  "endLine": 29,
                   "quote": "onClick(\"decline\", id => answer(id, false));"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-approvals.test.js",
+                  "name": "approvals AC3: declining a card continues the tool with a no"
+                }
+              ]
             },
             {
-              "given": "an approval card is still waiting",
-              "when": "the turn ends",
-              "then": "the card resolves as no answer",
+              "given": "an approval card gets no answer",
+              "when": "its 4 minutes run out",
+              "then": "the card resolves as no answer and nothing is done",
               "surface": "web",
               "evidence": [
                 {
-                  "path": ".agentforge/feature-map.json",
-                  "startLine": 482,
-                  "endLine": 482,
-                  "quote": "export function expireApprovals() { for (const [, res] of approvals) res(null); }"
+                  "path": "server/agent/runtime.js",
+                  "startLine": 268,
+                  "endLine": 268,
+                  "quote": "a.approval = ok === true ? \"approved\" : ok === null ? \"expired\" : \"declined\";"
                 }
               ],
               "tests": [
@@ -491,19 +498,73 @@
               "qa": "pass"
             },
             {
-              "given": "the user answered a card",
+              "given": "the user approved, declined or never answered a card",
               "when": "the tool resumes",
-              "then": "the outcome is written to the activity audit",
+              "then": "the outcome is written to the activity audit as by the user",
               "surface": "web",
               "evidence": [
                 {
                   "path": "server/agent/runtime.js",
-                  "startLine": 229,
-                  "endLine": 229,
-                  "quote": "audit(\"approval\", { [tool]: card.summary }, a.approval, \"you\");"
+                  "startLine": 270,
+                  "endLine": 270,
+                  "quote": "await audit(\"approval\", { [tool]: card.summary }, a.approval, \"you\");"
                 }
               ],
-              "qa": "untested"
+              "tests": [
+                {
+                  "path": "test/accept-approvals.test.js",
+                  "name": "approvals AC5: approved, declined and unanswered cards are all written to the audit"
+                }
+              ],
+              "qa": "pass"
+            },
+            {
+              "given": "a card is still open when the turn reaches its time limit",
+              "when": "the user answers within 4 minutes of the card appearing",
+              "then": "Muse runs the answered action in a follow-up turn and carries on",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "server/agent/runtime.js",
+                  "startLine": 261,
+                  "endLine": 261,
+                  "quote": "// The turn is out of time but the card isn't: pause with the card open."
+                },
+                {
+                  "path": "server/agent/http.js",
+                  "startLine": 89,
+                  "endLine": 89,
+                  "quote": "return { status: 200, json: { ok, resume: waitId } };"
+                }
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-approvals.test.js",
+                  "name": "approvals AC6: a card still open when the turn runs out of time can be answered, and Muse carries on"
+                }
+              ],
+              "qa": "pass"
+            },
+            {
+              "given": "a paused card's 4 minutes have passed",
+              "when": "the user answers it",
+              "then": "the answer is refused and nothing runs",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "server/agent/http.js",
+                  "startLine": 82,
+                  "endLine": 82,
+                  "quote": "if (park?.status === \"pending\" && Date.now() > Number(park.request?.until || 0)) {"
+                }
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-approvals.test.js",
+                  "name": "approvals AC7: answering a paused card after its time has run out does nothing"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [
@@ -553,49 +614,34 @@
           "risks": [],
           "openQuestions": [],
           "limitations": [],
-          "howItWorks": "Tools that change something call the approval helper in workflow/approvals.js, which adds a pending card to the assistant message and waits for Allow or Don't allow; a refusal goes back to the model as the tool result."
+          "howItWorks": "A tool that changes something calls h.ask in server/agent/runtime.js, which adds a pending card to the assistant message, saves a wait in agent_waits and waits for the answer from any device (/api/agent/answer, server/agent/http.js). A refusal goes back to the model as the tool result. When the turn nears the function time limit, the card is parked; answering it returns resume, and the browser (public/js/workflow/approvals.js) posts a follow-up turn that re-runs the tool with the saved answer."
         },
         "problems": [],
         "counts": {
-          "criteria": 5,
-          "verified": 5
+          "criteria": 7,
+          "verified": 7
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
-          "criteria": 5,
-          "passing": 2,
+          "criteria": 7,
+          "passing": 7,
           "failing": 0,
           "missing": 0,
-          "untested": 3
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC1",
-            "qa": "untested"
-          },
-          {
-            "id": "AC3",
-            "qa": "untested"
-          },
-          {
-            "id": "AC5",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
-          "fingerprints": {
-            "public/js/workflow/approvals.js": "539b562c97c5e6296e7d9fd8ca6d8abf9940f400",
-            "server/agent/runtime.js": "8c18f82b5ee9c9eb52b38d274d4c0b3e5d575a27"
-          },
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
+          "uncommitted": true,
           "files": [
+            "test/accept-approvals.test.js",
             "test/agent-runtime.test.js"
           ]
         }
@@ -620,18 +666,21 @@
         "status": "complete",
         "acceptanceCriteria": [
           "AC1: Given Muse is connected and not busy, when the user submits a goal in the Goals form, then Muse is asked to plan it with every step left as todo.",
-          "AC2: Given Muse calls create_goal, when it passes more than 8 steps or none, then at most 8 steps are kept, and a goal with no steps is refused.",
+          "AC2: Given Muse calls create_goal, when it passes fewer than 3 or more than 6 steps, then the tool refuses and asks for a plan of 3 to 6 steps.",
           "AC3: Given only bookkeeping tools ran this turn, when Muse calls update_step with status done, then the tool refuses because no tool did any work this turn.",
           "AC4: Given a web_search ran this turn, when Muse marks a step done citing a different tool, then the tool refuses and lists the tools that did run.",
           "AC5: Given Muse calls jobs_search, when it passes neither keywords nor company boards, then the tool refuses and asks for a job title or boards.",
           "AC6: Given the Library has no résumé, when Muse calls score_fit for a posting, then the tool refuses and asks the user to add a résumé.",
-          "AC7: Given a tracked job is drafted, when Muse marks it applied with no approved Submit click and no confirmation email this turn, then the tool refuses and points to Gmail or the Goals page.",
+          "AC7: Given a tracked job is drafted, when Muse marks it applied with no approved Submit click, no confirmation email and no word from the user this turn that they applied, then the tool refuses and asks the user whether they applied.",
           "AC8: Given Muse found the employer's email this turn, when it marks a job as interview, then the user is asked to confirm before it counts.",
-          "AC9: Given a goal exists, when Muse calls revise_plan with changed steps, then the user sees a before/after card and nothing changes unless they approve."
+          "AC9: Given a goal exists, when Muse calls revise_plan with changed steps, then the user sees a before/after card and nothing changes unless they approve.",
+          "AC10: Given a goal exists, when Muse calls revise_plan with fewer than 3 or more than 6 steps, then the tool refuses.",
+          "AC11: Given the user tells Muse this turn that they applied to a tracked job, when Muse marks that job applied, then the job is marked applied, citing the user's word.",
+          "AC12: Given an API client, when it POSTs /api/goals with fewer than 3 or more than 6 steps, then the response is 400 'a goal needs 3 to 6 steps'."
         ],
         "document": {
           "objective": "Lets a user set a goal, such as getting an interview within 30 days, that Muse turns into a plan of steps and works through, marking a step done only when it actually did the work.",
-          "summary": "The user creates a goal from the Goals page or in chat. Muse only marks a step in progress or done when a tool it ran in that turn did the work. For job searches it finds postings on employers' own hiring pages, scores the user's résumé against each one, and tracks applications against a target and deadline. Recording an interview or offer asks the user to confirm, and changing the plan needs the user's approval.",
+          "summary": "The user creates a goal from the Goals page or in chat; every goal has 3 to 6 steps. Muse marks a step in progress or done only when a tool it ran that turn did the work. For job searches it finds postings on employers' hiring pages, scores the résumé against each one, and tracks applications against a target and deadline. A job counts as applied after an approved Submit click, a confirmation email, or the user saying they applied. Interviews, offers and plan changes need the user's approval.",
           "userStories": [
             "As a job seeker, I want to state a goal and get a concrete plan so that I know the next steps.",
             "As a user, I want Muse to mark progress only when it really did the work so that the plan stays honest.",
@@ -651,11 +700,11 @@
             "Server persistence details"
           ],
           "functionalRequirements": [
-            "The system creates a goal only through create_goal, with at least one step and at most 8.",
+            "The system creates a goal only with 3 to 6 steps, from the agent or the API.",
             "The system refuses to mark a step doing or done unless a non-bookkeeping tool ran this turn and is cited as evidence.",
             "The system searches only employers' hiring sites for postings.",
-            "The system refuses an application status the turn's actions do not prove.",
-            "The system changes a plan only after the user approves the revision."
+            "The system refuses an application status the turn's actions or the user's own word do not prove.",
+            "The system changes a plan only after the user approves the revision, and keeps it at 3 to 6 steps."
           ],
           "acceptanceCriteria": [
             {
@@ -675,18 +724,24 @@
             },
             {
               "given": "Muse calls create_goal",
-              "when": "it passes more than 8 steps or none",
-              "then": "at most 8 steps are kept, and a goal with no steps is refused",
+              "when": "it passes fewer than 3 or more than 6 steps",
+              "then": "the tool refuses and asks for a plan of 3 to 6 steps",
               "surface": "web",
               "evidence": [
                 {
                   "path": "server/agent/tools/goals.js",
-                  "startLine": 31,
-                  "endLine": 31,
-                  "quote": ".map(String).filter(Boolean).slice(0, 8);"
+                  "startLine": 36,
+                  "endLine": 36,
+                  "quote": "given.length < MIN_STEPS || given.length > MAX_STEPS"
                 }
               ],
-              "qa": "untested"
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC2: create_goal with fewer than 3 or more than 6 steps is refused"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "only bookkeeping tools ran this turn",
@@ -696,8 +751,8 @@
               "evidence": [
                 {
                   "path": "server/agent/tools/goals.js",
-                  "startLine": 57,
-                  "endLine": 57,
+                  "startLine": 62,
+                  "endLine": 62,
                   "quote": "no tool did any work this turn"
                 }
               ],
@@ -717,12 +772,18 @@
               "evidence": [
                 {
                   "path": "server/agent/tools/goals.js",
-                  "startLine": 63,
-                  "endLine": 63,
+                  "startLine": 68,
+                  "endLine": 68,
                   "quote": "set \"evidence\" to the tool you used this turn for THIS step"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC4: marking a step done citing a tool that didn't run is refused, naming the tools that did"
+                }
+              ]
             },
             {
               "given": "Muse calls jobs_search",
@@ -737,7 +798,13 @@
                   "quote": "give keywords (the job title) to search the hiring sites, or name company boards"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC5: jobs_search with neither keywords nor boards is refused"
+                }
+              ]
             },
             {
               "given": "the Library has no résumé",
@@ -752,22 +819,34 @@
                   "quote": "No résumé in the Library."
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC6: score_fit without a résumé in the Library asks the user to add one"
+                }
+              ]
             },
             {
               "given": "a tracked job is drafted",
-              "when": "Muse marks it applied with no approved Submit click and no confirmation email this turn",
-              "then": "the tool refuses and points to Gmail or the Goals page",
+              "when": "Muse marks it applied with no approved Submit click, no confirmation email and no word from the user this turn that they applied",
+              "then": "the tool refuses and asks the user whether they applied",
               "surface": "web",
               "evidence": [
                 {
                   "path": "server/agent/tools/goals.js",
-                  "startLine": 104,
-                  "endLine": 104,
+                  "startLine": 109,
+                  "endLine": 109,
                   "quote": "there's no proof it was submitted this turn"
                 }
               ],
-              "qa": "untested"
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC7: marking a job applied with no proof and no word from the user is refused"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Muse found the employer's email this turn",
@@ -777,12 +856,18 @@
               "evidence": [
                 {
                   "path": "server/agent/tools/goals.js",
-                  "startLine": 110,
-                  "endLine": 110,
+                  "startLine": 115,
+                  "endLine": 115,
                   "quote": "Count this as ${app.status === \"offer\" ? \"an offer\" : \"an interview\"}?"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC8: counting an interview from an employer's email asks the user to confirm"
+                }
+              ]
             },
             {
               "given": "a goal exists",
@@ -792,12 +877,81 @@
               "evidence": [
                 {
                   "path": "server/agent/tools/goals.js",
-                  "startLine": 80,
-                  "endLine": 80,
+                  "startLine": 84,
+                  "endLine": 84,
                   "quote": "yes: \"Update plan\""
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC9: revise_plan shows a before/after card and changes nothing unless approved"
+                }
+              ]
+            },
+            {
+              "given": "a goal exists",
+              "when": "Muse calls revise_plan with fewer than 3 or more than 6 steps",
+              "then": "the tool refuses",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 80,
+                  "endLine": 80,
+                  "quote": "texts.length < MIN_STEPS || texts.length > MAX_STEPS"
+                }
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC10: revise_plan with fewer than 3 or more than 6 steps is refused"
+                }
+              ],
+              "qa": "pass"
+            },
+            {
+              "given": "the user tells Muse this turn that they applied to a tracked job",
+              "when": "Muse marks that job applied",
+              "then": "the job is marked applied, citing the user's word",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 107,
+                  "endLine": 107,
+                  "quote": "else if (saysApplied(ctx.userText)) proof = \"you said you applied\";"
+                }
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC11: when the user says they applied, Muse can mark the job applied"
+                }
+              ],
+              "qa": "pass"
+            },
+            {
+              "given": "an API client",
+              "when": "it POSTs /api/goals with fewer than 3 or more than 6 steps",
+              "then": "the response is 400 'a goal needs 3 to 6 steps'",
+              "surface": "web",
+              "evidence": [
+                {
+                  "path": "server/goals.js",
+                  "startLine": 30,
+                  "endLine": 30,
+                  "quote": "a goal needs ${MIN_STEPS} to ${MAX_STEPS} steps"
+                }
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-goals.test.js",
+                  "name": "goals AC12: the goals API refuses a goal with fewer than 3 or more than 6 steps"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [
@@ -871,70 +1025,35 @@
         },
         "problems": [],
         "counts": {
-          "criteria": 9,
-          "verified": 9
+          "criteria": 12,
+          "verified": 12
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
-          "criteria": 9,
-          "passing": 1,
+          "criteria": 12,
+          "passing": 11,
           "failing": 0,
           "missing": 0,
-          "untested": 8
+          "untested": 1
         },
         "gaps": [
           {
             "id": "AC1",
             "qa": "untested"
-          },
-          {
-            "id": "AC2",
-            "qa": "untested"
-          },
-          {
-            "id": "AC4",
-            "qa": "untested"
-          },
-          {
-            "id": "AC5",
-            "qa": "untested"
-          },
-          {
-            "id": "AC6",
-            "qa": "untested"
-          },
-          {
-            "id": "AC7",
-            "qa": "untested"
-          },
-          {
-            "id": "AC8",
-            "qa": "untested"
-          },
-          {
-            "id": "AC9",
-            "qa": "untested"
           }
         ],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
-          "fingerprints": {
-            "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
-            "api/jobs": "b9379d67779dd0cf1f42bd632c874113dcfea79b",
-            "public/js/features/goals": "96e73a38bc7e8021e3b3d405e206afb881a1c65f",
-            "server/agent/tools/goals.js": "cef22f671a07f8bd3a0324cb17aa3efc8dd4a54c",
-            "server/agent/tools/jobs.js": "db936ab5248ab42fdd5a8c5e8a80688397b086b2",
-            "server/goals.js": "8ec4574cb4ad497dde11eeff937aadcdf6f356c5",
-            "server/jobs.js": "76bef6edb81ddbc19b72938d55d087e077abc80f"
-          },
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
+          "uncommitted": true,
           "files": [
+            "test/accept-goals.test.js",
             "test/agent-runtime.test.js"
           ]
         }
@@ -1119,7 +1238,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       }
     },
     {
@@ -1302,8 +1421,8 @@
                 },
                 {
                   "path": ".agentforge/feature-map.json",
-                  "startLine": 1307,
-                  "endLine": 1307,
+                  "startLine": 1430,
+                  "endLine": 1430,
                   "quote": "'New from Muse <span>updated"
                 }
               ],
@@ -1409,13 +1528,13 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 10,
           "passing": 5,
@@ -1446,8 +1565,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
           "fingerprints": {
             "api/ideas": "d4f2abb813eafc0985590905cbd74f0987ceed96",
             "public/js/features/ideas": "7fa895a15e1230a993fc3dd95223eac7e74a0fa7",
@@ -1712,13 +1831,13 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 8,
           "passing": 8,
@@ -1728,8 +1847,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
           "fingerprints": {
             "api/docs": "02a86113cc7b1d25740e5f93606e0f954705dc23",
             "public/js/features/library": "42a2a7cd6a63777fac99f0abe9fb816ced108759",
@@ -1982,13 +2101,13 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 8,
           "passing": 4,
@@ -2015,8 +2134,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
           "fingerprints": {
             "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
             "public/js/features/connectors": "3484b397c45d0757efc8611a69b27e817733f277",
@@ -2046,14 +2165,14 @@
         "acceptanceCriteria": [
           "AC1: Given Muse already remembers a fact, when it calls remember with the same fact in different case, then nothing new is saved and it is told it is already remembered.",
           "AC2: Given Muse calls remember, when the fact is empty, then the tool refuses.",
-          "AC3: Given several facts mention a keyword, when Muse calls forget with that keyword, then every fact containing it is removed and listed back.",
+          "AC3: Given several facts mention a keyword, when Muse calls forget with that keyword, then the user is shown the matching facts and asked to confirm; only when they approve are the facts removed and listed back.",
           "AC4: Given no fact matches, when Muse calls forget, then nothing is removed and it says no memory matched.",
           "AC5: Given Settings → Memory lists facts, when the user clicks × on one, then it is removed and the deletion is audited as by the user.",
           "AC6: Given Muse remembers nothing yet, when the Memory list renders, then it suggests telling Muse a preference in Chat."
         ],
         "document": {
           "objective": "Lets Muse remember lasting facts and preferences about the user, and forget them on request; the user sees and deletes them in Settings.",
-          "summary": "Muse saves lasting facts and preferences when the user shares them (the same fact is never saved twice) and forgets every fact containing a word the user asks it to forget. Settings → Memory lists the facts, each with a delete button; deleting one is recorded in the activity log. Facts are stored on the server, so every device sees the same memory.",
+          "summary": "Muse saves lasting facts and preferences when the user shares them (the same fact is never saved twice) and forgets facts containing a word the user asks it to forget; when more than one fact matches, the user confirms the list first. Settings → Memory lists the facts, each with a delete button; deleting one is recorded in the activity log. Facts are stored on the server, so every device sees the same memory.",
           "userStories": [
             "As a user, I want Muse to remember my preferences so that I don't repeat myself.",
             "As a user, I want to see and delete what Muse remembers about me."
@@ -2067,7 +2186,7 @@
           ],
           "functionalRequirements": [
             "The system saves a fact only once, ignoring case.",
-            "The system forgets every fact containing the keyword.",
+            "The system forgets the facts containing the keyword, asking the user first when more than one matches.",
             "The system lets the user delete any fact from Settings."
           ],
           "acceptanceCriteria": [
@@ -2078,12 +2197,19 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "docs/reference/original-prototype.html",
-                  "startLine": 878,
-                  "endLine": 878,
-                  "quote": "if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return \"Already remembered.\";"
+                  "path": "server/agent/tools/memory.js",
+                  "startLine": 17,
+                  "endLine": 17,
+                  "quote": "return \"Already remembered.\";"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-memory.test.js",
+                  "name": "memory AC1: remembering a fact already saved, in different case, saves nothing new"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Muse calls remember",
@@ -2097,21 +2223,35 @@
                   "endLine": 15,
                   "quote": "if (!fact) throw new Error(\"fact is empty\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-memory.test.js",
+                  "name": "memory AC2: remember refuses an empty fact"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "several facts mention a keyword",
               "when": "Muse calls forget with that keyword",
-              "then": "every fact containing it is removed and listed back",
+              "then": "the user is shown the matching facts and asked to confirm; only when they approve are the facts removed and listed back",
               "surface": "web",
               "evidence": [
                 {
-                  "path": ".agentforge/feature-map.json",
-                  "startLine": 2112,
-                  "endLine": 2112,
-                  "quote": "const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));"
+                  "path": "server/agent/tools/memory.js",
+                  "startLine": 29,
+                  "endLine": 29,
+                  "quote": "if (gone.length > 1) {"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-memory.test.js",
+                  "name": "memory AC3: forgetting a keyword that matches several facts asks first, then removes and lists them"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "no fact matches",
@@ -2125,7 +2265,14 @@
                   "endLine": 27,
                   "quote": "if (!gone.length) return \"No memory matched '\" + keyword + \"'.\";"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-memory.test.js",
+                  "name": "memory AC4: forget with no matching fact removes nothing and says so"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Settings → Memory lists facts",
@@ -2139,7 +2286,8 @@
                   "endLine": 17,
                   "quote": "audit(\"forget\", { fact: f?.fact }, \"Deleted by you\", \"you\");"
                 }
-              ]
+              ],
+              "qa": "untested"
             },
             {
               "given": "Muse remembers nothing yet",
@@ -2153,7 +2301,8 @@
                   "endLine": 14,
                   "quote": "Muse doesn't know anything about you yet. Tell it a preference in Chat"
                 }
-              ]
+              ],
+              "qa": "untested"
             }
           ],
           "scenarios": [],
@@ -2169,7 +2318,38 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
+      },
+      "qa": {
+        "status": "in_progress",
+        "source": "plugin",
+        "runner": "node",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "counts": {
+          "criteria": 6,
+          "passing": 4,
+          "failing": 0,
+          "missing": 0,
+          "untested": 2
+        },
+        "gaps": [
+          {
+            "id": "AC5",
+            "qa": "untested"
+          },
+          {
+            "id": "AC6",
+            "qa": "untested"
+          }
+        ],
+        "evidence": {
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
+          "uncommitted": true,
+          "files": [
+            "test/accept-memory.test.js"
+          ]
+        }
       }
     },
     {
@@ -2352,13 +2532,13 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -2368,8 +2548,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
           "fingerprints": {
             "api/web": "23dd029dbf1bd46cac9751734598b9f7183ee53c",
             "server/agent/tools/web.js": "2550eb6dc3e1b44ec1aa8175612bb084b0320b88",
@@ -2579,13 +2759,13 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 5,
           "passing": 4,
@@ -2600,8 +2780,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
           "fingerprints": {
             "chrome-extension": "22812145e902dea5314d060c70351d60d583bd50",
             "public/js/features/browser": "f2861db4457e67f23d734de044d58343337cb230",
@@ -2752,7 +2932,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       }
     },
     {
@@ -2889,7 +3069,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       }
     },
     {
@@ -3114,13 +3294,13 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T03:24:15.999Z"
+        "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:24:16.066Z",
+        "checkedAt": "2026-11-22T03:35:37.864Z",
         "counts": {
           "criteria": 8,
           "passing": 6,
@@ -3139,8 +3319,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "eb37483d3b2bf53de8637c45e07a99fa40839b23",
-          "branch": "main",
+          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
+          "branch": "review-answers",
           "fingerprints": {
             "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",
             "public/js/features/observability": "acdfe166281d2be39b0127eeebdfa2fdbfdaf4e9",

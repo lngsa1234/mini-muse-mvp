@@ -3,8 +3,9 @@
  * server (server/index.js) and the Vercel function (api/agent.js); both hand
  * over Node's (req, res).
  *
- *   POST /api/agent/turn    { text | checkin, tier, tz }  -> text/event-stream of turn events
+ *   POST /api/agent/turn    { text | checkin | resume, tier, tz }  -> text/event-stream of turn events
  *   POST /api/agent/answer  { waitId, answer } | { waitId, result } | { waitId, error }
+ *                           -> { ok, resume? } (resume: the card's turn paused; post /turn with it)
  *   POST /api/agent/cancel  { messageId }
  *   GET  /api/agent/tools   -> { tools: [{ name, feature, connector? }] }
  *
@@ -21,7 +22,7 @@ import { makeLlm } from "./llm.js";
 import { makeDbRepo } from "./repo.js";
 import { webServices } from "./tools/web.js";
 import { allTools } from "./tools/index.js";
-import { runTurn, answerWait, cancelTurn } from "./runtime.js";
+import { runTurn, answerWait, cancelTurn, parkId } from "./runtime.js";
 
 const KEEPALIVE_MS = 15_000;
 
@@ -59,7 +60,7 @@ export async function serveTurn(req, res, body, { env = process.env, deps } = {}
   };
   const ping = setInterval(() => { if (open) try { res.write(": ping\n\n"); } catch (_) {} }, KEEPALIVE_MS);
   try {
-    const input = { text: body?.text, checkin: !!body?.checkin, tier: body?.tier, tz: typeof body?.tz === "string" ? body.tz.slice(0, 64) : "UTC" };
+    const input = { text: body?.text, checkin: !!body?.checkin, resume: typeof body?.resume === "string" ? body.resume.slice(0, 64) : undefined, tier: body?.tier, tz: typeof body?.tz === "string" ? body.tz.slice(0, 64) : "UTC" };
     const run = () => runTurn({ userId, input, deps: deps || turnDeps(req, userId, env), emit: send }).then(() => ({ status: 200, json: {} }));
     await withTrace("agent.turn", run, { userId })(req);
   } catch (e) {
@@ -74,7 +75,19 @@ export async function dispatchAgent(store, { method, action, userId, body }) {
   if (action === "answer" && method === "POST") {
     if (!body?.waitId) return { status: 400, json: { error: "waitId is required" } };
     const response = "answer" in body ? { answer: body.answer === true } : { result: body.result ?? null, ...(body.error ? { error: String(body.error) } : {}) };
-    const ok = await answerWait(store, userId, body.waitId, response);
+    const waitId = String(body.waitId);
+    // A card whose turn paused: it can still be answered until its own time runs out,
+    // and the answer starts a follow-up turn (the browser posts /turn with resume).
+    const park = "answer" in body ? await store.getWait(userId, parkId(waitId)) : null;
+    if (park?.status === "pending" && Date.now() > Number(park.request?.until || 0)) {
+      await store.expireWait(userId, parkId(waitId)); await store.expireWait(userId, waitId);
+      return { status: 409, json: { ok: false, error: "That request already ended." } };
+    }
+    const ok = await answerWait(store, userId, waitId, response);
+    if (ok && park?.status === "pending") {
+      await store.answerWait(userId, parkId(waitId), response);
+      return { status: 200, json: { ok, resume: waitId } };
+    }
     return { status: ok ? 200 : 409, json: ok ? { ok } : { ok, error: "That request already ended." } };
   }
   if (action === "cancel" && method === "POST") {

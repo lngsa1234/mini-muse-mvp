@@ -8,6 +8,7 @@ import { onClick } from "../core/registry.js";
 import { state } from "../core/state.js";
 import { answerAgent } from "../core/api.js";
 import { updateMsg } from "../features/chat/chat.js";
+import { run } from "../agent/run.js";
 
 function answer(id, ok) {
   const msg = state.chat.find(m => (m.acts || []).some(a => a.id === id));
@@ -16,7 +17,10 @@ function answer(id, ok) {
   a.approval = ok ? "approved" : "declined";   // optimistic; the server sends the real state
   a.label = (ok ? "Approved: " : "Declined: ") + (a.card?.summary || "");
   updateMsg(msg);
-  answerAgent(id, { answer: ok }).catch(() => {
+  answerAgent(id, { answer: ok }).then(out => {
+    // The card outlasted its turn: this answer starts a follow-up turn that carries on.
+    if (out?.resume) run({ id: "r" + Date.now(), role: "resume", resume: out.resume, text: "", t: Date.now() });
+  }).catch(() => {
     a.approval = "expired"; a.label = "No answer: " + (a.card?.summary || ""); updateMsg(msg);
   });
 }

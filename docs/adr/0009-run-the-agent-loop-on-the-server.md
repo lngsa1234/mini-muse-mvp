@@ -16,7 +16,7 @@ The server runs the turn (`server/agent/`):
 
 - `POST /api/agent/turn` saves the user message, builds the system prompt from the user's saved memory, ideas, goals and connector settings, runs the tool loop (12-step cap), and saves the assistant message as it goes. Progress streams back as Server-Sent Events.
 - Tools are defined on the server (`server/agent/tools/`), one module per feature with its guidance. Evidence rules and approvals are enforced there.
-- An approval card is saved in the message, and the turn waits on a row in `agent_waits`. The user answers through `POST /api/agent/answer` from any device showing the chat. Unanswered cards expire (4 minutes by default, `AGENT_APPROVAL_TIMEOUT_MS`).
+- An approval card is saved in the message, and the turn waits on a row in `agent_waits`. The user answers through `POST /api/agent/answer` from any device showing the chat. Unanswered cards expire (4 minutes by default, `AGENT_APPROVAL_TIMEOUT_MS`). Update (2026-11): a card that outlasts its turn's time limit stays open, and an answer in time starts a follow-up turn (`resume`) that carries the action through.
 - Chrome Browser Bridge tools can only run in the tab that started the turn. The server sends a `client_tool` event, the tab runs the tool, and the result comes back through the same answer endpoint.
 - Stop works from any device (`POST /api/agent/cancel`). One turn runs at a time per user.
 - The page keeps no tool code except the browser-bridge executor. Pure modules (goal model, intent checks, safety rules, document ranking, fit scoring) are shared from `public/js` so tests and evals use one copy.

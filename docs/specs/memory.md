@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Lets Muse remember lasting facts and preferences about the user, and forget them on request; the user sees and deletes them in Settings.**
 
-Muse saves lasting facts and preferences when the user shares them (the same fact is never saved twice) and forgets every fact containing a word the user asks it to forget. Settings → Memory lists the facts, each with a delete button; deleting one is recorded in the activity log. Facts are stored on the server, so every device sees the same memory.
+Muse saves lasting facts and preferences when the user shares them (the same fact is never saved twice) and forgets facts containing a word the user asks it to forget; when more than one fact matches, the user confirms the list first. Settings → Memory lists the facts, each with a delete button; deleting one is recorded in the activity log. Facts are stored on the server, so every device sees the same memory.
 
 ## User stories
 
@@ -39,19 +39,19 @@ Muse saves lasting facts and preferences when the user shares them (the same fac
 | ID | Requirement |
 |---|---|
 | FS-R01 | The system saves a fact only once, ignoring case. |
-| FS-R02 | The system forgets every fact containing the keyword. |
+| FS-R02 | The system forgets the facts containing the keyword, asking the user first when more than one matches. |
 | FS-R03 | The system lets the user delete any fact from Settings. |
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | Muse already remembers a fact | it calls remember with the same fact in different case | nothing new is saved and it is told it is already remembered | web | ✓ |
-| AC2 | Muse calls remember | the fact is empty | the tool refuses | web | ✓ |
-| AC3 | several facts mention a keyword | Muse calls forget with that keyword | every fact containing it is removed and listed back | web | ✓ |
-| AC4 | no fact matches | Muse calls forget | nothing is removed and it says no memory matched | web | ✓ |
-| AC5 | Settings → Memory lists facts | the user clicks × on one | it is removed and the deletion is audited as by the user | web | ✓ |
-| AC6 | Muse remembers nothing yet | the Memory list renders | it suggests telling Muse a preference in Chat | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | Muse already remembers a fact | it calls remember with the same fact in different case | nothing new is saved and it is told it is already remembered | web | ✓ | ✓ passes |
+| AC2 | Muse calls remember | the fact is empty | the tool refuses | web | ✓ | ✓ passes |
+| AC3 | several facts mention a keyword | Muse calls forget with that keyword | the user is shown the matching facts and asked to confirm; only when they approve are the facts removed and listed back | web | ✓ | ✓ passes |
+| AC4 | no fact matches | Muse calls forget | nothing is removed and it says no memory matched | web | ✓ | ✓ passes |
+| AC5 | Settings → Memory lists facts | the user clicks × on one | it is removed and the deletion is audited as by the user | web | ✓ | — no test |
+| AC6 | Muse remembers nothing yet | the Memory list renders | it suggests telling Muse a preference in Chat | web | ✓ | — no test |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -69,9 +69,18 @@ The remember and forget tools are in server/agent/tools/memory.js and run in the
 
 | # | Code | Quote |
 |---|---|---|
-| AC1 | `docs/reference/original-prototype.html:878` | `if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return "Already remembered.";` |
+| AC1 | `server/agent/tools/memory.js:17` | `return "Already remembered.";` |
 | AC2 | `server/agent/tools/memory.js:15` | `if (!fact) throw new Error("fact is empty");` |
-| AC3 | `.agentforge/feature-map.json:2112` | `const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));` |
+| AC3 | `server/agent/tools/memory.js:29` | `if (gone.length > 1) {` |
 | AC4 | `server/agent/tools/memory.js:27` | `if (!gone.length) return "No memory matched '" + keyword + "'.";` |
 | AC5 | `public/js/features/memory/memory.js:17` | `audit("forget", { fact: f?.fact }, "Deleted by you", "you");` |
 | AC6 | `public/js/features/memory/memory.js:14` | `Muse doesn't know anything about you yet. Tell it a preference in Chat` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC1 | memory AC1: remembering a fact already saved, in different case, saves nothing new | `test/accept-memory.test.js` |
+| AC2 | memory AC2: remember refuses an empty fact | `test/accept-memory.test.js` |
+| AC3 | memory AC3: forgetting a keyword that matches several facts asks first, then removes and lists them | `test/accept-memory.test.js` |
+| AC4 | memory AC4: forget with no matching fact removes nothing and says so | `test/accept-memory.test.js` |

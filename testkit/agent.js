@@ -41,4 +41,4 @@ export async function waitForEvent(events, name, n = 1) {
   throw new Error("no event " + name);
 }
 
-export const toolReply = (llm, step = 1) => llm.seen[step].messages.find(m => m.role === "tool")?.content;
+export const toolReply = (llm, step = 1) => llm.seen[step].messages.filter(m => m.role === "tool").at(-1)?.content;

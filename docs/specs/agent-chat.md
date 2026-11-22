@@ -117,8 +117,8 @@ The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn 
 |  | `public/js/features/chat/chat.js:71` | `if (rt.sample && !rt.busy) $("form").requestSubmit();` |
 | AC8 | `public/js/features/chat/chat.js:19` | `a.approval === "pending" && a.card` |
 |  | `public/js/features/chat/chat.js:23` | `Don't allow</button>` |
-| AC9 | `server/agent/runtime.js:322` | `const loopTools = application ? tools.filter(t => t.name !== "mail_search" && t.name !== "mail_send") : tools;` |
-| AC10 | `server/agent/runtime.js:330` | `The reply was cut short. Ask for less at once.` |
+| AC9 | `server/agent/runtime.js:374` | `const loopTools = application ? tools.filter(t => t.name !== "mail_search" && t.name !== "mail_send") : tools;` |
+| AC10 | `server/agent/runtime.js:382` | `The reply was cut short. Ask for less at once.` |
 
 ## Tests
 

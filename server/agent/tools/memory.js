@@ -18,13 +18,18 @@ export default {
         await ctx.setData({ memory: [...memory, { id: rid(), fact, t: Date.now() }] });
         h.act(fact); return "Saved to memory.";
       } },
-    { name: "forget", description: "Delete every memory containing the keyword. Returns what was removed.",
+    { name: "forget", description: "Delete the memories containing the keyword. When more than one matches, the user is asked to confirm the list first. Returns what was removed.",
       inputSchema: { type: "object", properties: { keyword: S }, required: ["keyword"] },
       run: async ({ keyword }, ctx, h) => {
         const k = String(keyword || "").toLowerCase().trim(); if (!k) throw new Error("keyword is empty");
         const memory = ctx.data.memory || [];
         const gone = memory.filter(f => f.fact.toLowerCase().includes(k));
         if (!gone.length) return "No memory matched '" + keyword + "'.";
+        // One keyword can catch more than the user meant: list them and ask first.
+        if (gone.length > 1) {
+          const ok = await h.ask("forget", { heading: `Forget these ${gone.length} things Muse remembers?`, rows: gone.map((g, i) => [String(i + 1), g.fact]), yes: "Forget them", summary: `forget ${gone.length} facts matching “${keyword}”` });
+          if (ok !== true) return h.refusal(ok);
+        }
         await ctx.setData({ memory: memory.filter(f => !gone.includes(f)) });
         h.act("Forgot: " + gone.map(g => g.fact).join("; ")); return { removed: gone.map(g => g.fact) };
       } }
