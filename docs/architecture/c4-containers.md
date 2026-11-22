@@ -42,6 +42,7 @@ flowchart TB
   api_server -->|"Searches and extracts pages"| tavily
   browser_app -->|"Sends browser commands"| chrome_extension
   local_storage ~~~ google_apis
+  click browser_app "c4-components-browser-app.md" "Browser app: its components"
   classDef person fill:#08427b,stroke:#052e56,color:#ffffff
   classDef container fill:#1168bd,stroke:#0b4884,color:#ffffff
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#0b2545
