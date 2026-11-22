@@ -1,0 +1,151 @@
+# AgentForge: Maya (Product Manager) and Alex (Technical Lead) on every pull request
+# and after every merge. Added by the agentforge:setup-github skill.
+#
+#   check — on each pull request: the Spec drift and Architecture checks, posted as one
+#           comment that updates itself. No model, no secret, no cost.
+#   qa    — on each pull request: runs the tests linked to each spec's acceptance criteria
+#           (check-qa --ci) and fails when one fails or can't be found. No model.
+#   docs  — after a merge to the default branch (or run by hand): refreshes the feature
+#           map, specs and architecture docs with Claude Code on YOUR Claude subscription
+#           (secret CLAUDE_CODE_OAUTH_TOKEN, from `claude setup-token`), then commits them.
+#           Skipped until that secret exists.
+#   qa-record — after a merge: re-runs QA and commits the result to the feature map, so
+#           each feature's Verified status is tied to the merged commit. No model.
+#
+# The checks run from .agentforge/bin/, a copy of the plugin's scripts the setup-github
+# skill commits alongside this file (run the skill again to update it).
+name: AgentForge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", ".agentforge/**"]
+  workflow_dispatch:
+
+env:
+  # Where the AgentForge plugin and its marketplace live (used by the docs refresh).
+  AGENTFORGE_REPO: https://github.com/lngsa1234/agentforge.git
+  # AgentForge's checks, copied into this repository.
+  AGENTFORGE: .agentforge/bin/agentforge.mjs
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the checks
+        run: |
+          {
+            echo "## AgentForge pre-merge check"
+            echo
+            node "$AGENTFORGE" pr-check --base "origin/${{ github.base_ref }}"
+            echo
+            echo "_Advisory: these checks never block a merge. Run \`/agentforge:pr-check\` in Claude Code to work through them._"
+          } > "$RUNNER_TEMP/agentforge-report.md"
+          cat "$RUNNER_TEMP/agentforge-report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment on the pull request
+        # Pull requests from forks get a read-only token; the report stays in the run summary.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file "$RUNNER_TEMP/agentforge-report.md" --edit-last --create-if-none
+
+  qa:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the project
+        run: bash "$(dirname "$AGENTFORGE")/ci-install.sh"
+      - name: Check each criterion's tests
+        run: node "$AGENTFORGE" check-qa --ci
+
+  docs:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: agentforge-docs
+      cancel-in-progress: true
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Check for the Claude token
+        id: token
+        env:
+          TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "No CLAUDE_CODE_OAUTH_TOKEN secret: skipping the docs refresh. Run \`claude setup-token\` and add it as a repository secret." >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/checkout@v6
+        if: steps.token.outputs.present == 'true'
+        with:
+          fetch-depth: 100
+      - uses: anthropics/claude-code-action@v1
+        if: steps.token.outputs.present == 'true'
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          plugin_marketplaces: ${{ env.AGENTFORGE_REPO }}
+          plugins: agentforge@agentforge
+          prompt: /agentforge:refresh-docs
+          claude_args: --max-turns 80
+      - name: Commit the updated docs
+        if: steps.token.outputs.present == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .agentforge docs
+          if git diff --cached --quiet; then echo "Docs already current." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          git commit -m "AgentForge: update feature map, specs and architecture docs"
+          git push
+
+  qa-record:
+    # After the docs refresh (or right away when it's skipped), so the two never race.
+    needs: docs
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: agentforge-docs-record
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 20
+      - name: Catch up with the docs refresh
+        run: git pull --ff-only
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the project
+        run: bash "$(dirname "$AGENTFORGE")/ci-install.sh"
+      - name: Re-run QA and commit the result
+        run: |
+          node "$AGENTFORGE" check-qa | tee -a "$GITHUB_STEP_SUMMARY"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .agentforge docs
+          if git diff --cached --quiet; then echo "QA record already current." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          git commit -m "AgentForge: QA re-run against ${GITHUB_SHA::7}"
+          git pull --rebase && git push
