@@ -10,7 +10,7 @@ owner: Product Manager (Maya)
 
 **10 of 10** acceptance criteria checked against the code · 5 risks · 3 open questions
 
-_Written by Maya from the code on 2026-11-21. It describes the feature as built, not as planned._
+_Written by Maya from the code on 2026-11-22. It describes the feature as built, not as planned._
 
 ## Summary
 

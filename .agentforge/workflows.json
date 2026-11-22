@@ -16,7 +16,9 @@
             "to": "client",
             "action": "Submits a message from the composer or from a feature button.",
             "call": "run(userMsg)",
-            "paths": []
+            "paths": [],
+            "toName": "Browser app",
+            "label": "Sends a message"
           },
           {
             "actor": "client",
@@ -25,7 +27,8 @@
             "call": "",
             "paths": [
               "public/js/agent/run.js"
-            ]
+            ],
+            "actorName": "Browser app"
           },
           {
             "actor": "client",
@@ -35,7 +38,8 @@
             "paths": [
               "public/js/agent/run.js",
               "public/js/agent/tools.js"
-            ]
+            ],
+            "actorName": "Browser app"
           },
           {
             "actor": "client",
@@ -45,7 +49,9 @@
             "paths": [
               "public/js/agent/loop.js",
               "public/js/agent/transport.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "LLM proxy"
           },
           {
             "actor": "server",
@@ -56,14 +62,18 @@
               "server/proxy.js",
               "server/routing.js",
               "api/llm.js"
-            ]
+            ],
+            "actorName": "LLM proxy",
+            "toName": "OpenAI"
           },
           {
             "actor": "external",
             "to": "client",
             "action": "Streams the reply back through the proxy.",
             "call": "SSE text and tool_call deltas",
-            "paths": []
+            "paths": [],
+            "actorName": "OpenAI",
+            "toName": "Browser app"
           },
           {
             "actor": "client",
@@ -73,7 +83,8 @@
             "paths": [
               "public/js/agent/transport.js",
               "public/js/features/chat/chat.js"
-            ]
+            ],
+            "actorName": "Browser app"
           },
           {
             "actor": "agent",
@@ -83,7 +94,8 @@
             "paths": [
               "public/js/agent/loop.js",
               "public/js/agent/tools.js"
-            ]
+            ],
+            "actorName": "Agent loop"
           },
           {
             "actor": "client",
@@ -93,7 +105,9 @@
             "paths": [
               "public/js/agent/run.js",
               "public/js/core/storage.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "Browser storage"
           }
         ],
         "errorPaths": [
@@ -103,6 +117,14 @@
           "A tool that throws, or an unknown tool, goes back to the model as an 'Error: …' tool result instead of ending the turn.",
           "If the user presses Stop the turn is cancelled and no error is shown. If the reply ends at max tokens, 'The reply was cut short' is shown.",
           "If opening or reading the application page fails, or job tools are off, the shortcut replies without calling the model."
+        ],
+        "blocks": [
+          {
+            "kind": "loop",
+            "label": "up to 12 steps",
+            "fromStep": 4,
+            "toStep": 8
+          }
         ]
       },
       {
@@ -124,7 +146,9 @@
             "paths": [
               "public/js/agent/loop.js",
               "public/js/agent/tools.js"
-            ]
+            ],
+            "toName": "Browser app",
+            "label": "Calls a write tool"
           },
           {
             "actor": "client",
@@ -133,7 +157,9 @@
             "call": "",
             "paths": [
               "public/js/agent/tools.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "label": "Ask or allow?"
           },
           {
             "actor": "client",
@@ -142,14 +168,17 @@
             "call": "approval card (heading, rows, Allow / Don't allow)",
             "paths": [
               "public/js/workflow/approvals.js"
-            ]
+            ],
+            "actorName": "Browser app"
           },
           {
             "actor": "user",
             "to": "client",
             "action": "Allows or declines the action.",
             "call": "approve or decline click",
-            "paths": []
+            "paths": [],
+            "toName": "Browser app",
+            "approval": true
           },
           {
             "actor": "client",
@@ -158,7 +187,8 @@
             "call": "",
             "paths": [
               "public/js/workflow/approvals.js"
-            ]
+            ],
+            "actorName": "Browser app"
           },
           {
             "actor": "client",
@@ -168,7 +198,9 @@
             "paths": [
               "public/js/features/goals/goals.js",
               "server/google-route.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "client",
@@ -177,12 +209,21 @@
             "call": "tool result",
             "paths": [
               "public/js/agent/tools.js"
-            ]
+            ],
+            "actorName": "Browser app"
           }
         ],
         "errorPaths": [
           "A decline returns 'The user declined. Nothing was changed.' to the model.",
           "If the user does not answer before the turn ends, or presses Stop, the approval resolves as no answer and returns 'The user did not answer. Nothing was changed.'"
+        ],
+        "blocks": [
+          {
+            "kind": "opt",
+            "label": "only when allowed",
+            "fromStep": 6,
+            "toStep": 6
+          }
         ]
       },
       {
@@ -202,7 +243,8 @@
             "call": "say(\"New goal: …\") or say(\"Move my goal … forward\")",
             "paths": [
               "public/js/features/goals/goals.js"
-            ]
+            ],
+            "toName": "Browser app"
           },
           {
             "actor": "agent",
@@ -211,7 +253,8 @@
             "call": "create_goal(goal, steps, target_metric, target_count, days)",
             "paths": [
               "public/js/features/goals/goals.js"
-            ]
+            ],
+            "toName": "Browser app"
           },
           {
             "actor": "client",
@@ -221,7 +264,9 @@
             "paths": [
               "public/js/core/api.js",
               "api/goals/index.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "Goals API"
           },
           {
             "actor": "server",
@@ -231,7 +276,9 @@
             "paths": [
               "server/goals.js",
               "server/db.js"
-            ]
+            ],
+            "actorName": "Goals API",
+            "toName": "Neon Postgres"
           },
           {
             "actor": "client",
@@ -240,7 +287,9 @@
             "call": "",
             "paths": [
               "public/js/agent/run.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "label": "Library check for résumé steps"
           },
           {
             "actor": "agent",
@@ -249,7 +298,8 @@
             "call": "docs_search, jobs_search or a browser tool, then update_step(goal_id, step, status, evidence)",
             "paths": [
               "public/js/features/goals/goals.js"
-            ]
+            ],
+            "toName": "Browser app"
           },
           {
             "actor": "client",
@@ -258,7 +308,9 @@
             "call": "",
             "paths": [
               "public/js/features/goals/goals.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "label": "Checks the evidence"
           },
           {
             "actor": "client",
@@ -268,7 +320,9 @@
             "paths": [
               "public/js/core/api.js",
               "api/goals/[id].js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "Goals API"
           },
           {
             "actor": "server",
@@ -278,7 +332,9 @@
             "paths": [
               "server/goals.js",
               "server/db.js"
-            ]
+            ],
+            "actorName": "Goals API",
+            "toName": "Neon Postgres"
           },
           {
             "actor": "agent",
@@ -287,7 +343,8 @@
             "call": "track_application(goal_id, company, role, status)",
             "paths": [
               "public/js/features/goals/goals.js"
-            ]
+            ],
+            "toName": "Browser app"
           }
         ],
         "errorPaths": [
@@ -323,7 +380,9 @@
             "call": "GET /api/google/authorize",
             "paths": [
               "public/js/features/connectors/index.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "server",
@@ -333,14 +392,18 @@
             "paths": [
               "server/google-route.js",
               "server/google.js"
-            ]
+            ],
+            "actorName": "API server",
+            "toName": "Google"
           },
           {
             "actor": "external",
             "to": "server",
             "action": "Google asks for consent and redirects back.",
             "call": "redirect to /api/google/callback (code)",
-            "paths": []
+            "paths": [],
+            "actorName": "Google",
+            "toName": "API server"
           },
           {
             "actor": "server",
@@ -350,7 +413,9 @@
             "paths": [
               "server/google-route.js",
               "server/google.js"
-            ]
+            ],
+            "actorName": "API server",
+            "toName": "Browser app"
           },
           {
             "actor": "client",
@@ -360,7 +425,9 @@
             "paths": [
               "public/js/features/connectors/index.js",
               "public/js/core/api.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "client",
@@ -371,7 +438,9 @@
               "public/js/agent/tools.js",
               "public/js/features/connectors/mail.js",
               "server/google-route.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "client",
@@ -380,7 +449,9 @@
             "call": "disconnect endpoint",
             "paths": [
               "public/js/features/connectors/index.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "API server"
           }
         ],
         "errorPaths": [
@@ -414,7 +485,9 @@
             "paths": [
               "public/js/features/library/library.js",
               "api/docs/index.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "toName": "Docs API"
           },
           {
             "actor": "server",
@@ -423,7 +496,8 @@
             "call": "",
             "paths": [
               "server/docs.js"
-            ]
+            ],
+            "actorName": "Docs API"
           },
           {
             "actor": "server",
@@ -433,7 +507,8 @@
             "paths": [
               "server/docs.js",
               "server/extract.js"
-            ]
+            ],
+            "actorName": "Docs API"
           },
           {
             "actor": "server",
@@ -443,7 +518,10 @@
             "paths": [
               "server/docs.js",
               "server/db.js"
-            ]
+            ],
+            "actorName": "Docs API",
+            "toName": "Neon Postgres",
+            "label": "Stores the text"
           },
           {
             "actor": "client",
@@ -453,7 +531,9 @@
             "paths": [
               "public/js/features/library/library.js",
               "public/js/features/library/search.js"
-            ]
+            ],
+            "actorName": "Browser app",
+            "label": "Adds it to the list"
           }
         ],
         "errorPaths": [
@@ -482,7 +562,8 @@
             "paths": [
               "public/js/workflow/checkin.js:27-33"
             ],
-            "label": "Is a check-in due?"
+            "label": "Is a check-in due?",
+            "actorName": "Browser app"
           },
           {
             "actor": "client",
@@ -492,7 +573,8 @@
             "paths": [
               "public/js/workflow/checkin.js:21-24"
             ],
-            "label": "Start the check-in turn"
+            "label": "Start the check-in turn",
+            "actorName": "Browser app"
           },
           {
             "actor": "agent",
@@ -513,7 +595,8 @@
             "paths": [
               "public/js/workflow/checkin.js:15"
             ],
-            "label": "Check Gmail"
+            "label": "Check Gmail",
+            "toName": "Gmail"
           },
           {
             "actor": "agent",
@@ -523,7 +606,8 @@
             "paths": [
               "public/js/features/goals/goals.js"
             ],
-            "label": "Update applications"
+            "label": "Update applications",
+            "toName": "Neon Postgres"
           },
           {
             "actor": "agent",
@@ -533,7 +617,8 @@
             "paths": [
               "public/js/features/jobs/jobs.js"
             ],
-            "label": "Find and score postings"
+            "label": "Find and score postings",
+            "toName": "API server"
           },
           {
             "actor": "agent",
@@ -647,7 +732,8 @@
             "action": "Reviews the filled form in Chrome and approves the Submit click on the approval card",
             "call": "Submit it",
             "paths": [],
-            "label": "Review and approve"
+            "label": "Review and approve",
+            "approval": true
           },
           {
             "actor": "agent",
@@ -686,7 +772,9 @@
             "paths": [
               "public/js/core/trace.js:176-185"
             ],
-            "label": "Load tracing settings"
+            "label": "Load tracing settings",
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "client",
@@ -697,7 +785,8 @@
               "public/js/core/trace.js:128-139",
               "public/js/core/trace.js:40-43"
             ],
-            "label": "Record spans"
+            "label": "Record spans",
+            "actorName": "Browser app"
           },
           {
             "actor": "client",
@@ -708,7 +797,9 @@
               "public/js/agent/transport.js:11-16",
               "public/js/core/api.js:7-12"
             ],
-            "label": "Link server spans"
+            "label": "Link server spans",
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "server",
@@ -718,7 +809,9 @@
             "paths": [
               "server/trace-node.js:71-74"
             ],
-            "label": "Record server spans"
+            "label": "Record server spans",
+            "actorName": "API server",
+            "toName": "Neon Postgres"
           },
           {
             "actor": "client",
@@ -728,7 +821,9 @@
             "paths": [
               "public/js/core/trace.js:154-165"
             ],
-            "label": "Ship the batch"
+            "label": "Ship the batch",
+            "actorName": "Browser app",
+            "toName": "API server"
           },
           {
             "actor": "server",
@@ -739,7 +834,9 @@
               "server/trace.js:60-77",
               "server/trace-store.js:74-79"
             ],
-            "label": "Store the batch"
+            "label": "Store the batch",
+            "actorName": "API server",
+            "toName": "Neon Postgres"
           },
           {
             "actor": "user",
@@ -749,7 +846,8 @@
             "paths": [
               "public/js/features/observability/observability.js"
             ],
-            "label": "Replay a trace"
+            "label": "Replay a trace",
+            "toName": "API server"
           }
         ],
         "errorPaths": [
@@ -779,5 +877,5 @@
       "How Muse works"
     ]
   },
-  "checkedAt": "2026-11-21T22:34:01.164Z"
+  "checkedAt": "2026-11-22T00:17:29.909Z"
 }

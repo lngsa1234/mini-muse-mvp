@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How a chat turn runs
 
-Mapped: 2026-11-21 · Mapped by Alex from the code
+Mapped: 2026-11-22 · Mapped by Alex from the code
 
 A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.
 
@@ -16,35 +16,37 @@ A user message goes to the browser agent loop. The loop streams model replies th
 sequenceDiagram
   autonumber
   actor user as User
-  participant client as Client
-  participant agent as Agent
-  participant data as Data
-  participant server as Server
-  participant external as External
-  user->>client: Submits a message from the…
+  participant client as Browser app
+  participant agent as Agent loop
+  participant data as Browser storage
+  participant server as LLM proxy
+  participant external as OpenAI
+  user->>client: Sends a message
   client->>client: Pushes the user message
   client->>client: Builds the tool list from features
+  loop up to 12 steps
   client->>server: POST /api/llm
   server->>external: POST chat completions
   external-->>client: SSE text
   client->>client: Parses the stream
   agent->>agent: Asks for tools
+  end
   client->>data: Ends the turn
 ```
 
 ## Steps
 
-| # | Who | What happens | Hands to | Code |
-|---|---|---|---|---|
-| 1 | User | Submits a message from the composer or from a feature button. | Client: `run(userMsg)` |  |
-| 2 | Client | Pushes the user message and a live assistant placeholder, disables the composer, shows Stop, and starts a trace for the turn. |  | `public/js/agent/run.js` |
-| 3 | Client | Builds the tool list from features and connected connectors, then applies pre-model shortcuts: Library check for résumé steps, a job-research nudge, and opening an application link in Chrome. |  | `public/js/agent/run.js`, `public/js/agent/tools.js` |
-| 4 | Client | Sends the conversation and tool definitions with a trace header. It sends a tier and never a model name. | Server: `POST /api/llm (tier, messages, tools, stream)` | `public/js/agent/loop.js`, `public/js/agent/transport.js` |
-| 5 | Server | Drops any client model, maps the tier to a model, adds the API key and forwards the request to OpenAI. | External: `POST chat completions (pinned model, server-held key)` | `server/proxy.js`, `server/routing.js`, `api/llm.js` |
-| 6 | External | Streams the reply back through the proxy. | Client: `SSE text and tool_call deltas` |  |
-| 7 | Client | Parses the stream and updates the message text live. |  | `public/js/agent/transport.js`, `public/js/features/chat/chat.js` |
-| 8 | Agent | Asks for tools. The loop runs each one locally and feeds the result back as a tool message. It repeats up to 12 steps until the model stops asking for tools. |  | `public/js/agent/loop.js`, `public/js/agent/tools.js` |
-| 9 | Client | Ends the turn: expires unanswered approvals, marks the message not live, shows a truncation notice if the reply hit the token limit, and saves state in browser storage. | Data: `save() chat state` | `public/js/agent/run.js`, `public/js/core/storage.js` |
+| # | From → To | What happens | Code |
+|---|---|---|---|
+| 1 | User → Browser app | Submits a message from the composer or from a feature button · `run(userMsg)` |  |
+| 2 | Browser app | Pushes the user message and a live assistant placeholder, disables the composer, shows Stop, and starts a trace for the turn | [run.js](../../../public/js/agent/run.js) |
+| 3 | Browser app | Builds the tool list from features and connected connectors, then applies pre-model shortcuts: Library check for résumé steps, a job-research nudge, and opening an application link in Chrome | [run.js](../../../public/js/agent/run.js), [tools.js](../../../public/js/agent/tools.js) |
+| 4 | Browser app → LLM proxy | _Repeats, up to 12 steps (steps 4–8):_ Sends the conversation and tool definitions with a trace header. It sends a tier and never a model name · `POST /api/llm (…)` | [loop.js](../../../public/js/agent/loop.js), [transport.js](../../../public/js/agent/transport.js) |
+| 5 | LLM proxy → OpenAI | Drops any client model, maps the tier to a model, adds the API key and forwards the request to OpenAI · `POST chat completions (…)` | [proxy.js](../../../server/proxy.js), [routing.js](../../../server/routing.js), [llm.js](../../../api/llm.js) |
+| 6 | OpenAI → Browser app | Streams the reply back through the proxy · `SSE text and tool_call deltas` |  |
+| 7 | Browser app | Parses the stream and updates the message text live | [transport.js](../../../public/js/agent/transport.js), [chat.js](../../../public/js/features/chat/chat.js) |
+| 8 | Agent loop | Asks for tools. The loop runs each one locally and feeds the result back as a tool message. It repeats up to 12 steps until the model stops asking for tools | [loop.js](../../../public/js/agent/loop.js), [tools.js](../../../public/js/agent/tools.js) |
+| 9 | Browser app → Browser storage | Ends the turn: expires unanswered approvals, marks the message not live, shows a truncation notice if the reply hit the token limit, and saves state in browser storage · `save() chat state` | [run.js](../../../public/js/agent/run.js), [storage.js](../../../public/js/core/storage.js) |
 
 ## When it goes wrong
 

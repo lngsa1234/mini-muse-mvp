@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # Workflows
 
-How the product works at runtime, flow by flow. Mapped by Alex from the code on 2026-11-21; every step's code is checked against the repository.
+How the product works at runtime, flow by flow. Mapped by Alex from the code on 2026-11-22; every step's code is checked against the repository.
 
 - [How a chat turn runs](chat-turn.md) — A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.
 - [How sensitive actions get approval](tool-approval.md) — A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.

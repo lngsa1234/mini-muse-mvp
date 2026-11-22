@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # How Muse fills an application in Chrome
 
-Mapped: 2026-11-21 · Mapped by Alex from the code
+Mapped: 2026-11-22 · Mapped by Alex from the code
 
 Muse fills in a job application in the user’s own Chrome tab through the optional extension, and only submits it after the user has reviewed it and approved.
 
@@ -31,16 +31,18 @@ sequenceDiagram
 
 ## Steps
 
-| # | Who | What happens | Hands to | Code |
-|---|---|---|---|---|
-| 1 | Agent | Asks the page to open the application URL in a new Chrome tab | Client: `browser_open(url)` | `public/js/features/browser/browser.js:22` |
-| 2 | Client | Posts the request to the extension through a window message, checking the reply comes from the same origin | External: `postMessage(source: mini-muse)` | `public/js/features/browser/browser.js:6-16` |
-| 3 | External | Relays the request to the extension’s background script, which only accepts messages from the Mini Muse origins |  | `chrome-extension/muse-bridge.js`, `chrome-extension/background.js:9-14` |
-| 4 | External | Picks the last non–Mini Muse tab, checks the user allowed control of that site, and injects the form script |  | `chrome-extension/background.js:16-28` |
-| 5 | Agent | Reads the form fields, then fills the ones the Library résumé supports | External: `browser_fields, browser_fill(fields)` | `public/js/features/browser/browser.js:24-32` |
-| 6 | External | Fills the fields in the tab and skips passwords, SSNs and card or account numbers |  | `chrome-extension/target.js:8`, `chrome-extension/target.js:54` |
-| 7 | User | Reviews the filled form in Chrome and approves the Submit click on the approval card | Agent: `Submit it` |  |
-| 8 | Agent | Clicks Submit in the tab | External: `browser_click(selector)` | `public/js/features/browser/browser.js:33-40` |
+| # | From → To | What happens | Code |
+|---|---|---|---|
+| 1 | Agent → Mini Muse page | Asks the page to open the application URL in a new Chrome tab · `browser_open(url)` | [browser.js:22](../../../public/js/features/browser/browser.js#L22) |
+| 2 | Mini Muse page → Chrome extension | Posts the request to the extension through a window message, checking the reply comes from the same origin · `postMessage(source: mini-muse)` | [browser.js:6-16](../../../public/js/features/browser/browser.js#L6-L16) |
+| 3 | Chrome extension | Relays the request to the extension’s background script, which only accepts messages from the Mini Muse origins | [muse-bridge.js](../../../chrome-extension/muse-bridge.js), [background.js:9-14](../../../chrome-extension/background.js#L9-L14) |
+| 4 | Chrome extension | Picks the last non–Mini Muse tab, checks the user allowed control of that site, and injects the form script | [background.js:16-28](../../../chrome-extension/background.js#L16-L28) |
+| 5 | Agent → Chrome extension | Reads the form fields, then fills the ones the Library résumé supports · `browser_fields, browser_fill(fields)` | [browser.js:24-32](../../../public/js/features/browser/browser.js#L24-L32) |
+| 6 | Chrome extension | Fills the fields in the tab and skips passwords, SSNs and card or account numbers | [target.js:8](../../../chrome-extension/target.js#L8), [target.js:54](../../../chrome-extension/target.js#L54) |
+| 7 | User → Agent | ✋ Reviews the filled form in Chrome and approves the Submit click on the approval card · `Submit it` |  |
+| 8 | Agent → Chrome extension | Clicks Submit in the tab · `browser_click(selector)` | [browser.js:33-40](../../../public/js/features/browser/browser.js#L33-L40) |
+
+✋ The step waits for the user.
 
 ## When it goes wrong
 
