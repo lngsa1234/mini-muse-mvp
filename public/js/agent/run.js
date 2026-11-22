@@ -87,7 +87,7 @@ export async function run(userMsg) {
   if (rt.busy || !rt.sample) return;
   rt.busy = true; setBusy(true); go("chat");
   const turn = { localId: userMsg.id, msgId: null, error: null };
-  state.chat.push(userMsg);   // shown right away; replaced by the server's copy
+  if (!userMsg.resume) state.chat.push(userMsg);   // shown right away; replaced by the server's copy
   renderChat(); setPhase("thinking");
   rt.ctl = new AbortController(); rt.turnId = null;
   try {
@@ -95,7 +95,7 @@ export async function run(userMsg) {
     const tp = activeTraceparent(); if (tp) headers.traceparent = tp;
     const res = await fetch("/api/agent/turn", {
       method: "POST", headers, signal: rt.ctl.signal,
-      body: JSON.stringify({ text: userMsg.text, checkin: userMsg.role === "checkin", tier: rt.mode, tz: TZ })
+      body: JSON.stringify({ text: userMsg.text, checkin: userMsg.role === "checkin", ...(userMsg.resume ? { resume: userMsg.resume } : {}), tier: rt.mode, tz: TZ })
     });
     if (!res.ok || !res.body) throw await apiError(res);
     for await (const [event, data] of events(res.body)) handle(event, data, turn);
@@ -108,7 +108,7 @@ export async function run(userMsg) {
     if (!turn.msgId) {
       // The server never started the turn (busy, offline...): put the text back and say why.
       state.chat = state.chat.filter(x => x.id !== turn.localId);
-      if (userMsg.text && !$("box").value) $("box").value = userMsg.text;
+      if (userMsg.text && !userMsg.resume && !$("box").value) $("box").value = userMsg.text;
       state.chat.push({ id: rid(), role: "assistant", text: "", acts: [], error: err.code === "busy" ? err.message : ERR[err.code] || "Muse couldn't reach the server. Send your message again.", t: Date.now() });
       renderChat();
     }

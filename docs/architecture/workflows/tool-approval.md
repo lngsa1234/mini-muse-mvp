@@ -52,6 +52,7 @@ sequenceDiagram
 
 - A decline returns “The user declined. Nothing was changed.” to the model.
 - No answer within 4 minutes (AGENT_APPROVAL_TIMEOUT_MS), or Stop, expires the card and returns “The user did not answer. Nothing was changed.”
+- If the turn reaches its time limit (AGENT_TURN_BUDGET_MS, 270s) while the card is open, the turn pauses with the card open; an answer within the card's 4 minutes returns resume, and the browser posts a follow-up turn that re-runs the tool with that answer. A later answer is refused (409).
 
 ## Features it serves
 

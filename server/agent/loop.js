@@ -33,7 +33,7 @@ export async function runLoop({ llm, messages, tools, tier = "quick", signal, on
           const out = await tool.execute(tu.input);
           content = typeof out === "string" ? out : JSON.stringify(out);
         } catch (e) {
-          if (e?.code === "cancelled") throw e;
+          if (e?.code === "cancelled" || e?.code === "parked") throw e;
           content = e?.message || String(e); isError = true;
         }
       }

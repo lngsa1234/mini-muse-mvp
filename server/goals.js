@@ -12,6 +12,8 @@ import { listGoals, getGoal, createGoal, updateGoal, deleteGoal } from "./db.js"
 import { normTarget, normDeadline, normApplication, upsertApplication } from "../public/js/features/goals/model.js";
 
 const STATUSES = ["todo", "doing", "done", "blocked"];
+// Every goal has 3 to 6 steps (the same rule the agent's create_goal follows).
+export const MIN_STEPS = 3, MAX_STEPS = 6;
 const err = (status, message) => ({ status, json: { error: message } });
 
 export async function handleList(userId) {
@@ -23,10 +25,9 @@ export async function handleCreate(userId, body) {
   const goal = String(body.goal || "").trim();
   const steps = (Array.isArray(body.steps) ? body.steps : [])
     .map(s => (typeof s === "string" ? { text: s, status: "todo" } : { text: String(s?.text || ""), status: s?.status || "todo" }))
-    .filter(s => s.text)
-    .slice(0, 8);
+    .filter(s => s.text);
   if (!goal) return err(400, "goal is required");
-  if (!steps.length) return err(400, "at least one step is required");
+  if (steps.length < MIN_STEPS || steps.length > MAX_STEPS) return err(400, `a goal needs ${MIN_STEPS} to ${MAX_STEPS} steps`);
   let target, deadline;
   try { target = normTarget(body.target); deadline = normDeadline(body.deadline); } catch (e) { return err(400, e.message); }
   const created = await createGoal(userId, { goal, steps, target, deadline });
