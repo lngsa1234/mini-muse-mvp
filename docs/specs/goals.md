@@ -94,21 +94,21 @@ _The code each criterion rests on is under Evidence, at the end._
 
 _For engineers: where the behavior above lives in the code._
 
-The Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. Job tools: jobs_search and score_fit (features/jobs/jobs.js, with server/jobs.js) for postings on public Greenhouse, Lever and Ashby boards and for scoring the Library résumé, track_application with status proof from the same turn. revise_plan goes through an approval card.
+The Goals form sends Muse a prompt and Muse calls create_goal, defined with the other goal tools in server/agent/tools/goals.js, which also enforces the evidence rules on the server. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. Job tools: jobs_search and score_fit (server/agent/tools/jobs.js, with server/jobs.js) for postings on public Greenhouse, Lever and Ashby boards and for scoring the Library résumé, track_application with status proof from the same turn. revise_plan goes through an approval card.
 
 ## Evidence
 
 | # | Code | Quote |
 |---|---|---|
-| AC1 | `public/js/features/goals/goals.js:57` | `say("New goal: " + t + ". Make a plan for it.` |
-| AC2 | `public/js/features/goals/goals.js:93` | `.map(String).filter(Boolean).slice(0, 8);` |
-| AC3 | `public/js/features/goals/goals.js:119` | `no tool did any work this turn` |
-| AC4 | `public/js/features/goals/goals.js:125` | `set "evidence" to the tool you used this turn for THIS step` |
-| AC5 | `public/js/features/jobs/jobs.js:29` | `give keywords (the job title) to search the hiring sites, or name company boards` |
-| AC6 | `public/js/features/jobs/jobs.js:40` | `No résumé in the Library.` |
-| AC7 | `public/js/features/goals/goals.js:164` | `there's no proof it was submitted this turn` |
-| AC8 | `public/js/features/goals/goals.js:170` | `Count this as ${app.status === "offer" ? "an offer" : "an interview"}?` |
-| AC9 | `public/js/features/goals/goals.js:141` | `yes: "Update plan"` |
+| AC1 | `public/js/features/goals/goals.js:49` | `say("New goal: " + t + ". Make a plan for it.` |
+| AC2 | `server/agent/tools/goals.js:31` | `.map(String).filter(Boolean).slice(0, 8);` |
+| AC3 | `server/agent/tools/goals.js:57` | `no tool did any work this turn` |
+| AC4 | `server/agent/tools/goals.js:63` | `set "evidence" to the tool you used this turn for THIS step` |
+| AC5 | `server/agent/tools/jobs.js:26` | `give keywords (the job title) to search the hiring sites, or name company boards` |
+| AC6 | `server/agent/tools/jobs.js:37` | `No résumé in the Library.` |
+| AC7 | `server/agent/tools/goals.js:104` | `there's no proof it was submitted this turn` |
+| AC8 | `server/agent/tools/goals.js:110` | `Count this as ${app.status === "offer" ? "an offer" : "an interview"}?` |
+| AC9 | `server/agent/tools/goals.js:80` | `yes: "Update plan"` |
 
 ## Not confirmed from the code
 

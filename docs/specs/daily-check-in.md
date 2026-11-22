@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Lets Muse work on the user's goals while they're away: once a day, or from a button, it reviews goals, ideas and connected services, does what it can without the user, and leaves a short progress brief in chat.**
 
-The check-in is an agent turn with a fixed instruction: check Gmail for application confirmations and replies, update tracked applications, work out pace against a job-search target, search for more postings when behind, never send email or submit applications, and end with a three-line brief. With "Every day" on, it runs once a day from 9am while the app is open and Muse is free, checked every five minutes and shortly after the app opens.
+The check-in is an agent turn with a fixed instruction: check Gmail for application confirmations and replies, update tracked applications, work out pace against a job-search target, search for more postings when behind, never send email or submit applications, and end with a three-line brief. With "Every day" on, the open app starts it once a day from 9am when Muse is free; once started, it runs on the server and finishes even if the tab is closed.
 
 ## User stories
 
@@ -72,7 +72,7 @@ _The code each criterion rests on is under Evidence, at the end._
 
 ## Risks
 
-- The check-in only runs while the app is open in a browser tab.
+- The check-in only starts while the app is open in a browser tab; there is no server-side schedule.
 
 ## Open questions
 
@@ -92,5 +92,5 @@ workflow/checkin.js holds the check-in prompt. maybeDailyCheckin() runs every fi
 | AC2 | `public/js/workflow/checkin.js:29` | `if (!p.dailyCheckin \|\| p.lastCheckin === today() \|\| now.getHours() < START_HOUR) return false;` |
 | AC3 | `public/js/workflow/checkin.js:18` | `const START_HOUR = 9;` |
 | AC4 | `public/js/workflow/checkin.js:30` | `if (!rt.sample \|\| rt.busy \|\| !state.plans.length) return false;` |
-| AC5 | `public/js/workflow/checkin.js:14` | `the user is away. Review my goals, ideas, and any connected services` |
-| AC6 | `public/js/workflow/checkin.js:16` | `Then write a progress brief of 3 short lines, list what needs my decision` |
+| AC5 | `public/js/workflow/checkin-prompt.js:3` | `the user is away. Review my goals, ideas, and any connected services` |
+| AC6 | `public/js/workflow/checkin-prompt.js:5` | `Then write a progress brief of 3 short lines, list what needs my decision` |

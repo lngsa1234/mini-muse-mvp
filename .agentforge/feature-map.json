@@ -13,14 +13,16 @@
         "route:api/llm.js",
         "module:server/proxy.js",
         "module:server/routing.js",
-        "doc:docs/specs/agent-chat.md"
+        "doc:docs/specs/agent-chat.md",
+        "module:server/agent",
+        "route:api/agent.js"
       ],
       "spec": {
         "status": "complete",
         "acceptanceCriteria": [
           "AC1: Given The chat composer is focused with text entered, when The user presses Enter without Shift, then The form is submitted and the message is sent; Shift+Enter does not send..",
           "AC2: Given A turn is in progress, when The user clicks Stop, then The request is aborted. No error banner is shown for the cancellation..",
-          "AC3: Given The model replies with tool calls, when A turn runs, then Each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached..",
+          "AC3: Given The model replies with tool calls, when A turn runs, then Each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached..",
           "AC4: Given The server has no OPENAI_API_KEY, when The browser calls /api/llm, then The server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message \"The assistant isn't available on this account…\"..",
           "AC5: Given A request carries tier \"default\" or any other value, when The proxy builds the upstream request, then \"default\" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored..",
           "AC6: Given The provider returns HTTP 429, when A turn runs, then The assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.'..",
@@ -31,7 +33,7 @@
         ],
         "document": {
           "objective": "Lets a user ask Muse for something in plain words and watch it answer and act, using tools for goals, documents, connected services and the browser, with risky actions held for approval.",
-          "summary": "Replies stream in as Muse writes them, and the user can stop a reply at any time. Muse can take up to 12 steps of tool use in one turn. Fast gives replies in seconds; Thorough uses a stronger model that can take up to a minute. When the assistant is unavailable or hits a usage limit, the chat says so in plain words. When the user asks to apply for a job, Muse can't use email in that turn.",
+          "summary": "Replies stream in as Muse writes them, and the user can stop a reply from any device. Turns run on the server, so a reply keeps going if the tab is closed and shows on every device; one turn runs at a time. Muse can take up to 12 steps of tool use in a turn. Fast replies in seconds; Thorough uses a stronger model. When the assistant is unavailable, the chat says so. In a job-application turn, Muse can't use email.",
           "userStories": [
             "As a user, I want to send a message and see Muse's reply stream in, so that I get answers without waiting for the full response.",
             "As a user, I want to stop a response in progress, so that I can cancel a turn I no longer want.",
@@ -50,7 +52,7 @@
           "outOfScope": [
             "Internals of individual tools, such as Library, Goals, Ideas, Gmail and the Chrome extension",
             "Approval workflow logic in workflow/approvals.js (not read)",
-            "Prompt content in agent/prompt.js and the intent regexes in agent/intent.js (not read in detail)",
+            "Prompt content in server/agent/prompt.js and the intent regexes in server/agent/runtime.js (makeIntents) (not read in detail)",
             "Tracing and observability backend",
             "Settings page, memory and reset"
           ],
@@ -87,15 +89,15 @@
               "then": "The request is aborted. No error banner is shown for the cancellation.",
               "evidence": [
                 {
-                  "path": "public/js/features/chat/chat.js",
-                  "startLine": 69,
-                  "endLine": 69,
+                  "path": "public/js/agent/run.js",
+                  "startLine": 126,
+                  "endLine": 126,
                   "quote": "rt.ctl?.abort()"
                 },
                 {
-                  "path": "public/js/agent/run.js",
-                  "startLine": 174,
-                  "endLine": 174,
+                  "path": "server/agent/runtime.js",
+                  "startLine": 256,
+                  "endLine": 256,
                   "quote": "if (e?.code !== \"cancelled\")"
                 }
               ]
@@ -104,18 +106,18 @@
               "surface": "web",
               "given": "The model replies with tool calls",
               "when": "A turn runs",
-              "then": "Each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached.",
+              "then": "Each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached.",
               "evidence": [
                 {
-                  "path": "public/js/agent/loop.js",
-                  "startLine": 8,
-                  "endLine": 8,
+                  "path": "server/agent/loop.js",
+                  "startLine": 6,
+                  "endLine": 6,
                   "quote": "export const MAX_STEPS = 12;"
                 },
                 {
-                  "path": "public/js/agent/loop.js",
-                  "startLine": 102,
-                  "endLine": 102,
+                  "path": ".agentforge/feature-map.json",
+                  "startLine": 119,
+                  "endLine": 119,
                   "quote": "const out = await tool.execute(tu.input, { signal });"
                 }
               ]
@@ -139,9 +141,9 @@
                   "quote": "if (serverCode === \"no_api_key\") code = \"sampling_disabled\";"
                 },
                 {
-                  "path": "public/js/agent/run.js",
-                  "startLine": 175,
-                  "endLine": 175,
+                  "path": ".agentforge/feature-map.json",
+                  "startLine": 145,
+                  "endLine": 145,
                   "quote": "disableChat(ERR[e.code])"
                 }
               ]
@@ -159,9 +161,9 @@
                   "quote": "const tier = body && body.tier === \"default\" ? \"default\" : \"quick\";"
                 },
                 {
-                  "path": "server/proxy.js",
-                  "startLine": 19,
-                  "endLine": 19,
+                  "path": ".agentforge/feature-map.json",
+                  "startLine": 165,
+                  "endLine": 165,
                   "quote": "Strip our 'tier' field and any client-sent model"
                 }
               ]
@@ -233,10 +235,10 @@
               "then": "mail_search and mail_send are removed from the tools offered for that turn.",
               "evidence": [
                 {
-                  "path": "public/js/agent/run.js",
-                  "startLine": 160,
-                  "endLine": 160,
-                  "quote": "tool.name !== \"mail_search\" && tool.name !== \"mail_send\""
+                  "path": "server/agent/runtime.js",
+                  "startLine": 322,
+                  "endLine": 322,
+                  "quote": "const loopTools = application ? tools.filter(t => t.name !== \"mail_search\" && t.name !== \"mail_send\") : tools;"
                 }
               ]
             },
@@ -247,9 +249,9 @@
               "then": "The message shows 'The reply was cut short. Ask for less at once.'.",
               "evidence": [
                 {
-                  "path": "public/js/agent/run.js",
-                  "startLine": 169,
-                  "endLine": 169,
+                  "path": "server/agent/runtime.js",
+                  "startLine": 330,
+                  "endLine": 330,
                   "quote": "The reply was cut short. Ask for less at once."
                 }
               ]
@@ -261,7 +263,8 @@
             "The 12-step cap ends a turn with whatever text exists, and the user gets no specific notice.",
             "The composer note says 'Connectors use sample data; nothing leaves this page', which may contradict the real Gmail/Google connectors and the server-side LLM calls.",
             "Chat history is persisted client-side via save(). I did not check how large it can grow or how it is protected.",
-            "No test or QA evidence for this feature was reviewed, so it is shipped but unverified."
+            "No test or QA evidence for this feature was reviewed, so it is shipped but unverified.",
+            "A turn runs inside one serverless call capped at 300 seconds, and an approval can wait up to 4 minutes of that, so a long turn with a slow approval can be cut off."
           ],
           "openQuestions": [
             "Is the 'Connectors use sample data' note still accurate now that Google OAuth connectors exist?",
@@ -274,14 +277,14 @@
             "No tests were read, so nothing here is verified by QA.",
             "The quotes were copied from the numbered lines I read, but I did not run the app."
           ],
-          "howItWorks": "The Chat page (features/chat/chat.js) submits to run() in agent/run.js, which records the message, starts a trace, applies a few deterministic shortcuts (document-step checks, a job-research nudge, opening an application link), then calls the loop in agent/loop.js. The loop posts the conversation and tool definitions to /api/llm via transport.js, streams the reply, runs requested tools in the browser and repeats up to MAX_STEPS = 12. server/proxy.js adds the API key and server/routing.js maps the tier to a model, so the browser never names one. agent/errors.js maps error codes to messages."
+          "howItWorks": "The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn through agent/client.js and agent/run.js, and renders the streamed events. server/agent/http.js hands the request to runTurn in server/agent/runtime.js, which saves the messages as it goes (server/userdata.js, chat_messages), builds the prompt (server/agent/prompt.js) and runs the loop in server/agent/loop.js with the tools in server/agent/tools/, up to MAX_STEPS = 12. server/agent/llm.js calls OpenAI with the server-held key and a model chosen from the tier. Approvals and Chrome-bridge calls wait in agent_waits and are answered through /api/agent/answer; Stop calls /api/agent/cancel."
         },
         "problems": [],
         "counts": {
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -290,7 +293,8 @@
       "summary": "Muse stops and shows an approval card before sending mail, changing the calendar or clicking Submit; the user approves or declines.",
       "status": "built",
       "anchors": [
-        "module:public/js/workflow/approvals.js"
+        "module:public/js/workflow/approvals.js",
+        "module:server/agent/runtime.js"
       ],
       "spec": {
         "status": "complete",
@@ -303,7 +307,7 @@
         ],
         "document": {
           "objective": "Makes Muse stop and ask before a sensitive action: a tool pauses, an approval card appears in chat, and the action goes ahead only if the user approves.",
-          "summary": "requestApproval puts the chat in a waiting state, shows a card with a heading, rows, an optional body and a yes label, and waits for the user's click. Approve resolves true, Decline false, and a turn that ends first resolves null (no answer). The outcome is labelled on the card and written to the activity audit.",
+          "summary": "Before Muse does something that changes or sends anything, the chat shows a card saying what it wants to do, and Muse waits. The user approves or declines; if nobody answers before the turn ends, nothing happens. Each answer is shown on the card and written to the activity log. Cards are saved on the server, so the user can answer from any device, and a turn waits up to 4 minutes for an answer.",
           "userStories": [
             "As a user, I want Muse to ask before sending, submitting or changing things so that nothing happens on my behalf without my say-so."
           ],
@@ -326,9 +330,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/workflow/approvals.js",
-                  "startLine": 15,
-                  "endLine": 15,
+                  "path": "server/agent/runtime.js",
+                  "startLine": 220,
+                  "endLine": 220,
                   "quote": "msg.status = \"Waiting for your approval…\""
                 }
               ]
@@ -341,9 +345,9 @@
               "evidence": [
                 {
                   "path": "public/js/workflow/approvals.js",
-                  "startLine": 29,
-                  "endLine": 29,
-                  "quote": "onClick(\"approve\", id => approvals.get(id)?.(true));"
+                  "startLine": 24,
+                  "endLine": 24,
+                  "quote": "onClick(\"approve\", id => answer(id, true));"
                 }
               ]
             },
@@ -355,9 +359,9 @@
               "evidence": [
                 {
                   "path": "public/js/workflow/approvals.js",
-                  "startLine": 30,
-                  "endLine": 30,
-                  "quote": "onClick(\"decline\", id => approvals.get(id)?.(false));"
+                  "startLine": 25,
+                  "endLine": 25,
+                  "quote": "onClick(\"decline\", id => answer(id, false));"
                 }
               ]
             },
@@ -368,9 +372,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/workflow/approvals.js",
-                  "startLine": 27,
-                  "endLine": 27,
+                  "path": ".agentforge/feature-map.json",
+                  "startLine": 378,
+                  "endLine": 378,
                   "quote": "export function expireApprovals() { for (const [, res] of approvals) res(null); }"
                 }
               ]
@@ -382,9 +386,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/workflow/approvals.js",
-                  "startLine": 21,
-                  "endLine": 21,
+                  "path": "server/agent/runtime.js",
+                  "startLine": 229,
+                  "endLine": 229,
                   "quote": "audit(\"approval\", { [tool]: card.summary }, a.approval, \"you\");"
                 }
               ]
@@ -444,7 +448,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -456,10 +460,11 @@
         "module:public/js/features/goals",
         "route:api/goals",
         "module:server/goals.js",
-        "module:public/js/features/jobs",
         "route:api/jobs",
         "module:server/jobs.js",
-        "doc:docs/specs/goals.md"
+        "doc:docs/specs/goals.md",
+        "module:server/agent/tools/goals.js",
+        "module:server/agent/tools/jobs.js"
       ],
       "spec": {
         "status": "complete",
@@ -511,8 +516,8 @@
               "evidence": [
                 {
                   "path": "public/js/features/goals/goals.js",
-                  "startLine": 57,
-                  "endLine": 57,
+                  "startLine": 49,
+                  "endLine": 49,
                   "quote": "say(\"New goal: \" + t + \". Make a plan for it."
                 }
               ]
@@ -524,9 +529,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/goals/goals.js",
-                  "startLine": 93,
-                  "endLine": 93,
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 31,
+                  "endLine": 31,
                   "quote": ".map(String).filter(Boolean).slice(0, 8);"
                 }
               ]
@@ -538,9 +543,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/goals/goals.js",
-                  "startLine": 119,
-                  "endLine": 119,
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 57,
+                  "endLine": 57,
                   "quote": "no tool did any work this turn"
                 }
               ]
@@ -552,9 +557,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/goals/goals.js",
-                  "startLine": 125,
-                  "endLine": 125,
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 63,
+                  "endLine": 63,
                   "quote": "set \"evidence\" to the tool you used this turn for THIS step"
                 }
               ]
@@ -566,9 +571,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/jobs/jobs.js",
-                  "startLine": 29,
-                  "endLine": 29,
+                  "path": "server/agent/tools/jobs.js",
+                  "startLine": 26,
+                  "endLine": 26,
                   "quote": "give keywords (the job title) to search the hiring sites, or name company boards"
                 }
               ]
@@ -580,9 +585,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/jobs/jobs.js",
-                  "startLine": 40,
-                  "endLine": 40,
+                  "path": "server/agent/tools/jobs.js",
+                  "startLine": 37,
+                  "endLine": 37,
                   "quote": "No résumé in the Library."
                 }
               ]
@@ -594,9 +599,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/goals/goals.js",
-                  "startLine": 164,
-                  "endLine": 164,
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 104,
+                  "endLine": 104,
                   "quote": "there's no proof it was submitted this turn"
                 }
               ]
@@ -608,9 +613,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/goals/goals.js",
-                  "startLine": 170,
-                  "endLine": 170,
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 110,
+                  "endLine": 110,
                   "quote": "Count this as ${app.status === \"offer\" ? \"an offer\" : \"an interview\"}?"
                 }
               ]
@@ -622,9 +627,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/goals/goals.js",
-                  "startLine": 141,
-                  "endLine": 141,
+                  "path": "server/agent/tools/goals.js",
+                  "startLine": 80,
+                  "endLine": 80,
                   "quote": "yes: \"Update plan\""
                 }
               ]
@@ -697,14 +702,14 @@
           "limitations": [
             "Carried over from the previous spec at docs/specs/goals.md (API layer); its server-side behaviour is not re-cited here."
           ],
-          "howItWorks": "The Goals form sends Muse a prompt and Muse calls create_goal. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. Job tools: jobs_search and score_fit (features/jobs/jobs.js, with server/jobs.js) for postings on public Greenhouse, Lever and Ashby boards and for scoring the Library résumé, track_application with status proof from the same turn. revise_plan goes through an approval card."
+          "howItWorks": "The Goals form sends Muse a prompt and Muse calls create_goal, defined with the other goal tools in server/agent/tools/goals.js, which also enforces the evidence rules on the server. update_step refuses doing or done unless a non-bookkeeping tool ran this turn and is named as evidence. Job tools: jobs_search and score_fit (server/agent/tools/jobs.js, with server/jobs.js) for postings on public Greenhouse, Lever and Ashby boards and for scoring the Library résumé, track_application with status proof from the same turn. revise_plan goes through an approval card."
         },
         "problems": [],
         "counts": {
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -713,7 +718,8 @@
       "summary": "A background check-in, from a button or once a day, where Muse reviews goals and connected services, acts where it can and leaves a progress brief.",
       "status": "built",
       "anchors": [
-        "module:public/js/workflow/checkin.js"
+        "module:public/js/workflow/checkin.js",
+        "module:public/js/workflow/checkin-prompt.js"
       ],
       "spec": {
         "status": "complete",
@@ -727,7 +733,7 @@
         ],
         "document": {
           "objective": "Lets Muse work on the user's goals while they're away: once a day, or from a button, it reviews goals, ideas and connected services, does what it can without the user, and leaves a short progress brief in chat.",
-          "summary": "The check-in is an agent turn with a fixed instruction: check Gmail for application confirmations and replies, update tracked applications, work out pace against a job-search target, search for more postings when behind, never send email or submit applications, and end with a three-line brief. With \"Every day\" on, it runs once a day from 9am while the app is open and Muse is free, checked every five minutes and shortly after the app opens.",
+          "summary": "The check-in is an agent turn with a fixed instruction: check Gmail for application confirmations and replies, update tracked applications, work out pace against a job-search target, search for more postings when behind, never send email or submit applications, and end with a three-line brief. With \"Every day\" on, the open app starts it once a day from 9am when Muse is free; once started, it runs on the server and finishes even if the tab is closed.",
           "userStories": [
             "As a job seeker, I want Muse to make progress on my goals each day without me asking, so that I don't fall behind.",
             "As a user, I want a short brief of what changed and what needs my decision when I come back."
@@ -810,9 +816,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/workflow/checkin.js",
-                  "startLine": 14,
-                  "endLine": 14,
+                  "path": "public/js/workflow/checkin-prompt.js",
+                  "startLine": 3,
+                  "endLine": 3,
                   "quote": "the user is away. Review my goals, ideas, and any connected services"
                 }
               ]
@@ -824,9 +830,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/workflow/checkin.js",
-                  "startLine": 16,
-                  "endLine": 16,
+                  "path": "public/js/workflow/checkin-prompt.js",
+                  "startLine": 5,
+                  "endLine": 5,
                   "quote": "Then write a progress brief of 3 short lines, list what needs my decision"
                 }
               ]
@@ -872,7 +878,7 @@
             }
           ],
           "risks": [
-            "The check-in only runs while the app is open in a browser tab."
+            "The check-in only starts while the app is open in a browser tab; there is no server-side schedule."
           ],
           "openQuestions": [
             "Is a server-side scheduler planned so check-ins run with the app closed?"
@@ -885,7 +891,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -944,7 +950,7 @@
             "Methods other than those listed return 405 on the Vercel functions.",
             "The Ideas page hides dismissed ideas and groups the rest into New or Starter, Saved, and Acted on (done or goal).",
             "Update with Muse asks the LLM for 4 ideas, keeps at most 6, and saves each as status 'new' with by 'muse'.",
-            "Not for me on a starter idea only records its rule key locally; on a stored idea it sets status to dismissed.",
+            "Not for me on a starter idea only records its rule key in the user’s saved settings; on a stored idea it sets status to dismissed.",
             "save_idea skips a title that already exists, ignoring case, and otherwise stores the idea as saved."
           ],
           "acceptanceCriteria": [
@@ -1037,9 +1043,9 @@
                   "quote": "status: \"new\", by: \"muse\" }));"
                 },
                 {
-                  "path": "public/js/features/ideas/ideas.js",
-                  "startLine": 50,
-                  "endLine": 50,
+                  "path": ".agentforge/feature-map.json",
+                  "startLine": 1049,
+                  "endLine": 1049,
                   "quote": "'New from Muse <span>updated"
                 }
               ]
@@ -1099,9 +1105,9 @@
               "then": "nothing is created and the tool replies 'Already on the Ideas page.'.",
               "evidence": [
                 {
-                  "path": "public/js/features/ideas/ideas.js",
-                  "startLine": 158,
-                  "endLine": 158,
+                  "path": "server/agent/tools/ideas.js",
+                  "startLine": 13,
+                  "endLine": 13,
                   "quote": "return \"Already on the Ideas page.\";"
                 }
               ]
@@ -1134,7 +1140,7 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -1332,7 +1338,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -1459,9 +1465,9 @@
               "then": "An approval card asks the user to allow the send, and the message is sent only after approval.",
               "evidence": [
                 {
-                  "path": "public/js/features/connectors/mail.js",
-                  "startLine": 13,
-                  "endLine": 13,
+                  "path": "server/agent/tools/connectors.js",
+                  "startLine": 27,
+                  "endLine": 27,
                   "quote": "Muse wants to send this Gmail message. Allow it?"
                 }
               ]
@@ -1473,9 +1479,9 @@
               "then": "An approval card shows the event and time before the event is added.",
               "evidence": [
                 {
-                  "path": "public/js/features/connectors/calendar.js",
-                  "startLine": 13,
-                  "endLine": 13,
+                  "path": "server/agent/tools/connectors.js",
+                  "startLine": 40,
+                  "endLine": 40,
                   "quote": "Muse wants to add this to Google Calendar. Allow it?"
                 }
               ]
@@ -1487,9 +1493,9 @@
               "then": "The tool returns 'No contact found.'.",
               "evidence": [
                 {
-                  "path": "public/js/features/connectors/contacts.js",
-                  "startLine": 40,
-                  "endLine": 40,
+                  "path": "server/agent/tools/connectors.js",
+                  "startLine": 63,
+                  "endLine": 63,
                   "quote": "\"No contact found.\""
                 }
               ]
@@ -1537,7 +1543,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -1546,7 +1552,9 @@
       "summary": "Muse remembers and forgets facts about the user on request, shown and editable in Settings.",
       "status": "built",
       "anchors": [
-        "module:public/js/features/memory"
+        "module:public/js/features/memory",
+        "module:server/agent/tools/memory.js",
+        "module:server/userdata.js"
       ],
       "spec": {
         "status": "complete",
@@ -1560,7 +1568,7 @@
         ],
         "document": {
           "objective": "Lets Muse remember lasting facts and preferences about the user, and forget them on request; the user sees and deletes them in Settings.",
-          "summary": "Muse calls remember to save one fact (duplicates are ignored, case-insensitively) and forget to delete every fact containing a keyword. Settings → Memory lists the facts with a count and a delete button on each; deleting one is recorded in the activity audit as done by the user.",
+          "summary": "Muse saves lasting facts and preferences when the user shares them (the same fact is never saved twice) and forgets every fact containing a word the user asks it to forget. Settings → Memory lists the facts, each with a delete button; deleting one is recorded in the activity log. Facts are stored on the server, so every device sees the same memory.",
           "userStories": [
             "As a user, I want Muse to remember my preferences so that I don't repeat myself.",
             "As a user, I want to see and delete what Muse remembers about me."
@@ -1585,9 +1593,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/memory/memory.js",
-                  "startLine": 28,
-                  "endLine": 28,
+                  "path": "docs/reference/original-prototype.html",
+                  "startLine": 878,
+                  "endLine": 878,
                   "quote": "if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return \"Already remembered.\";"
                 }
               ]
@@ -1599,9 +1607,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/memory/memory.js",
-                  "startLine": 27,
-                  "endLine": 27,
+                  "path": "server/agent/tools/memory.js",
+                  "startLine": 15,
+                  "endLine": 15,
                   "quote": "if (!fact) throw new Error(\"fact is empty\");"
                 }
               ]
@@ -1613,9 +1621,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/memory/memory.js",
-                  "startLine": 35,
-                  "endLine": 35,
+                  "path": ".agentforge/feature-map.json",
+                  "startLine": 1627,
+                  "endLine": 1627,
                   "quote": "const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));"
                 }
               ]
@@ -1627,9 +1635,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/memory/memory.js",
-                  "startLine": 37,
-                  "endLine": 37,
+                  "path": "server/agent/tools/memory.js",
+                  "startLine": 27,
+                  "endLine": 27,
                   "quote": "if (!gone.length) return \"No memory matched '\" + keyword + \"'.\";"
                 }
               ]
@@ -1669,14 +1677,14 @@
           ],
           "openQuestions": [],
           "limitations": [],
-          "howItWorks": "features/memory/memory.js defines the remember and forget tools and renders Settings → Memory. Facts live in state.memory; deletions are written to the audit log."
+          "howItWorks": "The remember and forget tools are in server/agent/tools/memory.js and run in the server agent; facts are saved with the rest of the user's state in Postgres (server/userdata.js, user_state). features/memory/memory.js renders Settings → Memory and saves deletions back, writing an audit entry."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -1685,9 +1693,9 @@
       "summary": "Muse searches the web and opens pages through the server.",
       "status": "built",
       "anchors": [
-        "module:public/js/features/web",
         "route:api/web",
-        "module:server/web.js"
+        "module:server/web.js",
+        "module:server/agent/tools/web.js"
       ],
       "spec": {
         "status": "complete",
@@ -1726,9 +1734,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/web/web.js",
-                  "startLine": 15,
-                  "endLine": 15,
+                  "path": "server/agent/tools/web.js",
+                  "startLine": 17,
+                  "endLine": 17,
                   "quote": "if (!q) throw new Error(\"need a search query\");"
                 }
               ]
@@ -1754,9 +1762,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/web/web.js",
-                  "startLine": 25,
-                  "endLine": 25,
+                  "path": "server/agent/tools/web.js",
+                  "startLine": 27,
+                  "endLine": 27,
                   "quote": "if (!/^https?:\\/\\//i.test(u)) throw new Error(\"need a valid http(s) url\");"
                 }
               ]
@@ -1810,14 +1818,14 @@
           ],
           "openQuestions": [],
           "limitations": [],
-          "howItWorks": "features/web/web.js defines web_search and web_open, which call /api/web. server/web.js forwards to Tavily's search and extract APIs with TAVILY_API_KEY, keeps five results and caps page text at TEXT_CAP = 20000."
+          "howItWorks": "server/agent/tools/web.js defines web_search and web_open for the server agent and calls the handlers in server/web.js directly, which forward to Tavily's search and extract APIs with TAVILY_API_KEY, keep five results and cap page text at TEXT_CAP = 20000."
         },
         "problems": [],
         "counts": {
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -1827,7 +1835,8 @@
       "status": "built",
       "anchors": [
         "module:public/js/features/browser",
-        "module:chrome-extension"
+        "module:chrome-extension",
+        "module:server/agent/tools/browser.js"
       ],
       "spec": {
         "status": "complete",
@@ -1840,7 +1849,7 @@
         ],
         "document": {
           "objective": "Lets Muse fill in a job application in the user's own Chrome tab through an optional extension, and submit it only after the user has reviewed it and approved.",
-          "summary": "The page talks to the Mini Muse Browser Bridge extension by window messages. Muse can open an application URL, read the tab's text and form fields, fill fields from the Library résumé, and click; every click needs approval, and a submit click gets a card that asks whether every field was reviewed. The extension never fills passwords, SSNs, card or account numbers. Without the extension, requests time out with a message pointing to web_open.",
+          "summary": "Through the optional Mini Muse Browser Bridge extension, Muse can open an application, read its text and form fields, fill fields from the Library résumé, and click. Every click needs approval, and a submit click asks whether every field was reviewed. Passwords, SSNs and card or account numbers are never filled. The agent runs on the server, so browser tools only work while a Mini Muse tab is open; without the extension they fail with a clear message.",
           "userStories": [
             "As a job seeker, I want Muse to fill in an application for me so that I only review and submit.",
             "As a user, I want nothing submitted without my approval."
@@ -1880,9 +1889,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/browser/browser.js",
-                  "startLine": 27,
-                  "endLine": 27,
+                  "path": "server/agent/tools/browser.js",
+                  "startLine": 22,
+                  "endLine": 22,
                   "quote": "if (!list.length) throw new Error(\"No fields to fill.\");"
                 }
               ]
@@ -1894,9 +1903,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/browser/browser.js",
-                  "startLine": 37,
-                  "endLine": 37,
+                  "path": "server/agent/tools/browser.js",
+                  "startLine": 33,
+                  "endLine": 33,
                   "quote": "heading: \"This will submit the form in your Chrome tab. Did you review every field?\""
                 }
               ]
@@ -1908,9 +1917,9 @@
               "surface": "web",
               "evidence": [
                 {
-                  "path": "public/js/features/browser/browser.js",
-                  "startLine": 39,
-                  "endLine": 39,
+                  "path": "server/agent/tools/browser.js",
+                  "startLine": 35,
+                  "endLine": 35,
                   "quote": "if (ok !== true) return h.refusal(ok);"
                 }
               ]
@@ -1988,7 +1997,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -2007,11 +2016,11 @@
           "AC3: Given web search is on, when the user clicks the web search switch, then it turns off and is saved.",
           "AC4: Given the How Muse works panel is shown on a phone, when the user turns it off, then the app returns to Chat.",
           "AC5: Given Settings is open, when the user clicks Erase everything…, then they are asked to confirm before anything is erased.",
-          "AC6: Given the user confirms erasing, when Muse is mid-turn, then the turn is stopped and all data except preferences is reset."
+          "AC6: Given the user confirms erasing, when Muse is mid-turn, then the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences."
         ],
         "document": {
           "objective": "Lets the user choose how Muse replies (Fast or Thorough), turn web search and the How Muse works panel on or off, and erase everything to start over.",
-          "summary": "Settings holds the response-style switch (Fast maps to the quick model tier, Thorough to the default tier), the web search switch, the How Muse works switch, and Erase everything, which asks for confirmation in the page, stops any running turn and resets all data except preferences. Memory and Activity sections on the same page belong to their own features.",
+          "summary": "Settings holds the response-style switch (Fast maps to the quick model tier, Thorough to the default tier), the web search switch, the How Muse works switch, and Erase everything, which asks for confirmation in the page, stops any running turn and resets all data except preferences, here and on the server, for every device. Memory and Activity sections on the same page belong to their own features.",
           "userStories": [
             "As a user, I want to trade speed for care in Muse's replies.",
             "As a user, I want to wipe my data and start over without losing my settings."
@@ -2040,8 +2049,8 @@
               "evidence": [
                 {
                   "path": "public/js/features/settings/settings.js",
-                  "startLine": 45,
-                  "endLine": 45,
+                  "startLine": 51,
+                  "endLine": 51,
                   "quote": "beforeRenderAll() { rt.mode = state.prefs?.mode || \"quick\"; setLearn(!!state.prefs?.learn); }"
                 }
               ]
@@ -2105,23 +2114,21 @@
             {
               "given": "the user confirms erasing",
               "when": "Muse is mid-turn",
-              "then": "the turn is stopped and all data except preferences is reset",
+              "then": "the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences",
               "surface": "web",
               "evidence": [
                 {
                   "path": "public/js/features/settings/settings.js",
-                  "startLine": 37,
-                  "endLine": 37,
-                  "quote": "else if (id === \"resetYes\") { if (rt.busy) rt.ctl?.abort(); const prefs = state.prefs; replaceState(blank()); state.prefs = prefs; renderAll(); go(\"settings\"); flush(); restoreReset(); }"
+                  "startLine": 42,
+                  "endLine": 42,
+                  "quote": "resetAll({ prefs }); // the chat, memory and settings on the server, for every device"
                 }
               ]
             }
           ],
           "scenarios": [],
           "risks": [],
-          "openQuestions": [
-            "Should Erase everything also delete server-side data (traces, saved goals) or only this browser's data?"
-          ],
+          "openQuestions": [],
           "limitations": [
             "Did not check what blank() resets beyond local state."
           ],
@@ -2132,7 +2139,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -2195,9 +2202,9 @@
               "evidence": [
                 {
                   "path": "public/js/features/hood/hood.js",
-                  "startLine": 21,
-                  "endLine": 21,
-                  "quote": "const list = [...coreToolNames().map(n => [n, \"\"]), ...Object.keys(CONNECTORS).filter(isOn).flatMap(k => CONNECTORS[k].tools.map(t => [t.name, \"c\"]))];"
+                  "startLine": 27,
+                  "endLine": 27,
+                  "quote": "const list = [...core.map(t => [t.name, \"\"]), ...Object.keys(CONNECTORS).filter(isOn).flatMap(k => CONNECTORS[k].tools.map(t => [t.name, \"c\"]))];"
                 }
               ]
             },
@@ -2269,7 +2276,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     },
     {
@@ -2450,7 +2457,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T00:17:29.956Z"
+        "checkedAt": "2026-11-22T00:45:06.182Z"
       }
     }
   ]

@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Lets Muse fill in a job application in the user's own Chrome tab through an optional extension, and submit it only after the user has reviewed it and approved.**
 
-The page talks to the Mini Muse Browser Bridge extension by window messages. Muse can open an application URL, read the tab's text and form fields, fill fields from the Library résumé, and click; every click needs approval, and a submit click gets a card that asks whether every field was reviewed. The extension never fills passwords, SSNs, card or account numbers. Without the extension, requests time out with a message pointing to web_open.
+Through the optional Mini Muse Browser Bridge extension, Muse can open an application, read its text and form fields, fill fields from the Library résumé, and click. Every click needs approval, and a submit click asks whether every field was reviewed. Passwords, SSNs and card or account numbers are never filled. The agent runs on the server, so browser tools only work while a Mini Muse tab is open; without the extension they fail with a clear message.
 
 ## User stories
 
@@ -84,9 +84,9 @@ features/browser/browser.js talks to the Chrome extension with window.postMessag
 | # | Code | Quote |
 |---|---|---|
 | AC1 | `public/js/features/browser/browser.js:8` | `Mini Muse Browser Bridge did not respond: the Chrome extension isn't installed or enabled.` |
-| AC2 | `public/js/features/browser/browser.js:27` | `if (!list.length) throw new Error("No fields to fill.");` |
-| AC3 | `public/js/features/browser/browser.js:37` | `heading: "This will submit the form in your Chrome tab. Did you review every field?"` |
-| AC4 | `public/js/features/browser/browser.js:39` | `if (ok !== true) return h.refusal(ok);` |
+| AC2 | `server/agent/tools/browser.js:22` | `if (!list.length) throw new Error("No fields to fill.");` |
+| AC3 | `server/agent/tools/browser.js:33` | `heading: "This will submit the form in your Chrome tab. Did you review every field?"` |
+| AC4 | `server/agent/tools/browser.js:35` | `if (ok !== true) return h.refusal(ok);` |
 | AC5 | `chrome-extension/target.js:8` | `const SENSITIVE = /password\|passwd\|ssn\|social.?security\|card.?number\|cvv\|cvc\|routing\|account.?number/i;` |
 
 ## Not confirmed from the code

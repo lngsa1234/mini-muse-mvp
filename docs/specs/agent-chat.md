@@ -8,7 +8,7 @@ owner: Product Manager (Maya)
 
 # Agent chat
 
-**10 of 10** acceptance criteria checked against the code · 5 risks · 3 open questions
+**10 of 10** acceptance criteria checked against the code · 6 risks · 3 open questions
 
 _Written by Maya from the code on 2026-11-22. It describes the feature as built, not as planned._
 
@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Lets a user ask Muse for something in plain words and watch it answer and act, using tools for goals, documents, connected services and the browser, with risky actions held for approval.**
 
-Replies stream in as Muse writes them, and the user can stop a reply at any time. Muse can take up to 12 steps of tool use in one turn. Fast gives replies in seconds; Thorough uses a stronger model that can take up to a minute. When the assistant is unavailable or hits a usage limit, the chat says so in plain words. When the user asks to apply for a job, Muse can't use email in that turn.
+Replies stream in as Muse writes them, and the user can stop a reply from any device. Turns run on the server, so a reply keeps going if the tab is closed and shows on every device; one turn runs at a time. Muse can take up to 12 steps of tool use in a turn. Fast replies in seconds; Thorough uses a stronger model. When the assistant is unavailable, the chat says so. In a job-application turn, Muse can't use email.
 
 ## User stories
 
@@ -41,7 +41,7 @@ Replies stream in as Muse writes them, and the user can stop a reply at any time
 
 - Internals of individual tools, such as Library, Goals, Ideas, Gmail and the Chrome extension
 - Approval workflow logic in workflow/approvals.js (not read)
-- Prompt content in agent/prompt.js and the intent regexes in agent/intent.js (not read in detail)
+- Prompt content in server/agent/prompt.js and the intent regexes in server/agent/runtime.js (makeIntents) (not read in detail)
 - Tracing and observability backend
 - Settings page, memory and reset
 
@@ -65,7 +65,7 @@ Replies stream in as Muse writes them, and the user can stop a reply at any time
 |---|---|---|---|---|---|
 | AC1 | the chat composer is focused with text entered | the user presses Enter without Shift | the form is submitted and the message is sent; Shift+Enter does not send | web | ✓ |
 | AC2 | a turn is in progress | the user clicks Stop | the request is aborted. No error banner is shown for the cancellation | web | ✓ |
-| AC3 | the model replies with tool calls | a turn runs | each tool is executed locally and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ |
+| AC3 | the model replies with tool calls | a turn runs | each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ |
 | AC4 | the server has no OPENAI_API_KEY | the browser calls /api/llm | the server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…" | API | ✓ |
 | AC5 | a request carries tier "default" or any other value | the proxy builds the upstream request | "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored | API | ✓ |
 | AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ |
@@ -83,6 +83,7 @@ _The code each criterion rests on is under Evidence, at the end._
 - The composer note says 'Connectors use sample data; nothing leaves this page', which may contradict the real Gmail/Google connectors and the server-side LLM calls.
 - Chat history is persisted client-side via save(). I did not check how large it can grow or how it is protected.
 - No test or QA evidence for this feature was reviewed, so it is shipped but unverified.
+- A turn runs inside one serverless call capped at 300 seconds, and an approval can wait up to 4 minutes of that, so a long turn with a slow approval can be cut off.
 
 ## Open questions
 
@@ -94,30 +95,30 @@ _The code each criterion rests on is under Evidence, at the end._
 
 _For engineers: where the behavior above lives in the code._
 
-The Chat page (features/chat/chat.js) submits to run() in agent/run.js, which records the message, starts a trace, applies a few deterministic shortcuts (document-step checks, a job-research nudge, opening an application link), then calls the loop in agent/loop.js. The loop posts the conversation and tool definitions to /api/llm via transport.js, streams the reply, runs requested tools in the browser and repeats up to MAX_STEPS = 12. server/proxy.js adds the API key and server/routing.js maps the tier to a model, so the browser never names one. agent/errors.js maps error codes to messages.
+The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn through agent/client.js and agent/run.js, and renders the streamed events. server/agent/http.js hands the request to runTurn in server/agent/runtime.js, which saves the messages as it goes (server/userdata.js, chat_messages), builds the prompt (server/agent/prompt.js) and runs the loop in server/agent/loop.js with the tools in server/agent/tools/, up to MAX_STEPS = 12. server/agent/llm.js calls OpenAI with the server-held key and a model chosen from the tier. Approvals and Chrome-bridge calls wait in agent_waits and are answered through /api/agent/answer; Stop calls /api/agent/cancel.
 
 ## Evidence
 
 | # | Code | Quote |
 |---|---|---|
 | AC1 | `public/js/features/chat/chat.js:67` | `e.key === "Enter" && !e.shiftKey && !e.isComposing` |
-| AC2 | `public/js/features/chat/chat.js:69` | `rt.ctl?.abort()` |
-|  | `public/js/agent/run.js:174` | `if (e?.code !== "cancelled")` |
-| AC3 | `public/js/agent/loop.js:8` | `export const MAX_STEPS = 12;` |
-|  | `public/js/agent/loop.js:102` | `const out = await tool.execute(tu.input, { signal });` |
+| AC2 | `public/js/agent/run.js:126` | `rt.ctl?.abort()` |
+|  | `server/agent/runtime.js:256` | `if (e?.code !== "cancelled")` |
+| AC3 | `server/agent/loop.js:6` | `export const MAX_STEPS = 12;` |
+|  | `.agentforge/feature-map.json:119` | `const out = await tool.execute(tu.input, { signal });` |
 | AC4 | `server/proxy.js:16` | `status: 503, body: { code: "no_api_key"` |
 |  | `public/js/agent/transport.js:27` | `if (serverCode === "no_api_key") code = "sampling_disabled";` |
-|  | `public/js/agent/run.js:175` | `disableChat(ERR[e.code])` |
+|  | `.agentforge/feature-map.json:145` | `disableChat(ERR[e.code])` |
 | AC5 | `server/routing.js:31` | `const tier = body && body.tier === "default" ? "default" : "quick";` |
-|  | `server/proxy.js:19` | `Strip our 'tier' field and any client-sent model` |
+|  | `.agentforge/feature-map.json:165` | `Strip our 'tier' field and any client-sent model` |
 | AC6 | `public/js/agent/transport.js:30` | `res.status === 429) code = "rate_limited"` |
 |  | `public/js/agent/errors.js:5` | `Muse hit a usage limit. Wait a minute, then send again.` |
 | AC7 | `public/js/features/chat/chat.js:40` | `Tell Muse what you want done` |
 |  | `public/js/features/chat/chat.js:71` | `if (rt.sample && !rt.busy) $("form").requestSubmit();` |
 | AC8 | `public/js/features/chat/chat.js:19` | `a.approval === "pending" && a.card` |
 |  | `public/js/features/chat/chat.js:23` | `Don't allow</button>` |
-| AC9 | `public/js/agent/run.js:160` | `tool.name !== "mail_search" && tool.name !== "mail_send"` |
-| AC10 | `public/js/agent/run.js:169` | `The reply was cut short. Ask for less at once.` |
+| AC9 | `server/agent/runtime.js:322` | `const loopTools = application ? tools.filter(t => t.name !== "mail_search" && t.name !== "mail_send") : tools;` |
+| AC10 | `server/agent/runtime.js:330` | `The reply was cut short. Ask for less at once.` |
 
 ## Not confirmed from the code
 

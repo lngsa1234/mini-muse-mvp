@@ -8,7 +8,7 @@ owner: Product Manager (Maya)
 
 # Settings
 
-**6 of 6** acceptance criteria checked against the code · 1 open question
+**6 of 6** acceptance criteria checked against the code
 
 _Written by Maya from the code on 2026-11-22. It describes the feature as built, not as planned._
 
@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Lets the user choose how Muse replies (Fast or Thorough), turn web search and the How Muse works panel on or off, and erase everything to start over.**
 
-Settings holds the response-style switch (Fast maps to the quick model tier, Thorough to the default tier), the web search switch, the How Muse works switch, and Erase everything, which asks for confirmation in the page, stops any running turn and resets all data except preferences. Memory and Activity sections on the same page belong to their own features.
+Settings holds the response-style switch (Fast maps to the quick model tier, Thorough to the default tier), the web search switch, the How Muse works switch, and Erase everything, which asks for confirmation in the page, stops any running turn and resets all data except preferences, here and on the server, for every device. Memory and Activity sections on the same page belong to their own features.
 
 ## User stories
 
@@ -54,13 +54,9 @@ Settings holds the response-style switch (Fast maps to the quick model tier, Tho
 | AC3 | web search is on | the user clicks the web search switch | it turns off and is saved | web | ✓ |
 | AC4 | the How Muse works panel is shown on a phone | the user turns it off | the app returns to Chat | web | ✓ |
 | AC5 | settings is open | the user clicks Erase everything… | they are asked to confirm before anything is erased | web | ✓ |
-| AC6 | the user confirms erasing | muse is mid-turn | the turn is stopped and all data except preferences is reset | web | ✓ |
+| AC6 | the user confirms erasing | muse is mid-turn | the turn is stopped and the chat, memory and settings are erased on every device, keeping preferences | web | ✓ |
 
 _The code each criterion rests on is under Evidence, at the end._
-
-## Open questions
-
-- Should Erase everything also delete server-side data (traces, saved goals) or only this browser's data?
 
 ## How it works
 
@@ -72,12 +68,12 @@ features/settings/settings.js renders the page and stores choices in state.prefs
 
 | # | Code | Quote |
 |---|---|---|
-| AC1 | `public/js/features/settings/settings.js:45` | `beforeRenderAll() { rt.mode = state.prefs?.mode \|\| "quick"; setLearn(!!state.prefs?.learn); }` |
+| AC1 | `public/js/features/settings/settings.js:51` | `beforeRenderAll() { rt.mode = state.prefs?.mode \|\| "quick"; setLearn(!!state.prefs?.learn); }` |
 | AC2 | `public/js/features/settings/settings.js:12` | `rt.mode === "quick" ? "Fast: replies in seconds. Good for most things." : "Thorough: a stronger model that plans more ca` |
 | AC3 | `public/js/features/settings/settings.js:33` | `$("webSearch")?.addEventListener("click", () => { state.prefs.webSearch = state.prefs.webSearch === false; renderSetting` |
 | AC4 | `public/js/features/settings/settings.js:23` | `if (!on && $("panes").dataset.mobile === "hood") go("chat");` |
 | AC5 | `public/js/features/settings/settings.js:36` | `Are you sure? <button class="btn" id="resetYes"` |
-| AC6 | `public/js/features/settings/settings.js:37` | `else if (id === "resetYes") { if (rt.busy) rt.ctl?.abort(); const prefs = state.prefs; replaceState(blank()); state.pref` |
+| AC6 | `public/js/features/settings/settings.js:42` | `resetAll({ prefs }); // the chat, memory and settings on the server, for every device` |
 
 ## Not confirmed from the code
 

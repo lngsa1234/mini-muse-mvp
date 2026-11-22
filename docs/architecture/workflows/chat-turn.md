@@ -8,54 +8,54 @@ owner: Alex (Technical Lead)
 
 Mapped: 2026-11-22 · Mapped by Alex from the code
 
-A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.
+A message goes to the agent runtime on the server, which saves it, builds the prompt from the user’s saved data, calls the model and runs the tools it asks for, and streams progress back to the page. The turn keeps going if the tab closes.
 
-**Starts when:** The user presses Send in chat, or another page sends a message such as New goal, Do it or Ask Muse to move this forward.
+**Starts when:** The user presses Send in chat, or another page sends a message such as New goal, Do it or Ask Muse to move this forward
 
 ```mermaid
 sequenceDiagram
   autonumber
   actor user as User
   participant client as Browser app
-  participant agent as Agent loop
-  participant data as Browser storage
-  participant server as LLM proxy
+  participant agent as Model
+  participant data as Neon Postgres
+  participant server as Agent runtime
   participant external as OpenAI
   user->>client: Sends a message
-  client->>client: Pushes the user message
-  client->>client: Builds the tool list from features
+  client->>server: Post the turn
+  server-->>data: Save the messages
+  server->>server: Tools and shortcuts
+  server->>server: Build the prompt
   loop up to 12 steps
-  client->>server: POST /api/llm
-  server->>external: POST chat completions
-  external-->>client: SSE text
-  client->>client: Parses the stream
-  agent->>agent: Asks for tools
+  server->>external: Ask the model
+  agent->>agent: Run the tools
   end
-  client->>data: Ends the turn
+  server-->>client: Stream progress
+  server-->>data: Finish the turn
 ```
 
 ## Steps
 
 | # | From → To | What happens | Code |
 |---|---|---|---|
-| 1 | User → Browser app | Submits a message from the composer or from a feature button · `run(userMsg)` |  |
-| 2 | Browser app | Pushes the user message and a live assistant placeholder, disables the composer, shows Stop, and starts a trace for the turn | [run.js](../../../public/js/agent/run.js) |
-| 3 | Browser app | Builds the tool list from features and connected connectors, then applies pre-model shortcuts: Library check for résumé steps, a job-research nudge, and opening an application link in Chrome | [run.js](../../../public/js/agent/run.js), [tools.js](../../../public/js/agent/tools.js) |
-| 4 | Browser app → LLM proxy | _Repeats, up to 12 steps (steps 4–8):_ Sends the conversation and tool definitions with a trace header. It sends a tier and never a model name · `POST /api/llm (…)` | [loop.js](../../../public/js/agent/loop.js), [transport.js](../../../public/js/agent/transport.js) |
-| 5 | LLM proxy → OpenAI | Drops any client model, maps the tier to a model, adds the API key and forwards the request to OpenAI · `POST chat completions (…)` | [proxy.js](../../../server/proxy.js), [routing.js](../../../server/routing.js), [llm.js](../../../api/llm.js) |
-| 6 | OpenAI → Browser app | Streams the reply back through the proxy · `SSE text and tool_call deltas` |  |
-| 7 | Browser app | Parses the stream and updates the message text live | [transport.js](../../../public/js/agent/transport.js), [chat.js](../../../public/js/features/chat/chat.js) |
-| 8 | Agent loop | Asks for tools. The loop runs each one locally and feeds the result back as a tool message. It repeats up to 12 steps until the model stops asking for tools | [loop.js](../../../public/js/agent/loop.js), [tools.js](../../../public/js/agent/tools.js) |
-| 9 | Browser app → Browser storage | Ends the turn: expires unanswered approvals, marks the message not live, shows a truncation notice if the reply hit the token limit, and saves state in browser storage · `save() chat state` | [run.js](../../../public/js/agent/run.js), [storage.js](../../../public/js/core/storage.js) |
+| 1 | User → Browser app | Submits a message from the composer or a feature button |  |
+| 2 | Browser app → Agent runtime | Shows the message, disables the composer and posts it with the response tier and time zone · `POST /api/agent/turn` | [run.js](../../../public/js/agent/run.js) |
+| 3 | Agent runtime → Neon Postgres | Refuses if another turn for this user is still live, then saves the user message and a live reply · `chat_messages` | [runtime.js:158-171](../../../server/agent/runtime.js#L158-L171), [userdata.js](../../../server/userdata.js) |
+| 4 | Agent runtime | Builds the tools and runs the shortcuts: Library check for résumé steps, a job-research nudge, opening an application link | [runtime.js:268-282](../../../server/agent/runtime.js#L268-L282), [tools/index.js](../../../server/agent/tools/index.js) |
+| 5 | Agent runtime | Builds the system prompt from saved memory, ideas, goals and settings, plus the last 18 messages | [prompt.js](../../../server/agent/prompt.js) |
+| 6 | Agent runtime → OpenAI | _Repeats, up to 12 steps (steps 6–7):_ Streams a model turn with the server-held key and a model picked from the tier · `POST chat completions` | [llm.js](../../../server/agent/llm.js), [routing.js](../../../server/routing.js) |
+| 7 | Model | Asks for tools; the runtime runs each one, logs it and feeds the result back | [loop.js:17](../../../server/agent/loop.js#L17), [tools/index.js](../../../server/agent/tools/index.js) |
+| 8 | Agent runtime → Browser app | Streams events to the page and saves the reply every few seconds · `SSE text, audit, done` | [http.js](../../../server/agent/http.js) |
+| 9 | Agent runtime → Neon Postgres | Ends the turn: expires unanswered approvals, marks the reply finished and saves it · `chat_messages` | [runtime.js](../../../server/agent/runtime.js) |
 
 ## When it goes wrong
 
-- If the server has no API key it returns 503 no_api_key. The client maps this to sampling_disabled, shows the assistant-unavailable message and disables the composer.
-- HTTP 401, 403 and 429 map to session_expired, not_granted and rate_limited messages. A 400 maps to prompt_too_large or refused.
-- If the server cannot be reached the turn fails with a generic 'send your message again' message. If OpenAI is unreachable the proxy has an upstream_unreachable 502 response.
-- A tool that throws, or an unknown tool, goes back to the model as an 'Error: …' tool result instead of ending the turn.
-- If the user presses Stop the turn is cancelled and no error is shown. If the reply ends at max tokens, 'The reply was cut short' is shown.
-- If opening or reading the application page fails, or job tools are off, the shortcut replies without calling the model.
+- No API key: the turn ends with sampling_disabled; the page shows the assistant-unavailable message and disables the composer.
+- Model errors 401, 403, 429 and 400 map to session_expired, not_granted, rate_limited, prompt_too_large or refused.
+- A tool that throws, or an unknown tool, goes back to the model as an error result instead of ending the turn.
+- Stop, from any device, cancels the turn through /api/agent/cancel; no error is shown.
+- If the page’s stream drops, the turn keeps running; the page polls /api/state until the reply is finished.
+- If another turn is live, the server answers busy and the page puts the text back in the composer.
 
 ## Features it serves
 

@@ -283,7 +283,7 @@
       }
     ],
     "openQuestions": [
-      "The daily check-in only runs while the app is open; is a server-side scheduler planned?"
+      "The daily check-in only starts while the app is open (it then runs on the server); is a server-side scheduler planned?"
     ]
   },
   "status": "complete",
@@ -302,5 +302,5 @@
     "prdBuilt": 0,
     "notInPrd": []
   },
-  "checkedAt": "2026-11-21T22:06:29.308Z"
+  "checkedAt": "2026-11-22T00:45:22.669Z"
 }

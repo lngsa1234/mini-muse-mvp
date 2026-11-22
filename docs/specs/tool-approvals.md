@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Makes Muse stop and ask before a sensitive action: a tool pauses, an approval card appears in chat, and the action goes ahead only if the user approves.**
 
-requestApproval puts the chat in a waiting state, shows a card with a heading, rows, an optional body and a yes label, and waits for the user's click. Approve resolves true, Decline false, and a turn that ends first resolves null (no answer). The outcome is labelled on the card and written to the activity audit.
+Before Muse does something that changes or sends anything, the chat shows a card saying what it wants to do, and Muse waits. The user approves or declines; if nobody answers before the turn ends, nothing happens. Each answer is shown on the card and written to the activity log. Cards are saved on the server, so the user can answer from any device, and a turn waits up to 4 minutes for an answer.
 
 ## User stories
 
@@ -76,8 +76,8 @@ Tools that change something call the approval helper in workflow/approvals.js, w
 
 | # | Code | Quote |
 |---|---|---|
-| AC1 | `public/js/workflow/approvals.js:15` | `msg.status = "Waiting for your approval…"` |
-| AC2 | `public/js/workflow/approvals.js:29` | `onClick("approve", id => approvals.get(id)?.(true));` |
-| AC3 | `public/js/workflow/approvals.js:30` | `onClick("decline", id => approvals.get(id)?.(false));` |
-| AC4 | `public/js/workflow/approvals.js:27` | `export function expireApprovals() { for (const [, res] of approvals) res(null); }` |
-| AC5 | `public/js/workflow/approvals.js:21` | `audit("approval", { [tool]: card.summary }, a.approval, "you");` |
+| AC1 | `server/agent/runtime.js:220` | `msg.status = "Waiting for your approval…"` |
+| AC2 | `public/js/workflow/approvals.js:24` | `onClick("approve", id => answer(id, true));` |
+| AC3 | `public/js/workflow/approvals.js:25` | `onClick("decline", id => answer(id, false));` |
+| AC4 | `.agentforge/feature-map.json:378` | `export function expireApprovals() { for (const [, res] of approvals) res(null); }` |
+| AC5 | `server/agent/runtime.js:229` | `audit("approval", { [tool]: card.summary }, a.approval, "you");` |
