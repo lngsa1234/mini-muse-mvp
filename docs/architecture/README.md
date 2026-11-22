@@ -15,10 +15,10 @@ This page is deliberately thin. The detail lives in the decision records, which 
 
 Mini Muse is a no-build browser app with a Node/Express (or Vercel function) backend. The tool-use agent loop runs on the server (`server/agent/`): it builds the prompt from the user's saved data, calls OpenAI, runs the tools, waits for approvals, and streams progress to the page. All user data lives in Neon Postgres — chat, memory, settings and the activity log as well as documents, ideas, goals and traces — so every device shows the same thing. Tools reach Gmail and Calendar through Google OAuth, and Tavily and job-board search. An optional Chrome extension lets the agent fill in job application forms; the server asks the open tab to run those tools.
 
-> The C4 and workflow maps below were drawn before ADR-0008 and ADR-0009 and are due to be mapped again. [How a chat turn runs](workflows/chat-turn.md) and [How sensitive actions get approval](workflows/tool-approval.md) are already current.
+> The C4 maps, workflows and feature specs were updated for ADR-0008 and ADR-0009 on 2026-11-21.
 
 - [Containers](c4-containers.md) — its deployable parts, how they talk, and who and what is around them (C4 level 2)
-- [Components](c4-components-browser-app.md) — inside the browser app: the agent, each feature, and how they work together (C4 level 3)
+- [Components](c4-components-api-server.md) — inside the API server: the agent runtime, its tools, and how they work together (C4 level 3)
 - [Workflows](workflows/README.md) — how the product runs, flow by flow: [how a chat turn runs](workflows/chat-turn.md), [how sensitive actions get approval](workflows/tool-approval.md), [how a goal step advances](workflows/goal-step-progress.md), [how Google connectors sign in](workflows/google-connect.md), [how documents enter the Library](workflows/library-ingest.md), [how the daily check-in runs](workflows/daily-check-in.md), [how Muse fills an application in Chrome](workflows/browser-bridge-fill.md), [how turns are traced](workflows/tracing.md)
 
 | Part | Layer | Technology | Governed by |

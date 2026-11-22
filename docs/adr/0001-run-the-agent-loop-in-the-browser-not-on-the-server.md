@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded
 paths:
   - public/js/agent
 ---
