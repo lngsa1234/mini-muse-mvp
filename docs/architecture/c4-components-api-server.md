@@ -8,15 +8,15 @@ owner: Alex (Technical Lead)
 
 Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-22 · Mapped by Alex from the code (C4 model)
 
-C4 level 3: the components inside API server, with the agent kept apart from each feature’s UI, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).
+C4 level 3: the components inside API server, with the agent kept apart from each feature’s tools, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).
 
 ```mermaid
 flowchart TB
   subgraph app["API server"]
-    subgraph k_shell["App shell"]
+    subgraph k_shell["Endpoints"]
       agent_http["<b>Agent endpoints</b><br/>Component: Node HTTP, SSE"]
     end
-    subgraph k_feature["Feature UI"]
+    subgraph k_feature["Feature tools"]
       goal_tools["<b>Goal and job tools</b><br/>Component: JS"]
       library_tools["<b>Library and ideas tools</b><br/>Component: JS"]
       connector_tools["<b>Connector tools</b><br/>Component: JS"]
@@ -26,11 +26,11 @@ flowchart TB
       agent_runtime["<b>Agent runtime</b><br/>Component: JS"]
       prompt_model["<b>Prompt and model client</b><br/>Component: JS, fetch"]
     end
-    subgraph k_tools["Tools"]
+    subgraph k_tools["Tool plumbing"]
       tool_set["<b>Tool set</b><br/>Component: JS"]
       browser_relay["<b>Browser tool relay</b><br/>Component: SSE, wait records"]
     end
-    subgraph k_state["Client state"]
+    subgraph k_state["Data access"]
       user_data["<b>User data and records</b><br/>Component: Neon driver"]
     end
   end
@@ -72,16 +72,16 @@ flowchart TB
 
 | Component | Kind | What it does | Code |
 |---|---|---|---|
-| Agent endpoints | App shell | Turn, answer, cancel and state endpoints; streams turn events to the page. | `server/agent/http.js`, `api/agent.js`, `server/state.js` |
+| Agent endpoints | Endpoints | Turn, answer, cancel and state endpoints; streams turn events to the page. | `server/agent/http.js`, `api/agent.js`, `server/state.js` |
 | Agent runtime | Agent | Runs one turn at a time per user: shortcuts, the tool loop up to 12 steps, approvals and browser-tool waits, and Stop. | `server/agent/runtime.js`, `server/agent/loop.js` |
 | Prompt and model client | Agent | Builds the prompt from saved data and calls the model with the server-held key and a model picked by tier. | `server/agent/prompt.js`, `server/agent/llm.js`, `server/routing.js` |
-| Tool set | Tools | Collects each feature’s tools and the connected services’ tools for a turn. | `server/agent/tools/index.js`, `server/agent/tools/schema.js` |
-| Goal and job tools | Feature UI | create_goal, update_step, revise_plan, track_application, jobs_search and score_fit, with the evidence rules. | `server/agent/tools/goals.js`, `server/agent/tools/jobs.js` |
-| Library and ideas tools | Feature UI | docs_search, docs_read, docs_add, docs_remove and save_idea. | `server/agent/tools/library.js`, `server/agent/tools/ideas.js` |
-| Connector tools | Feature UI | Gmail, Calendar and Contacts tools; writes ask for approval. | `server/agent/tools/connectors.js` |
-| Memory and web tools | Feature UI | remember, forget, web_search and web_open. | `server/agent/tools/memory.js`, `server/agent/tools/web.js` |
-| Browser tool relay | Tools | Sends browser_* tools to the tab that started the turn and waits for the result. | `server/agent/tools/browser.js` |
-| User data and records | Client state | Chat, state, waits and the activity log, plus the goals, docs and ideas handlers. | `server/userdata.js`, `server/agent/repo.js`, `server/goals.js`, `server/docs.js`, `server/ideas.js` |
+| Tool set | Tool plumbing | Collects each feature’s tools and the connected services’ tools for a turn. | `server/agent/tools/index.js`, `server/agent/tools/schema.js` |
+| Goal and job tools | Feature tools | create_goal, update_step, revise_plan, track_application, jobs_search and score_fit, with the evidence rules. | `server/agent/tools/goals.js`, `server/agent/tools/jobs.js` |
+| Library and ideas tools | Feature tools | docs_search, docs_read, docs_add, docs_remove and save_idea. | `server/agent/tools/library.js`, `server/agent/tools/ideas.js` |
+| Connector tools | Feature tools | Gmail, Calendar and Contacts tools; writes ask for approval. | `server/agent/tools/connectors.js` |
+| Memory and web tools | Feature tools | remember, forget, web_search and web_open. | `server/agent/tools/memory.js`, `server/agent/tools/web.js` |
+| Browser tool relay | Tool plumbing | Sends browser_* tools to the tab that started the turn and waits for the result. | `server/agent/tools/browser.js` |
+| User data and records | Data access | Chat, state, waits and the activity log, plus the goals, docs and ideas handlers. | `server/userdata.js`, `server/agent/repo.js`, `server/goals.js`, `server/docs.js`, `server/ideas.js` |
 
 ## How they talk
 
