@@ -2,7 +2,7 @@
 // The model is scripted; the store and repo are in memory.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { setup, waitForEvent, U } from "../testkit/agent.js";
+import { setup, call, waitForEvent, U } from "../testkit/agent.js";
 import { answerWait } from "../server/agent/runtime.js";
 
 test("agent-chat AC9: an apply request removes mail_search and mail_send from the turn's tools", async () => {
@@ -30,4 +30,24 @@ test("agent-chat AC10: a reply stopped by the token limit says it was cut short"
   const msg = await t.turn({ text: "write me everything" });
   assert.equal(msg.error, "The reply was cut short. Ask for less at once.");
   assert.match(msg.text, /first part/);
+});
+
+test("agent-chat AC3: tool calls run on the server and feed back until the model answers, at most 12 steps", async () => {
+  const { MAX_STEPS } = await import("../server/agent/loop.js");
+  assert.equal(MAX_STEPS, 12);
+  const t = setup({ script: [{ tools: [call("remember", { fact: "Likes tea" })] }, { text: "Saved." }] });
+  const msg = await t.turn({ text: "remember I like tea" });
+  assert.equal(msg.text, "Saved.");
+  assert.equal(t.llm.seen.length, 2);
+  assert.match(t.llm.seen[1].messages.at(-1).content, /Saved to memory/);
+  // A model that never stops calling tools is cut off after 12 model calls.
+  const loop = setup({ script: Array.from({ length: 20 }, (_, i) => ({ tools: [call("remember", { fact: "fact " + i }, "c" + i)] })) });
+  await loop.turn({ text: "go" });
+  assert.equal(loop.llm.seen.length, 12);
+});
+
+test("agent-chat AC4: with no OPENAI_API_KEY the server answers 503 no_api_key", async () => {
+  const { buildUpstreamRequest } = await import("../server/proxy.js");
+  const out = buildUpstreamRequest({ tier: "quick", messages: [] }, {});
+  assert.deepEqual([out.error.status, out.error.body.code], [503, "no_api_key"]);
 });
