@@ -328,7 +328,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 10,
           "passing": 4,
@@ -363,9 +363,17 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
-          "uncommitted": true,
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
+          "fingerprints": {
+            "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
+            "api/llm.js": "eba07f1d87da6abf9924f996916d15af49b1018c",
+            "public/js/agent": "02bb94cc4324970a4b511c2084a62c1d12c54ad7",
+            "public/js/features/chat": "79724a4569a9c96bb156cc9947b3ceee7aca365c",
+            "server/agent": "e33f8ca1ab4d3a85ee540aa6b303e11b5f2191f5",
+            "server/proxy.js": "385cb0ede0ba19eeb0b528dfccc464f459960a03",
+            "server/routing.js": "de88364d6deb723a73b71525cc96e4a0dec1f898"
+          },
           "files": [
             "test/agent-runtime.test.js",
             "test/server.test.js",
@@ -627,7 +635,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 7,
           "passing": 7,
@@ -637,9 +645,12 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
-          "uncommitted": true,
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
+          "fingerprints": {
+            "public/js/workflow/approvals.js": "9bd452d7beb02727372e7f8b3c47199c1e17c512",
+            "server/agent/runtime.js": "afefc3e04d63f369e9962502f7639f1a83fc2fbd"
+          },
           "files": [
             "test/accept-approvals.test.js",
             "test/agent-runtime.test.js"
@@ -1034,7 +1045,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 12,
           "passing": 11,
@@ -1049,9 +1060,17 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
-          "uncommitted": true,
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
+          "fingerprints": {
+            "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
+            "api/jobs": "b9379d67779dd0cf1f42bd632c874113dcfea79b",
+            "public/js/features/goals": "96e73a38bc7e8021e3b3d405e206afb881a1c65f",
+            "server/agent/tools/goals.js": "8d3bedfe07f8156556994a403d7aa48fae0d2c2b",
+            "server/agent/tools/jobs.js": "db936ab5248ab42fdd5a8c5e8a80688397b086b2",
+            "server/goals.js": "a7d3c4e7ce3286ede0a022b3dd4c789fd60bb858",
+            "server/jobs.js": "76bef6edb81ddbc19b72938d55d087e077abc80f"
+          },
           "files": [
             "test/accept-goals.test.js",
             "test/agent-runtime.test.js"
@@ -1534,7 +1553,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 10,
           "passing": 5,
@@ -1565,8 +1584,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
           "fingerprints": {
             "api/ideas": "d4f2abb813eafc0985590905cbd74f0987ceed96",
             "public/js/features/ideas": "7fa895a15e1230a993fc3dd95223eac7e74a0fa7",
@@ -1837,7 +1856,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 8,
           "passing": 8,
@@ -1847,8 +1866,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
           "fingerprints": {
             "api/docs": "02a86113cc7b1d25740e5f93606e0f954705dc23",
             "public/js/features/library": "42a2a7cd6a63777fac99f0abe9fb816ced108759",
@@ -2107,7 +2126,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 8,
           "passing": 4,
@@ -2134,8 +2153,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
           "fingerprints": {
             "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
             "public/js/features/connectors": "3484b397c45d0757efc8611a69b27e817733f277",
@@ -2324,7 +2343,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 6,
           "passing": 4,
@@ -2343,9 +2362,13 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
-          "uncommitted": true,
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
+          "fingerprints": {
+            "public/js/features/memory": "e6276efd8f3c74a936ce167a9717dc0f91de1846",
+            "server/agent/tools/memory.js": "77f9e0248fc9614cfa760088fa87be8f4514c5e7",
+            "server/userdata.js": "52b02b497503d2db14e980cb6e621fbbbe7b4cb9"
+          },
           "files": [
             "test/accept-memory.test.js"
           ]
@@ -2538,7 +2561,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -2548,8 +2571,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
           "fingerprints": {
             "api/web": "23dd029dbf1bd46cac9751734598b9f7183ee53c",
             "server/agent/tools/web.js": "2550eb6dc3e1b44ec1aa8175612bb084b0320b88",
@@ -2765,7 +2788,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 5,
           "passing": 4,
@@ -2780,8 +2803,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
           "fingerprints": {
             "chrome-extension": "22812145e902dea5314d060c70351d60d583bd50",
             "public/js/features/browser": "f2861db4457e67f23d734de044d58343337cb230",
@@ -3300,7 +3323,7 @@
         "status": "in_progress",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:35:37.864Z",
+        "checkedAt": "2026-11-22T03:39:01.637Z",
         "counts": {
           "criteria": 8,
           "passing": 6,
@@ -3319,8 +3342,8 @@
           }
         ],
         "evidence": {
-          "commitSha": "2c0424853a310ef72bd6e971c5ee3c7af754575c",
-          "branch": "review-answers",
+          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
+          "branch": "main",
           "fingerprints": {
             "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",
             "public/js/features/observability": "acdfe166281d2be39b0127eeebdfa2fdbfdaf4e9",
