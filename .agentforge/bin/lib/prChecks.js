@@ -37,7 +37,8 @@ export function changedPaths(files) {
   return [...paths].sort()
 }
 
-const isCodeFile = (path) => CODE_EXTENSIONS.test(path) && !TEST_FILE.test(path) && !path.startsWith('docs/')
+// docs/ and AgentForge's own files (.agentforge/, including the CI copy of its checks) aren't product code.
+const isCodeFile = (path) => CODE_EXTENSIONS.test(path) && !TEST_FILE.test(path) && !path.startsWith('docs/') && !path.startsWith('.agentforge/')
 
 // The paths of a feature's documents: its spec file and any doc:* anchors it owns.
 function featureDocPaths(feature) {
