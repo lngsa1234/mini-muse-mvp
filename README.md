@@ -102,8 +102,8 @@ Mini Muse features (weight-management planning, Black Friday shopping) live in
 evals/general-cases.js and run with `npm run evals -- --general` (or `--all` for both).
 The evals send Muse's real system prompt and tools (evals/muse.mjs), so a prompt or
 tool change is exactly what they test. In CI they run on PRs that change the agent's
-prompt, tools or model routing, and nightly (.github/workflows/evals.yml); add an
-OPENAI_API_KEY repository secret to turn them on.
+prompt, tools or model routing, and by hand from the Actions tab
+(.github/workflows/evals.yml); add an OPENAI_API_KEY repository secret to turn them on.
 
 The live runner uses OPENAI_API_KEY, makes a few paid API requests, and exits
 non-zero if the agent claims to have an unprovided résumé or marks goal progress
