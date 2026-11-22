@@ -6,7 +6,12 @@ export async function open(page, seed = {}, { ready = true } = {}) {
   const res = await page.request.post("/__test/reset", { data: seed });
   if (!res.ok()) throw new Error("reset failed");
   await page.goto("/");
-  if (ready) await expect(page.locator("#box")).toBeEnabled();
+  // Boot is done once the note leaves "Connecting…": the assistant is loaded, so chips
+  // and the composer submit. (The composer is enabled a moment before that.)
+  if (ready) {
+    await expect(page.locator("#note")).toContainText("Enter to send");
+    await expect(page.locator("#box")).toBeEnabled();
+  }
 }
 export const seen = async page => (await page.request.get("/__test/seen")).json();
 export const serverState = async page => (await (await page.request.get("/api/state")).json());

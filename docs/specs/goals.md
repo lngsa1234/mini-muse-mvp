@@ -55,7 +55,7 @@ The user creates a goal from the Goals page or in chat; every goal has 3 to 6 st
 
 | # | Given | When | Then | Where | In code | Tested |
 |---|---|---|---|---|---|---|
-| AC1 | Muse is connected and not busy | the user submits a goal in the Goals form | Muse is asked to plan it with every step left as todo | web | ✓ | — no test |
+| AC1 | Muse is connected and not busy | the user submits a goal in the Goals form | Muse is asked to plan it with every step left as todo | web | ✓ | ✓ passes |
 | AC2 | Muse calls create_goal | it passes fewer than 3 or more than 6 steps | the tool refuses and asks for a plan of 3 to 6 steps | web | ✓ | ✓ passes |
 | AC3 | only bookkeeping tools ran this turn | Muse calls update_step with status done | the tool refuses because no tool did any work this turn | web | ✓ | ✓ passes |
 | AC4 | a web_search ran this turn | Muse marks a step done citing a different tool | the tool refuses and lists the tools that did run | web | ✓ | ✓ passes |
@@ -120,6 +120,7 @@ The Goals form sends Muse a prompt and Muse calls create_goal, defined with the 
 
 | # | Test | File |
 |---|---|---|
+| AC1 | goals AC1: submitting a goal asks Muse to plan it with every step left as todo | `e2e/goals.spec.mjs` |
 | AC2 | goals AC2: create_goal with fewer than 3 or more than 6 steps is refused | `test/accept-goals.test.js` |
 | AC3 | update_step's evidence rule is enforced on the server | `test/agent-runtime.test.js` |
 | AC4 | goals AC4: marking a step done citing a tool that didn't run is refused, naming the tools that did | `test/accept-goals.test.js` |

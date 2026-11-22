@@ -65,11 +65,11 @@ Until Muse has learned enough to suggest ideas of its own, the page shows starte
 | AC2 | an API client | it POSTs a valid idea | the response is 201 with the created idea, and the title is capped at 200 characters | API | ✓ | ✓ passes |
 | AC3 | an idea id that does not exist for the user | the client sends PATCH or DELETE | the response is 404 'no such idea' | API | ✓ | ✓ passes |
 | AC4 | an unsupported HTTP method on /api/ideas | the request is made | the response is 405 'method not allowed' | API | ✓ | ✓ passes |
-| AC5 | a user opens the Ideas page and has no 'new' ideas | the page renders | rule-based starter ideas appear under 'Starter ideas' | web | ✓ | — no test |
-| AC6 | a user with an active LLM session | they press 'Update with Muse' | Muse creates ideas with status 'new', and the page shows them under 'New from Muse' | web | ✓ | — no test |
-| AC7 | a stored idea | the user presses Save | its status is set to 'saved' and it moves to the Saved group | web | ✓ | — no test |
-| AC8 | an idea card | the user presses 'Not for me' on a stored idea | its status becomes dismissed and the card disappears | web | ✓ | — no test |
-| AC9 | an idea card | the user presses 'Do it' | the idea is marked done and Muse is sent a message to carry it out | web | ✓ | — no test |
+| AC5 | a user opens the Ideas page and has no 'new' ideas | the page renders | rule-based starter ideas appear under 'Starter ideas' | web | ✓ | ✓ passes |
+| AC6 | a user with an active LLM session | they press 'Update with Muse' | Muse creates ideas with status 'new', and the page shows them under 'New from Muse' | web | ✓ | ✓ passes |
+| AC7 | a stored idea | the user presses Save | its status is set to 'saved' and it moves to the Saved group | web | ✓ | ✓ passes |
+| AC8 | an idea card | the user presses 'Not for me' on a stored idea | its status becomes dismissed and the card disappears | web | ✓ | ✓ passes |
+| AC9 | an idea card | the user presses 'Do it' | the idea is marked done and Muse is sent a message to carry it out | web | ✓ | ✓ passes |
 | AC10 | a chat where the user shares an idea | Muse calls save_idea with a title already on the page | nothing is created and the tool replies 'Already on the Ideas page.' | web | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
@@ -122,6 +122,11 @@ server/ideas.js holds the handlers for GET/POST /api/ideas and PATCH/DELETE /api
 | AC2 | ideas AC2: a valid idea is created with 201 and its title capped at 200 characters | `test/accept-ideas.test.js` |
 | AC3 | ideas AC3: PATCH or DELETE of an unknown idea returns 404 | `test/accept-ideas.test.js` |
 | AC4 | ideas AC4: an unsupported method on /api/ideas returns 405 | `test/accept-ideas.test.js` |
+| AC5 | ideas AC5: with no new ideas, rule-based starter ideas show under Starter ideas | `e2e/ideas.spec.mjs` |
+| AC6 | ideas AC6: Update with Muse adds new ideas under New from Muse | `e2e/ideas.spec.mjs` |
+| AC7 | ideas AC7: Save sets a stored idea to saved and moves it to the Saved group | `e2e/ideas.spec.mjs` |
+| AC8 | ideas AC8: Not for me dismisses a stored idea and removes its card | `e2e/ideas.spec.mjs` |
+| AC9 | ideas AC9: Do it marks the idea done and sends Muse a message to carry it out | `e2e/ideas.spec.mjs` |
 | AC10 | ideas AC10: save_idea with a title already on the page creates nothing | `test/accept-ideas.test.js` |
 
 ## Not confirmed from the code

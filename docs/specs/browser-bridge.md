@@ -47,7 +47,7 @@ Through the optional Mini Muse Browser Bridge extension, Muse can open an applic
 
 | # | Given | When | Then | Where | In code | Tested |
 |---|---|---|---|---|---|---|
-| AC1 | the extension isn't installed | Muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ | — no test |
+| AC1 | the extension isn't installed | Muse calls a browser tool | it fails with a message that the bridge did not respond | web | ✓ | ✓ passes |
 | AC2 | Muse calls browser_fill | with no fields | the tool refuses | web | ✓ | ✓ passes |
 | AC3 | Muse wants to click a Submit or Apply button | it calls browser_click | the user is asked whether they reviewed every field before it submits | web | ✓ | ✓ passes |
 | AC4 | an approval card is showing for a click | the user does not approve | nothing is clicked | web | ✓ | ✓ passes |
@@ -93,6 +93,7 @@ features/browser/browser.js talks to the Chrome extension with window.postMessag
 
 | # | Test | File |
 |---|---|---|
+| AC1 | browser-bridge AC1: without the extension, a browser tool fails saying the bridge did not respond | `e2e/browser-bridge.spec.mjs` |
 | AC2 | browser-bridge AC2: browser_fill refuses when there are no fields | `test/accept-browser-bridge.test.js` |
 | AC3 | browser-bridge AC3: clicking Submit asks whether every field was reviewed | `test/accept-browser-bridge.test.js` |
 | AC4 | browser-bridge AC4: a click the user doesn't approve clicks nothing | `test/accept-browser-bridge.test.js` |

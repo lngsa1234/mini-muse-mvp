@@ -63,14 +63,14 @@ Replies stream in as Muse writes them, and the user can stop a reply from any de
 
 | # | Given | When | Then | Where | In code | Tested |
 |---|---|---|---|---|---|---|
-| AC1 | the chat composer is focused with text entered | the user presses Enter without Shift | the form is submitted and the message is sent; Shift+Enter does not send | web | ✓ | — no test |
+| AC1 | the chat composer is focused with text entered | the user presses Enter without Shift | the form is submitted and the message is sent; Shift+Enter does not send | web | ✓ | ✓ passes |
 | AC2 | a turn is in progress | the user clicks Stop | the request is aborted. No error banner is shown for the cancellation | web | ✓ | ✓ passes |
-| AC3 | the model replies with tool calls | a turn runs | each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ | — no test |
-| AC4 | the server has no OPENAI_API_KEY | the browser calls /api/llm | the server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…" | API | ✓ | — no test |
+| AC3 | the model replies with tool calls | a turn runs | each tool is run on the server and its result is fed back to the model. The loop continues until the model answers or 12 steps are reached | web | ✓ | ✓ passes |
+| AC4 | the server has no OPENAI_API_KEY | the browser calls /api/llm | the server returns 503 with code no_api_key. The client maps it to sampling_disabled and chat is disabled with the message "The assistant isn't available on this account…" | API | ✓ | ✓ passes |
 | AC5 | a request carries tier "default" or any other value | the proxy builds the upstream request | "default" maps to the Thorough model and anything else maps to the quick model. A client-sent model is ignored | API | ✓ | ✓ passes |
-| AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ | — no test |
-| AC7 | the chat is empty | the Chat page renders | a welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle | web | ✓ | — no test |
-| AC8 | a tool action needs approval | the assistant message renders | a card with the heading, detail rows, and Allow / Don't allow buttons is shown | web | ✓ | — no test |
+| AC6 | the provider returns HTTP 429 | a turn runs | the assistant message shows 'Muse hit a usage limit. Wait a minute, then send again.' | web | ✓ | ✓ passes |
+| AC7 | the chat is empty | the Chat page renders | a welcome screen with example prompt chips is shown. Clicking a chip fills the composer and submits it if the assistant is available and idle | web | ✓ | ✓ passes |
+| AC8 | a tool action needs approval | the assistant message renders | a card with the heading, detail rows, and Allow / Don't allow buttons is shown | web | ✓ | ✓ passes |
 | AC9 | the user asks to apply for a job and the message is not an email request | the model is called | mail_search and mail_send are removed from the tools offered for that turn | web | ✓ | ✓ passes |
 | AC10 | a reply stops because of the token limit | the turn finishes | the message shows 'The reply was cut short. Ask for less at once.' | web | ✓ | ✓ passes |
 
@@ -124,9 +124,16 @@ The Chat page (features/chat/chat.js) sends the message to POST /api/agent/turn 
 
 | # | Test | File |
 |---|---|---|
+| AC1 | agent-chat AC1: Enter sends the message, Shift+Enter adds a new line | `e2e/agent-chat.spec.mjs` |
 | AC2 | only one turn runs at a time per user, across devices | `test/agent-runtime.test.js` |
+| AC3 | agent-chat AC3: tool calls run on the server and feed back until the model answers, at most 12 steps | `test/accept-agent-chat.test.js` |
+| AC4 | agent-chat AC4: when the server has no model key, chat is disabled with a message | `e2e/agent-chat.spec.mjs` |
+|  | agent-chat AC4: with no OPENAI_API_KEY the server answers 503 no_api_key | `test/accept-agent-chat.test.js` |
 | AC5 | routing: tier picks the model, defaults to quick | `test/server.test.js` |
 |  | proxy: pins the model and strips client fields | `test/server.test.js` |
+| AC6 | agent-chat AC6: a provider rate limit shows the usage-limit message | `e2e/agent-chat.spec.mjs` |
+| AC7 | agent-chat AC7: an empty chat shows a welcome with example chips; a chip sends its text | `e2e/agent-chat.spec.mjs` |
+| AC8 | agent-chat AC8: an action that needs approval shows a card with heading, details and allow/decline buttons | `e2e/agent-chat.spec.mjs` |
 | AC9 | agent-chat AC9: an apply request removes mail_search and mail_send from the turn's tools | `test/accept-agent-chat.test.js` |
 | AC10 | agent-chat AC10: a reply stopped by the token limit says it was cut short | `test/accept-agent-chat.test.js` |
 

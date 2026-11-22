@@ -81,7 +81,13 @@
                   "quote": "e.key === \"Enter\" && !e.shiftKey && !e.isComposing"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/agent-chat.spec.mjs",
+                  "name": "agent-chat AC1: Enter sends the message, Shift+Enter adds a new line"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -129,7 +135,13 @@
                   "quote": "const out = await tool.execute(tu.input, { signal });"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "test/accept-agent-chat.test.js",
+                  "name": "agent-chat AC3: tool calls run on the server and feed back until the model answers, at most 12 steps"
+                }
+              ]
             },
             {
               "surface": "API",
@@ -156,7 +168,17 @@
                   "quote": "disableChat(ERR[e.code])"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/agent-chat.spec.mjs",
+                  "name": "agent-chat AC4: when the server has no model key, chat is disabled with a message"
+                },
+                {
+                  "path": "test/accept-agent-chat.test.js",
+                  "name": "agent-chat AC4: with no OPENAI_API_KEY the server answers 503 no_api_key"
+                }
+              ]
             },
             {
               "surface": "API",
@@ -208,7 +230,13 @@
                   "quote": "Muse hit a usage limit. Wait a minute, then send again."
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/agent-chat.spec.mjs",
+                  "name": "agent-chat AC6: a provider rate limit shows the usage-limit message"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -229,7 +257,13 @@
                   "quote": "if (rt.sample && !rt.busy) $(\"form\").requestSubmit();"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/agent-chat.spec.mjs",
+                  "name": "agent-chat AC7: an empty chat shows a welcome with example chips; a chip sends its text"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -250,7 +284,13 @@
                   "quote": "Don't allow</button>"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/agent-chat.spec.mjs",
+                  "name": "agent-chat AC8: an action that needs approval shows a card with heading, details and allow/decline buttons"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -325,59 +365,35 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "playwright+node",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 10,
-          "passing": 4,
+          "passing": 10,
           "failing": 0,
           "missing": 0,
-          "untested": 6
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC1",
-            "qa": "untested"
-          },
-          {
-            "id": "AC3",
-            "qa": "untested"
-          },
-          {
-            "id": "AC4",
-            "qa": "untested"
-          },
-          {
-            "id": "AC6",
-            "qa": "untested"
-          },
-          {
-            "id": "AC7",
-            "qa": "untested"
-          },
-          {
-            "id": "AC8",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/agent.js": "d9cd68550189d6c899390de25aaef2961317616e",
             "api/llm.js": "eba07f1d87da6abf9924f996916d15af49b1018c",
-            "public/js/agent": "02bb94cc4324970a4b511c2084a62c1d12c54ad7",
+            "public/js/agent": "9ce8f11bb53a688d2970b2d9fa7338729fd56be7",
             "public/js/features/chat": "79724a4569a9c96bb156cc9947b3ceee7aca365c",
             "server/agent": "e33f8ca1ab4d3a85ee540aa6b303e11b5f2191f5",
             "server/proxy.js": "385cb0ede0ba19eeb0b528dfccc464f459960a03",
             "server/routing.js": "de88364d6deb723a73b71525cc96e4a0dec1f898"
           },
           "files": [
+            "e2e/agent-chat.spec.mjs",
             "test/agent-runtime.test.js",
-            "test/server.test.js",
-            "test/accept-agent-chat.test.js"
+            "test/accept-agent-chat.test.js",
+            "test/server.test.js"
           ]
         }
       }
@@ -635,7 +651,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 7,
           "passing": 7,
@@ -645,8 +661,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "public/js/workflow/approvals.js": "9bd452d7beb02727372e7f8b3c47199c1e17c512",
             "server/agent/runtime.js": "afefc3e04d63f369e9962502f7639f1a83fc2fbd"
@@ -731,7 +747,13 @@
                   "quote": "say(\"New goal: \" + t + \". Make a plan for it."
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/goals.spec.mjs",
+                  "name": "goals AC1: submitting a goal asks Muse to plan it with every step left as todo"
+                }
+              ]
             },
             {
               "given": "Muse calls create_goal",
@@ -1042,26 +1064,21 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "playwright+node",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 12,
-          "passing": 11,
+          "passing": 12,
           "failing": 0,
           "missing": 0,
-          "untested": 1
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC1",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/goals": "879c610abdd96aab89fae6a8af4b00fa19e8f318",
             "api/jobs": "b9379d67779dd0cf1f42bd632c874113dcfea79b",
@@ -1072,6 +1089,7 @@
             "server/jobs.js": "76bef6edb81ddbc19b72938d55d087e077abc80f"
           },
           "files": [
+            "e2e/goals.spec.mjs",
             "test/accept-goals.test.js",
             "test/agent-runtime.test.js"
           ]
@@ -1131,7 +1149,14 @@
                   "endLine": 41,
                   "quote": "$(\"checkinBtn\").addEventListener(\"click\", runCheckin);"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/daily-check-in.spec.mjs",
+                  "name": "daily-check-in AC1: the check-in button runs a check-in turn"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "\"Every day\" is on and a check-in already ran today",
@@ -1145,7 +1170,14 @@
                   "endLine": 29,
                   "quote": "if (!p.dailyCheckin || p.lastCheckin === today() || now.getHours() < START_HOUR) return false;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/daily-check-in.spec.mjs",
+                  "name": "daily-check-in AC2: with a check-in already run today, the timer doesn't run another"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "\"Every day\" is on and it is before 9am",
@@ -1159,7 +1191,14 @@
                   "endLine": 18,
                   "quote": "const START_HOUR = 9;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/daily-check-in.spec.mjs",
+                  "name": "daily-check-in AC3: before 9am the check-in waits, then runs once 9am has passed"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "\"Every day\" is on but Muse is busy or there are no goals",
@@ -1173,7 +1212,14 @@
                   "endLine": 30,
                   "quote": "if (!rt.sample || rt.busy || !state.plans.length) return false;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/daily-check-in.spec.mjs",
+                  "name": "daily-check-in AC4: no check-in runs while Muse is busy or when there are no goals"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a check-in runs",
@@ -1187,7 +1233,14 @@
                   "endLine": 3,
                   "quote": "the user is away. Review my goals, ideas, and any connected services"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-daily-check-in.test.js",
+                  "name": "daily-check-in AC5: a check-in tells Muse the user is away and not to send emails"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a check-in finishes",
@@ -1201,7 +1254,14 @@
                   "endLine": 5,
                   "quote": "Then write a progress brief of 3 short lines, list what needs my decision"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "test/accept-daily-check-in.test.js",
+                  "name": "daily-check-in AC6: a check-in tells Muse to finish with a three-line brief and what needs the user's decision"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [
@@ -1258,6 +1318,32 @@
           "verified": 6
         },
         "checkedAt": "2026-11-22T03:35:49.505Z"
+      },
+      "qa": {
+        "status": "complete",
+        "source": "plugin",
+        "runner": "playwright+node",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
+        "counts": {
+          "criteria": 6,
+          "passing": 6,
+          "failing": 0,
+          "missing": 0,
+          "untested": 0
+        },
+        "gaps": [],
+        "evidence": {
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
+          "fingerprints": {
+            "public/js/workflow/checkin-prompt.js": "d6785a53c7c4cd4d8ad457c054dcad82caf63d8d",
+            "public/js/workflow/checkin.js": "aaeede10541a5782a1c6ed8292ab1c929d3a93d3"
+          },
+          "files": [
+            "e2e/daily-check-in.spec.mjs",
+            "test/accept-daily-check-in.test.js"
+          ]
+        }
       }
     },
     {
@@ -1424,7 +1510,13 @@
                   "quote": "Starter ideas <span>${gen.busy ? \"Muse is personalizing these…\" : \"from simple rules\"}</span>"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/ideas.spec.mjs",
+                  "name": "ideas AC5: with no new ideas, rule-based starter ideas show under Starter ideas"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1445,7 +1537,13 @@
                   "quote": "'New from Muse <span>updated"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/ideas.spec.mjs",
+                  "name": "ideas AC6: Update with Muse adds new ideas under New from Muse"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1460,7 +1558,13 @@
                   "quote": "replaceIdea(i = await updateIdea(i.id, { status: \"saved\" }))"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/ideas.spec.mjs",
+                  "name": "ideas AC7: Save sets a stored idea to saved and moves it to the Saved group"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1481,7 +1585,13 @@
                   "quote": "filter(i => ideaStatus(i) !== \"dismissed\")"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/ideas.spec.mjs",
+                  "name": "ideas AC8: Not for me dismisses a stored idea and removes its card"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1496,7 +1606,13 @@
                   "quote": "updateIdea(i.id, { status: \"done\" })"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/ideas.spec.mjs",
+                  "name": "ideas AC9: Do it marks the idea done and sends Muse a message to carry it out"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1550,42 +1666,21 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "node+playwright",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 10,
-          "passing": 5,
+          "passing": 10,
           "failing": 0,
           "missing": 0,
-          "untested": 5
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC5",
-            "qa": "untested"
-          },
-          {
-            "id": "AC6",
-            "qa": "untested"
-          },
-          {
-            "id": "AC7",
-            "qa": "untested"
-          },
-          {
-            "id": "AC8",
-            "qa": "untested"
-          },
-          {
-            "id": "AC9",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/ideas": "d4f2abb813eafc0985590905cbd74f0987ceed96",
             "public/js/features/ideas": "7fa895a15e1230a993fc3dd95223eac7e74a0fa7",
@@ -1593,7 +1688,8 @@
             "server/ideas.js": "aeb56f3b7bab83d6333cb25c4e1d32342130bbdf"
           },
           "files": [
-            "test/accept-ideas.test.js"
+            "test/accept-ideas.test.js",
+            "e2e/ideas.spec.mjs"
           ]
         }
       }
@@ -1856,7 +1952,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 8,
           "passing": 8,
@@ -1866,8 +1962,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/docs": "02a86113cc7b1d25740e5f93606e0f954705dc23",
             "public/js/features/library": "42a2a7cd6a63777fac99f0abe9fb816ced108759",
@@ -1956,7 +2052,13 @@
                   "quote": "window.location.assign(\"/api/google/authorize\")"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/connectors.spec.mjs",
+                  "name": "connectors AC1: Continue with Google in the consent panel goes to /api/google/authorize"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1971,7 +2073,13 @@
                   "quote": "Sending email always needs your approval."
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/connectors.spec.mjs",
+                  "name": "connectors AC2: with Gmail connected, Allow is disabled because sending email always needs approval"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -1986,7 +2094,13 @@
                   "quote": "for (const key of [\"mail\", \"calendar\"]) state.connectors[key].on = on;"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/connectors.spec.mjs",
+                  "name": "connectors AC3: when Google reports connected, Gmail and Calendar are both on"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -2001,7 +2115,13 @@
                   "quote": "Disconnected Gmail and Google Calendar · tools removed"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/connectors.spec.mjs",
+                  "name": "connectors AC4: Disconnect Google turns off Gmail and Calendar and audits it"
+                }
+              ]
             },
             {
               "surface": "web",
@@ -2123,38 +2243,21 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "playwright+node",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 8,
-          "passing": 4,
+          "passing": 8,
           "failing": 0,
           "missing": 0,
-          "untested": 4
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC1",
-            "qa": "untested"
-          },
-          {
-            "id": "AC2",
-            "qa": "untested"
-          },
-          {
-            "id": "AC3",
-            "qa": "untested"
-          },
-          {
-            "id": "AC4",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/google.js": "6ac419f2fbce3aa9c06eaa438640bde251a0544c",
             "public/js/features/connectors": "3484b397c45d0757efc8611a69b27e817733f277",
@@ -2163,6 +2266,7 @@
             "server/google.js": "90be1a2745f2d0e5fb0ff09b4aca10284e1d1e0a"
           },
           "files": [
+            "e2e/connectors.spec.mjs",
             "test/agent-runtime.test.js",
             "test/accept-connectors.test.js"
           ]
@@ -2306,7 +2410,13 @@
                   "quote": "audit(\"forget\", { fact: f?.fact }, \"Deleted by you\", \"you\");"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/memory.spec.mjs",
+                  "name": "memory AC5: deleting a fact in Settings removes it and audits it as by you"
+                }
+              ]
             },
             {
               "given": "Muse remembers nothing yet",
@@ -2321,7 +2431,13 @@
                   "quote": "Muse doesn't know anything about you yet. Tell it a preference in Chat"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/memory.spec.mjs",
+                  "name": "memory AC6: with nothing remembered, the list suggests telling Muse a preference in Chat"
+                }
+              ]
             }
           ],
           "scenarios": [],
@@ -2340,37 +2456,29 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "node+playwright",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 6,
-          "passing": 4,
+          "passing": 6,
           "failing": 0,
           "missing": 0,
-          "untested": 2
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC5",
-            "qa": "untested"
-          },
-          {
-            "id": "AC6",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "public/js/features/memory": "e6276efd8f3c74a936ce167a9717dc0f91de1846",
             "server/agent/tools/memory.js": "77f9e0248fc9614cfa760088fa87be8f4514c5e7",
             "server/userdata.js": "52b02b497503d2db14e980cb6e621fbbbe7b4cb9"
           },
           "files": [
-            "test/accept-memory.test.js"
+            "test/accept-memory.test.js",
+            "e2e/memory.spec.mjs"
           ]
         }
       }
@@ -2561,7 +2669,7 @@
         "status": "complete",
         "source": "plugin",
         "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 6,
           "passing": 6,
@@ -2571,8 +2679,8 @@
         },
         "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/web": "23dd029dbf1bd46cac9751734598b9f7183ee53c",
             "server/agent/tools/web.js": "2550eb6dc3e1b44ec1aa8175612bb084b0320b88",
@@ -2637,7 +2745,13 @@
                   "quote": "Mini Muse Browser Bridge did not respond: the Chrome extension isn't installed or enabled."
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/browser-bridge.spec.mjs",
+                  "name": "browser-bridge AC1: without the extension, a browser tool fails saying the bridge did not respond"
+                }
+              ]
             },
             {
               "given": "Muse calls browser_fill",
@@ -2785,32 +2899,28 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "playwright+node",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 5,
-          "passing": 4,
+          "passing": 5,
           "failing": 0,
           "missing": 0,
-          "untested": 1
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC1",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "chrome-extension": "22812145e902dea5314d060c70351d60d583bd50",
             "public/js/features/browser": "f2861db4457e67f23d734de044d58343337cb230",
             "server/agent/tools/browser.js": "6282963b8ed77d55230ba2f002dab644de7fcec6"
           },
           "files": [
+            "e2e/browser-bridge.spec.mjs",
             "test/accept-browser-bridge.test.js"
           ]
         }
@@ -2869,7 +2979,14 @@
                   "endLine": 51,
                   "quote": "beforeRenderAll() { rt.mode = state.prefs?.mode || \"quick\"; setLearn(!!state.prefs?.learn); }"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/settings.spec.mjs",
+                  "name": "settings AC1: with no style chosen, Fast is selected"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Settings is open",
@@ -2883,7 +3000,14 @@
                   "endLine": 12,
                   "quote": "rt.mode === \"quick\" ? \"Fast: replies in seconds. Good for most things.\" : \"Thorough: a stronger model that plans more carefully. Replies can take up to a minute.\";"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/settings.spec.mjs",
+                  "name": "settings AC2: choosing Thorough says replies can take up to a minute"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "web search is on",
@@ -2897,7 +3021,14 @@
                   "endLine": 33,
                   "quote": "$(\"webSearch\")?.addEventListener(\"click\", () => { state.prefs.webSearch = state.prefs.webSearch === false; renderSettings(); save(); });"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/settings.spec.mjs",
+                  "name": "settings AC3: the web search switch turns web search off and saves it"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the How Muse works panel is shown on a phone",
@@ -2911,7 +3042,14 @@
                   "endLine": 23,
                   "quote": "if (!on && $(\"panes\").dataset.mobile === \"hood\") go(\"chat\");"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/settings.spec.mjs",
+                  "name": "settings AC4: on a phone, turning How Muse works off returns to Chat"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "Settings is open",
@@ -2925,7 +3063,14 @@
                   "endLine": 36,
                   "quote": "Are you sure? <button class=\"btn\" id=\"resetYes\""
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/settings.spec.mjs",
+                  "name": "settings AC5: Erase everything asks for confirmation before erasing"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the user confirms erasing",
@@ -2939,7 +3084,14 @@
                   "endLine": 42,
                   "quote": "resetAll({ prefs }); // the chat, memory and settings on the server, for every device"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/settings.spec.mjs",
+                  "name": "settings AC6: confirming the erase stops a running turn and erases chat, memory and settings, keeping preferences"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [],
@@ -2956,6 +3108,30 @@
           "verified": 6
         },
         "checkedAt": "2026-11-22T03:35:49.505Z"
+      },
+      "qa": {
+        "status": "complete",
+        "source": "plugin",
+        "runner": "playwright",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
+        "counts": {
+          "criteria": 6,
+          "passing": 6,
+          "failing": 0,
+          "missing": 0,
+          "untested": 0
+        },
+        "gaps": [],
+        "evidence": {
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
+          "fingerprints": {
+            "public/js/features/settings": "b54743df8dfcc282c7779e20a8ffc5576d4c1d2b"
+          },
+          "files": [
+            "e2e/settings.spec.mjs"
+          ]
+        }
       }
     },
     {
@@ -3008,7 +3184,14 @@
                   "endLine": 9,
                   "quote": "function setPhase(p) { document.querySelectorAll(\"#loop li\").forEach(li => li.classList.toggle(\"on\", li.dataset.p === p)); }"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/how-muse-works.spec.mjs",
+                  "name": "how-muse-works AC1: the loop highlights the phase Muse is in"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "a service is connected",
@@ -3022,7 +3205,14 @@
                   "endLine": 27,
                   "quote": "const list = [...core.map(t => [t.name, \"\"]), ...Object.keys(CONNECTORS).filter(isOn).flatMap(k => CONNECTORS[k].tools.map(t => [t.name, \"c\"]))];"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/how-muse-works.spec.mjs",
+                  "name": "how-muse-works AC2: a connected service's tools are listed after the core tools"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "there are more than 150 audit entries",
@@ -3036,7 +3226,14 @@
                   "endLine": 16,
                   "quote": "$(\"audit\").innerHTML = a.length ? a.slice(0, 150).map(auditItem).join(\"\") : empty;"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/how-muse-works.spec.mjs",
+                  "name": "how-muse-works AC3: Settings → Activity shows only the latest 150 entries"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the user deleted something",
@@ -3050,7 +3247,14 @@
                   "endLine": 11,
                   "quote": "${x.by === \"you\" ? \"you · \" : isConnTool(x.tool) ? \"connector · \" : \"\"}"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/how-muse-works.spec.mjs",
+                  "name": "how-muse-works AC4: an entry the user did is labelled as done by you"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "the panel is open",
@@ -3064,7 +3268,14 @@
                   "endLine": 17,
                   "quote": "const mine = a.filter(x => x.by !== \"you\").slice(0, 6);"
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/how-muse-works.spec.mjs",
+                  "name": "how-muse-works AC5: the panel shows Muse's six latest tool calls, not the user's"
+                }
+              ],
+              "qa": "pass"
             },
             {
               "given": "nothing has happened yet",
@@ -3078,7 +3289,14 @@
                   "endLine": 14,
                   "quote": "Nothing yet. Every tool Muse uses shows up here, with what it sent and what came back."
                 }
-              ]
+              ],
+              "tests": [
+                {
+                  "path": "e2e/how-muse-works.spec.mjs",
+                  "name": "how-muse-works AC6: with no activity yet, it explains every tool call will show up here"
+                }
+              ],
+              "qa": "pass"
             }
           ],
           "scenarios": [],
@@ -3093,6 +3311,30 @@
           "verified": 6
         },
         "checkedAt": "2026-11-22T03:35:49.505Z"
+      },
+      "qa": {
+        "status": "complete",
+        "source": "plugin",
+        "runner": "playwright",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
+        "counts": {
+          "criteria": 6,
+          "passing": 6,
+          "failing": 0,
+          "missing": 0,
+          "untested": 0
+        },
+        "gaps": [],
+        "evidence": {
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
+          "fingerprints": {
+            "public/js/features/hood": "c546944c1581f05334a8866a3cd4a761e0ccc06f"
+          },
+          "files": [
+            "e2e/how-muse-works.spec.mjs"
+          ]
+        }
       }
     },
     {
@@ -3259,7 +3501,13 @@
                   "quote": "<div class=\"obs-flags\">${statusDot(trace.status)} ${spans.length} spans · ${hasTools ? \"ran tools\" : \"no tool calls\"}</div>"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/observability.spec.mjs",
+                  "name": "observability AC6: an open trace's header says whether any tool ran"
+                }
+              ]
             },
             {
               "given": "no traces exist yet",
@@ -3274,7 +3522,13 @@
                   "quote": "`<p class=\"empty\">No traces yet. Send a chat message, then refresh.</p>`;"
                 }
               ],
-              "qa": "untested"
+              "qa": "pass",
+              "tests": [
+                {
+                  "path": "e2e/observability.spec.mjs",
+                  "name": "observability AC7: with no traces yet, it says to send a chat message and refresh"
+                }
+              ]
             },
             {
               "given": "an unknown trace id is requested",
@@ -3320,30 +3574,21 @@
         "checkedAt": "2026-11-22T03:35:49.505Z"
       },
       "qa": {
-        "status": "in_progress",
+        "status": "complete",
         "source": "plugin",
-        "runner": "node",
-        "checkedAt": "2026-11-22T03:39:01.637Z",
+        "runner": "node+playwright",
+        "checkedAt": "2026-11-22T13:41:04.814Z",
         "counts": {
           "criteria": 8,
-          "passing": 6,
+          "passing": 8,
           "failing": 0,
           "missing": 0,
-          "untested": 2
+          "untested": 0
         },
-        "gaps": [
-          {
-            "id": "AC6",
-            "qa": "untested"
-          },
-          {
-            "id": "AC7",
-            "qa": "untested"
-          }
-        ],
+        "gaps": [],
         "evidence": {
-          "commitSha": "a94b1aee98bb944270445628c700f5b077930297",
-          "branch": "main",
+          "commitSha": "61f7ecccf4610864a03d4a138519707af2522195",
+          "branch": "test/browser-acceptance",
           "fingerprints": {
             "api/trace.js": "b6355cbeabf973eab67b3d5ba36c3971b37e969f",
             "public/js/features/observability": "acdfe166281d2be39b0127eeebdfa2fdbfdaf4e9",
@@ -3354,7 +3599,8 @@
           },
           "files": [
             "test/accept-observability.test.js",
-            "test/trace-core.test.js"
+            "test/trace-core.test.js",
+            "e2e/observability.spec.mjs"
           ]
         }
       }

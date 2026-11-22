@@ -46,14 +46,14 @@ The check-in is an agent turn with a fixed instruction: check Gmail for applicat
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | the Goals page is open | the user clicks the check-in button | Muse runs a check-in turn | web | ✓ |
-| AC2 | "Every day" is on and a check-in already ran today | the five-minute timer fires | no second check-in runs that day | web | ✓ |
-| AC3 | "Every day" is on and it is before 9am | the timer fires | the check-in waits until 9am | web | ✓ |
-| AC4 | "Every day" is on but Muse is busy or there are no goals | the timer fires | no check-in runs | web | ✓ |
-| AC5 | a check-in runs | Muse gets its instruction | it is told the user is away and not to send emails | web | ✓ |
-| AC6 | a check-in finishes | Muse writes its reply | it leaves a three-line progress brief and what needs the user's decision | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | the Goals page is open | the user clicks the check-in button | Muse runs a check-in turn | web | ✓ | ✓ passes |
+| AC2 | "Every day" is on and a check-in already ran today | the five-minute timer fires | no second check-in runs that day | web | ✓ | ✓ passes |
+| AC3 | "Every day" is on and it is before 9am | the timer fires | the check-in waits until 9am | web | ✓ | ✓ passes |
+| AC4 | "Every day" is on but Muse is busy or there are no goals | the timer fires | no check-in runs | web | ✓ | ✓ passes |
+| AC5 | a check-in runs | Muse gets its instruction | it is told the user is away and not to send emails | web | ✓ | ✓ passes |
+| AC6 | a check-in finishes | Muse writes its reply | it leaves a three-line progress brief and what needs the user's decision | web | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -94,3 +94,14 @@ workflow/checkin.js holds the check-in prompt. maybeDailyCheckin() runs every fi
 | AC4 | `public/js/workflow/checkin.js:30` | `if (!rt.sample \|\| rt.busy \|\| !state.plans.length) return false;` |
 | AC5 | `public/js/workflow/checkin-prompt.js:3` | `the user is away. Review my goals, ideas, and any connected services` |
 | AC6 | `public/js/workflow/checkin-prompt.js:5` | `Then write a progress brief of 3 short lines, list what needs my decision` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC1 | daily-check-in AC1: the check-in button runs a check-in turn | `e2e/daily-check-in.spec.mjs` |
+| AC2 | daily-check-in AC2: with a check-in already run today, the timer doesn't run another | `e2e/daily-check-in.spec.mjs` |
+| AC3 | daily-check-in AC3: before 9am the check-in waits, then runs once 9am has passed | `e2e/daily-check-in.spec.mjs` |
+| AC4 | daily-check-in AC4: no check-in runs while Muse is busy or when there are no goals | `e2e/daily-check-in.spec.mjs` |
+| AC5 | daily-check-in AC5: a check-in tells Muse the user is away and not to send emails | `test/accept-daily-check-in.test.js` |
+| AC6 | daily-check-in AC6: a check-in tells Muse to finish with a three-line brief and what needs the user's decision | `test/accept-daily-check-in.test.js` |

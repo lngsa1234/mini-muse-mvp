@@ -44,14 +44,14 @@ A side panel (switched on in Settings) highlights the current loop phase, lists 
 
 ## Acceptance criteria
 
-| # | Given | When | Then | Where | In code |
-|---|---|---|---|---|---|
-| AC1 | Muse moves to a new loop phase | a phase event fires | that phase is highlighted | web | ✓ |
-| AC2 | a service is connected | the tool list renders | its tools appear after the core tools | web | ✓ |
-| AC3 | there are more than 150 audit entries | Settings → Activity renders | only the latest 150 are shown | web | ✓ |
-| AC4 | the user deleted something | the activity renders | that entry is labelled as done by you | web | ✓ |
-| AC5 | the panel is open | Muse has used tools | its six latest calls show, excluding the user's | web | ✓ |
-| AC6 | nothing has happened yet | the activity renders | it explains every tool call will show up here | web | ✓ |
+| # | Given | When | Then | Where | In code | Tested |
+|---|---|---|---|---|---|---|
+| AC1 | Muse moves to a new loop phase | a phase event fires | that phase is highlighted | web | ✓ | ✓ passes |
+| AC2 | a service is connected | the tool list renders | its tools appear after the core tools | web | ✓ | ✓ passes |
+| AC3 | there are more than 150 audit entries | Settings → Activity renders | only the latest 150 are shown | web | ✓ | ✓ passes |
+| AC4 | the user deleted something | the activity renders | that entry is labelled as done by you | web | ✓ | ✓ passes |
+| AC5 | the panel is open | Muse has used tools | its six latest calls show, excluding the user's | web | ✓ | ✓ passes |
+| AC6 | nothing has happened yet | the activity renders | it explains every tool call will show up here | web | ✓ | ✓ passes |
 
 _The code each criterion rests on is under Evidence, at the end._
 
@@ -71,3 +71,14 @@ features/hood/hood.js listens for phase and audit events from core/activity.js, 
 | AC4 | `public/js/features/hood/hood.js:11` | `${x.by === "you" ? "you · " : isConnTool(x.tool) ? "connector · " : ""}` |
 | AC5 | `public/js/features/hood/hood.js:17` | `const mine = a.filter(x => x.by !== "you").slice(0, 6);` |
 | AC6 | `public/js/features/hood/hood.js:14` | `Nothing yet. Every tool Muse uses shows up here, with what it sent and what came back.` |
+
+## Tests
+
+| # | Test | File |
+|---|---|---|
+| AC1 | how-muse-works AC1: the loop highlights the phase Muse is in | `e2e/how-muse-works.spec.mjs` |
+| AC2 | how-muse-works AC2: a connected service's tools are listed after the core tools | `e2e/how-muse-works.spec.mjs` |
+| AC3 | how-muse-works AC3: Settings → Activity shows only the latest 150 entries | `e2e/how-muse-works.spec.mjs` |
+| AC4 | how-muse-works AC4: an entry the user did is labelled as done by you | `e2e/how-muse-works.spec.mjs` |
+| AC5 | how-muse-works AC5: the panel shows Muse's six latest tool calls, not the user's | `e2e/how-muse-works.spec.mjs` |
+| AC6 | how-muse-works AC6: with no activity yet, it explains every tool call will show up here | `e2e/how-muse-works.spec.mjs` |
