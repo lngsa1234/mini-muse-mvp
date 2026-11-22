@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # Inside API server — Mini Muse
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-22 · Mapped by Alex from the code (C4 model)
+Mapped: 2026-11-22 · Mapped by Alex from the code (C4 model)
 
 C4 level 3: the components inside API server, with the agent kept apart from each feature’s tools, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).
 

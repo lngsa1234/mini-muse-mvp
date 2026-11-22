@@ -1,0 +1,552 @@
+{
+  "document": {
+    "systemName": "Mini Muse",
+    "componentView": {
+      "container": "api-server",
+      "components": [
+        {
+          "id": "agent-http",
+          "name": "Agent endpoints",
+          "kind": "shell",
+          "tech": "Node HTTP, SSE",
+          "summary": "Turn, answer, cancel and state endpoints; streams turn events to the page.",
+          "paths": [
+            "server/agent/http.js",
+            "api/agent.js",
+            "server/state.js"
+          ]
+        },
+        {
+          "id": "agent-runtime",
+          "name": "Agent runtime",
+          "kind": "agent",
+          "tech": "JS",
+          "summary": "Runs one turn at a time per user: shortcuts, the tool loop up to 12 steps, approvals and browser-tool waits, and Stop.",
+          "paths": [
+            "server/agent/runtime.js",
+            "server/agent/loop.js"
+          ]
+        },
+        {
+          "id": "prompt-model",
+          "name": "Prompt and model client",
+          "kind": "agent",
+          "tech": "JS, fetch",
+          "summary": "Builds the prompt from saved data and calls the model with the server-held key and a model picked by tier.",
+          "paths": [
+            "server/agent/prompt.js",
+            "server/agent/llm.js",
+            "server/routing.js"
+          ]
+        },
+        {
+          "id": "tool-set",
+          "name": "Tool set",
+          "kind": "tools",
+          "tech": "JS",
+          "summary": "Collects the tools of each feature and of the connected services for a turn.",
+          "paths": [
+            "server/agent/tools/index.js",
+            "server/agent/tools/schema.js"
+          ]
+        },
+        {
+          "id": "goal-tools",
+          "name": "Goal and job tools",
+          "kind": "feature",
+          "tech": "JS",
+          "summary": "create_goal, update_step, revise_plan, track_application, jobs_search and score_fit, with the evidence rules.",
+          "paths": [
+            "server/agent/tools/goals.js",
+            "server/agent/tools/jobs.js"
+          ],
+          "feature": "goals"
+        },
+        {
+          "id": "library-tools",
+          "name": "Library tools",
+          "kind": "feature",
+          "tech": "JS",
+          "summary": "docs_search, docs_read, docs_add and docs_remove.",
+          "paths": [
+            "server/agent/tools/library.js"
+          ],
+          "feature": "library"
+        },
+        {
+          "id": "ideas-tools",
+          "name": "Ideas tools",
+          "kind": "feature",
+          "tech": "JS",
+          "summary": "save_idea.",
+          "paths": [
+            "server/agent/tools/ideas.js"
+          ],
+          "feature": "ideas"
+        },
+        {
+          "id": "connector-tools",
+          "name": "Connector tools",
+          "kind": "feature",
+          "tech": "JS",
+          "summary": "Gmail, Calendar and Contacts tools; writes ask for approval.",
+          "paths": [
+            "server/agent/tools/connectors.js"
+          ],
+          "feature": "connectors"
+        },
+        {
+          "id": "memory-tools",
+          "name": "Memory tools",
+          "kind": "feature",
+          "tech": "JS",
+          "summary": "remember and forget, saved with the user’s state.",
+          "paths": [
+            "server/agent/tools/memory.js"
+          ],
+          "feature": "memory"
+        },
+        {
+          "id": "web-tools",
+          "name": "Web search tools",
+          "kind": "feature",
+          "tech": "JS",
+          "summary": "web_search and web_open, through Tavily.",
+          "paths": [
+            "server/agent/tools/web.js"
+          ],
+          "feature": "web-search"
+        },
+        {
+          "id": "browser-relay",
+          "name": "Browser bridge tools",
+          "kind": "feature",
+          "tech": "SSE, wait records",
+          "summary": "browser_open, browser_snapshot, browser_fields, browser_fill and browser_click (asks first); each runs in the tab that started the turn, which waits for the result.",
+          "paths": [
+            "server/agent/tools/browser.js"
+          ],
+          "feature": "browser-bridge"
+        },
+        {
+          "id": "user-data",
+          "name": "User data and records",
+          "kind": "state",
+          "tech": "Neon driver",
+          "summary": "Chat, state, waits and the activity log, plus the goals, docs and ideas handlers.",
+          "paths": [
+            "server/userdata.js",
+            "server/agent/repo.js",
+            "server/goals.js",
+            "server/docs.js",
+            "server/ideas.js"
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "from": "browser-app",
+          "to": "agent-http",
+          "label": "Posts turns and answers",
+          "technology": "HTTPS/SSE"
+        },
+        {
+          "from": "agent-http",
+          "to": "agent-runtime",
+          "label": "Starts a turn",
+          "technology": "function call"
+        },
+        {
+          "from": "agent-runtime",
+          "to": "prompt-model",
+          "label": "Asks the model",
+          "technology": "function call"
+        },
+        {
+          "from": "prompt-model",
+          "to": "openai",
+          "label": "Streams completions",
+          "technology": "HTTPS/SSE"
+        },
+        {
+          "from": "agent-runtime",
+          "to": "tool-set",
+          "label": "Runs requested tools",
+          "technology": "function call"
+        },
+        {
+          "from": "tool-set",
+          "to": "goal-tools",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "tool-set",
+          "to": "library-tools",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "tool-set",
+          "to": "ideas-tools",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "tool-set",
+          "to": "connector-tools",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "tool-set",
+          "to": "memory-tools",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "tool-set",
+          "to": "web-tools",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "tool-set",
+          "to": "browser-relay",
+          "label": "Includes",
+          "technology": ""
+        },
+        {
+          "from": "browser-relay",
+          "to": "browser-app",
+          "label": "Asks the tab to run it",
+          "technology": "SSE"
+        },
+        {
+          "from": "goal-tools",
+          "to": "user-data",
+          "label": "Saves goals and applications",
+          "technology": "function call"
+        },
+        {
+          "from": "library-tools",
+          "to": "user-data",
+          "label": "Saves documents",
+          "technology": "function call"
+        },
+        {
+          "from": "ideas-tools",
+          "to": "user-data",
+          "label": "Saves ideas",
+          "technology": "function call"
+        },
+        {
+          "from": "memory-tools",
+          "to": "user-data",
+          "label": "Saves facts",
+          "technology": "function call"
+        },
+        {
+          "from": "connector-tools",
+          "to": "google-apis",
+          "label": "Reads and writes",
+          "technology": "OAuth 2.0/HTTPS"
+        },
+        {
+          "from": "web-tools",
+          "to": "tavily",
+          "label": "Searches and opens pages",
+          "technology": "HTTPS"
+        },
+        {
+          "from": "goal-tools",
+          "to": "tavily",
+          "label": "Opens job postings",
+          "technology": "HTTPS"
+        },
+        {
+          "from": "agent-runtime",
+          "to": "user-data",
+          "label": "Saves messages and waits",
+          "technology": "function call"
+        },
+        {
+          "from": "user-data",
+          "to": "neon-postgres",
+          "label": "Reads and writes",
+          "technology": "SQL"
+        }
+      ]
+    },
+    "featureInteractions": [
+      {
+        "feature": "Agent chat",
+        "trigger": "Submitting the composer, example chips or a feature button posts the message to /api/agent/turn.",
+        "agentActions": "The agent runtime saves the message, runs the tool loop on the server, waits for approvals and browser tools, and saves the reply as it streams.",
+        "tools": [
+          {
+            "name": "browser_fill",
+            "effect": "Fills form fields in the Chrome tab",
+            "needsApproval": false
+          },
+          {
+            "name": "browser_click",
+            "effect": "Clicks a button, including Submit",
+            "needsApproval": true
+          }
+        ],
+        "uiUpdates": "The page shows streamed text, tool chips and approval cards; if the stream drops it polls /api/state until the reply is finished, on any device.",
+        "paths": [
+          "public/js/agent/run.js",
+          "public/js/features/chat/chat.js",
+          "server/agent/runtime.js",
+          "server/agent/http.js"
+        ]
+      },
+      {
+        "feature": "Library",
+        "trigger": "Questions about notes, or goal steps that need a résumé, call the docs tools; the page adds and deletes documents through the API.",
+        "agentActions": "Searches and reads documents and saves or removes notes, citing the source.",
+        "tools": [
+          {
+            "name": "docs_search",
+            "effect": "Searches documents",
+            "needsApproval": false
+          },
+          {
+            "name": "docs_read",
+            "effect": "Reads a document",
+            "needsApproval": false
+          },
+          {
+            "name": "docs_add",
+            "effect": "Saves a document",
+            "needsApproval": false
+          },
+          {
+            "name": "docs_remove",
+            "effect": "Deletes a document",
+            "needsApproval": false
+          }
+        ],
+        "uiUpdates": "The Library list reloads after the turn changes it.",
+        "paths": [
+          "server/agent/tools/library.js",
+          "public/js/features/library/library.js",
+          "server/docs.js"
+        ]
+      },
+      {
+        "feature": "Ideas",
+        "trigger": "Do it sends the idea to chat; Make it a goal sends a plan request.",
+        "agentActions": "Saves ideas shared in chat and acts on or plans an idea.",
+        "tools": [
+          {
+            "name": "save_idea",
+            "effect": "Creates an idea",
+            "needsApproval": false
+          }
+        ],
+        "uiUpdates": "The Ideas page reloads its cards after the turn.",
+        "paths": [
+          "server/agent/tools/ideas.js",
+          "public/js/features/ideas/ideas.js",
+          "server/ideas.js"
+        ]
+      },
+      {
+        "feature": "Goals",
+        "trigger": "The goal form and Ask Muse to move this forward send chat messages; the open app starts the daily check-in.",
+        "agentActions": "Creates plans, moves steps only with tool evidence from the same turn (enforced on the server), revises plans with approval, and tracks applications with proof.",
+        "tools": [
+          {
+            "name": "create_goal",
+            "effect": "Creates a goal with steps, target and deadline",
+            "needsApproval": false
+          },
+          {
+            "name": "update_step",
+            "effect": "Sets a step’s status, with tool evidence",
+            "needsApproval": false
+          },
+          {
+            "name": "revise_plan",
+            "effect": "Rewords, adds or removes steps",
+            "needsApproval": true
+          },
+          {
+            "name": "track_application",
+            "effect": "Adds or updates a job application",
+            "needsApproval": false
+          }
+        ],
+        "uiUpdates": "Goal cards reload with step status, progress, target and applications.",
+        "paths": [
+          "server/agent/tools/goals.js",
+          "server/agent/tools/jobs.js",
+          "public/js/features/goals/goals.js",
+          "public/js/workflow/checkin.js"
+        ]
+      },
+      {
+        "feature": "Connectors",
+        "trigger": "The user asks about email, calendar or contacts; connected services add their tools to the turn.",
+        "agentActions": "Searches and reads Gmail, sends mail, manages Calendar events and looks up contacts; writes ask first.",
+        "tools": [
+          {
+            "name": "mail_search",
+            "effect": "Searches Gmail",
+            "needsApproval": false
+          },
+          {
+            "name": "mail_send",
+            "effect": "Sends an email",
+            "needsApproval": true
+          },
+          {
+            "name": "calendar_add",
+            "effect": "Adds an event",
+            "needsApproval": true
+          }
+        ],
+        "uiUpdates": "Chat shows tool chips and approval cards; the Connectors page shows connection and permissions.",
+        "paths": [
+          "server/agent/tools/connectors.js",
+          "public/js/features/connectors/index.js",
+          "server/google.js"
+        ]
+      }
+    ],
+    "people": [
+      {
+        "id": "user",
+        "name": "User",
+        "description": "Person using Muse as a personal agent",
+        "uses": "Chats with Muse, manages ideas, goals and documents, approves actions"
+      }
+    ],
+    "summary": "Mini Muse is a no-build browser app with a Node/Express (or Vercel function) backend. The agent runs on the server: it builds the prompt from the user’s saved data, calls OpenAI, runs the tools, waits for approvals and streams progress to the page. All user data lives in Neon Postgres, so every device shows the same chat, memory and settings. An optional Chrome extension lets the agent fill in job application forms through the open tab.",
+    "components": [
+      {
+        "id": "browser-app",
+        "name": "Browser app",
+        "layer": "client",
+        "tech": "ES modules",
+        "summary": "Pages for chat, ideas, goals, library, connectors and settings. Sends each message to the agent on the server, shows its streamed progress and approval cards, and runs browser tools for it.",
+        "paths": [
+          "public/index.html",
+          "public/js/main.js",
+          "public/js/agent",
+          "public/js/features"
+        ]
+      },
+      {
+        "id": "chrome-extension",
+        "name": "Chrome Browser Bridge",
+        "layer": "client",
+        "tech": "Chrome extension",
+        "summary": "Optional extension that opens, reads, fills and clicks in a job application tab when the page asks.",
+        "paths": [
+          "chrome-extension/background.js",
+          "chrome-extension/muse-bridge.js",
+          "chrome-extension/target.js",
+          "chrome-extension/manifest.json"
+        ]
+      },
+      {
+        "id": "api-server",
+        "name": "API server",
+        "layer": "server",
+        "tech": "Express / Vercel functions",
+        "summary": "Runs the agent (turns, tools, approvals) and serves the handlers for user state, docs, ideas, goals, web and job search, Google OAuth, Gmail and Calendar, and traces.",
+        "paths": [
+          "server/index.js",
+          "server/agent",
+          "api/agent.js",
+          "server/google.js",
+          "api"
+        ]
+      },
+      {
+        "id": "neon-postgres",
+        "name": "Neon Postgres",
+        "layer": "data",
+        "tech": "Postgres",
+        "summary": "Stores everything per user: chat, memory, settings, contacts and the activity log, plus documents, ideas, goals, pending approvals and traces.",
+        "paths": [
+          "db/schema.sql",
+          "server/db.js",
+          "server/userdata.js"
+        ]
+      },
+      {
+        "id": "openai",
+        "name": "OpenAI API",
+        "layer": "external",
+        "tech": "Chat Completions",
+        "summary": "Model that answers agent turns, selected by tier.",
+        "paths": []
+      },
+      {
+        "id": "google-apis",
+        "name": "Google Gmail and Calendar",
+        "layer": "external",
+        "tech": "Google OAuth 2.0",
+        "summary": "The user’s Gmail inbox and primary calendar, reached with a token kept in an encrypted HttpOnly cookie.",
+        "paths": []
+      },
+      {
+        "id": "tavily",
+        "name": "Tavily web search",
+        "layer": "external",
+        "tech": "Tavily API",
+        "summary": "Web search and page extraction used by web_search and web_open.",
+        "paths": []
+      }
+    ],
+    "connections": [
+      {
+        "from": "browser-app",
+        "to": "api-server",
+        "label": "Runs agent turns, saves state",
+        "technology": "HTTPS/SSE /api/agent, /api/state"
+      },
+      {
+        "from": "api-server",
+        "to": "openai",
+        "label": "Calls the model with key",
+        "technology": "HTTPS/SSE"
+      },
+      {
+        "from": "api-server",
+        "to": "neon-postgres",
+        "label": "Reads and writes user data",
+        "technology": "SQL"
+      },
+      {
+        "from": "api-server",
+        "to": "google-apis",
+        "label": "Searches mail, manages events",
+        "technology": "OAuth 2.0/HTTPS"
+      },
+      {
+        "from": "api-server",
+        "to": "tavily",
+        "label": "Searches and extracts pages",
+        "technology": "HTTPS"
+      },
+      {
+        "from": "browser-app",
+        "to": "chrome-extension",
+        "label": "Runs browser tools for the agent",
+        "technology": "window.postMessage"
+      }
+    ],
+    "limitations": [
+      "Tracing components (server/trace-node.js, server/trace-store.js) are left out of the component view. Job-board search (server/jobs.js) is inside the API server, so the boards are not drawn."
+    ]
+  },
+  "status": "complete",
+  "problems": [],
+  "checkedAt": "2026-11-22T02:31:16.643Z"
+}

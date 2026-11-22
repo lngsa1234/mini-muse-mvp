@@ -284,7 +284,7 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -448,7 +448,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -709,7 +709,7 @@
           "criteria": 9,
           "verified": 9
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -891,7 +891,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -903,7 +903,8 @@
         "module:public/js/features/ideas",
         "route:api/ideas",
         "module:server/ideas.js",
-        "doc:docs/specs/ideas.md"
+        "doc:docs/specs/ideas.md",
+        "module:server/agent/tools/ideas.js"
       ],
       "spec": {
         "status": "complete",
@@ -1140,7 +1141,7 @@
           "criteria": 10,
           "verified": 10
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -1153,7 +1154,8 @@
         "route:api/docs",
         "module:server/docs.js",
         "module:server/extract.js",
-        "doc:docs/specs/library.md"
+        "doc:docs/specs/library.md",
+        "module:server/agent/tools/library.js"
       ],
       "spec": {
         "status": "complete",
@@ -1338,7 +1340,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -1351,7 +1353,8 @@
         "route:api/google.js",
         "module:server/google.js",
         "module:server/google-route.js",
-        "doc:docs/specs/connectors.md"
+        "doc:docs/specs/connectors.md",
+        "module:server/agent/tools/connectors.js"
       ],
       "spec": {
         "status": "complete",
@@ -1543,7 +1546,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -1684,7 +1687,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -1825,7 +1828,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -1997,7 +2000,7 @@
           "criteria": 5,
           "verified": 5
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -2139,7 +2142,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -2276,7 +2279,7 @@
           "criteria": 6,
           "verified": 6
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     },
     {
@@ -2457,7 +2460,7 @@
           "criteria": 8,
           "verified": 8
         },
-        "checkedAt": "2026-11-22T00:45:06.182Z"
+        "checkedAt": "2026-11-22T02:31:16.686Z"
       }
     }
   ]

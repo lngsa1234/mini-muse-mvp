@@ -6,7 +6,7 @@ owner: Alex (Technical Lead)
 
 # Containers — Mini Muse
 
-Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-22 · Mapped by Alex from the code (C4 model)
+Mapped: 2026-11-22 · Mapped by Alex from the code (C4 model)
 
 C4 level 2: the deployable parts and data stores, how they talk, and the people and outside systems around them. The inside of the browser app, and how each feature works with the agent, is in [Components](c4-components-api-server.md). How requests flow step by step is in [Workflows](workflows/README.md).
 
@@ -86,6 +86,5 @@ flowchart TB
 
 ## Not confirmed
 
-- Mapped by hand from the server-runtime change (ADR-0008, ADR-0009), not by a full Alex run; every cited path is checked against the repository.
 - Tracing components (server/trace-node.js, server/trace-store.js) are left out of the component view. Job-board search (server/jobs.js) is inside the API server, so the boards are not drawn.
 
