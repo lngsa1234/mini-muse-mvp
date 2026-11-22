@@ -104,9 +104,9 @@ The Connectors page (features/connectors) sends the browser to /api/google/autho
 | AC2 | `public/js/features/connectors/index.js:37` | `Sending email always needs your approval.` |
 | AC3 | `public/js/features/connectors/index.js:77` | `for (const key of ["mail", "calendar"]) state.connectors[key].on = on;` |
 | AC4 | `public/js/features/connectors/index.js:55` | `Disconnected Gmail and Google Calendar · tools removed` |
-| AC5 | `public/js/features/connectors/mail.js:13` | `Muse wants to send this Gmail message. Allow it?` |
-| AC6 | `public/js/features/connectors/calendar.js:13` | `Muse wants to add this to Google Calendar. Allow it?` |
-| AC7 | `public/js/features/connectors/contacts.js:40` | `"No contact found."` |
+| AC5 | `server/agent/tools/connectors.js:27` | `Muse wants to send this Gmail message. Allow it?` |
+| AC6 | `server/agent/tools/connectors.js:40` | `Muse wants to add this to Google Calendar. Allow it?` |
+| AC7 | `server/agent/tools/connectors.js:63` | `"No contact found."` |
 | AC8 | `server/index.js:88` | `app.post("/api/google/mail/search"` |
 
 ## Not confirmed from the code

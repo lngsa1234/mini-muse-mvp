@@ -135,6 +135,23 @@ export async function googleCalendarList(from_date) { return jpost("/api/google/
 export async function googleCalendarAdd(data) { return jpost("/api/google/calendar/add", data); }
 export async function googleCalendarRemove(event_id) { return jpost("/api/google/calendar/remove", { event_id }); }
 
+/* ---------- User state + chat history (/api/state → Neon, ADR-0008) ---------- */
+// Returns { state: { memory, contacts, prefs, connectors, audit, ... }, chat: [...] }.
+export async function getUserState() { return jcall("/api/state"); }
+// Only the top-level keys given change on the server.
+export async function patchUserState(patch) { return jpatch("/api/state", patch); }
+export async function appendAudit(entries) { return jpost("/api/state/audit", { entries }); }
+export async function importLocalState(state, chat) { return jpost("/api/state/import", { state, chat }); }
+export async function clearChat() { return jcall("/api/state/chat", { method: "DELETE" }); }
+
+/* ---------- Server-side agent (/api/agent, ADR-0009) ---------- */
+// Answer something a running turn is waiting on: an approval (answer: true/false)
+// or a browser-only tool call (result or error).
+export async function answerAgent(waitId, response) { return jpost("/api/agent/answer", { waitId, ...response }); }
+export async function cancelAgent(messageId) { return jpost("/api/agent/cancel", { messageId }); }
+// [{ name, feature, connector? }] — every tool the server agent has.
+export async function agentTools() { const data = await jcall("/api/agent/tools"); return (data && data.tools) || []; }
+
 /* ---------- Observability viewer (/api/trace → Neon) ---------- */
 // Recent traces, newest first: [{ trace_id, name, root_kind, duration_ms, status, ... }].
 export async function listTraces(limit = 50) {

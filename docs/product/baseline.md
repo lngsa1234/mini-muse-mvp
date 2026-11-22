@@ -7,7 +7,7 @@ status: Checked
 
 # Mini Muse: product baseline
 
-_What the product is today, written by Maya from the code on 2026-11-21. Each feature's detail is in its spec._
+_What the product is today, written by Maya from the code on 2026-11-22. Each feature's detail is in its spec._
 
 **At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **13** checked against the code, 0 in progress, 0 not written
 
@@ -338,4 +338,4 @@ flowchart LR
 
 **Features on no journey:** Memory, Web search, Settings, How Muse works, Observability. Supporting features, or journeys still to write.
 
-- The daily check-in only runs while the app is open; is a server-side scheduler planned?
+- The daily check-in only starts while the app is open (it then runs on the server); is a server-side scheduler planned?

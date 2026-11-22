@@ -54,7 +54,7 @@ Until Muse has learned enough to suggest ideas of its own, the page shows starte
 | FS-R05 | Methods other than those listed return 405 on the Vercel functions. |
 | FS-R06 | The Ideas page hides dismissed ideas and groups the rest into New or Starter, Saved, and Acted on (done or goal). |
 | FS-R07 | Update with Muse asks the LLM for 4 ideas, keeps at most 6, and saves each as status 'new' with by 'muse'. |
-| FS-R08 | Not for me on a starter idea only records its rule key locally; on a stored idea it sets status to dismissed. |
+| FS-R08 | Not for me on a starter idea only records its rule key in the user’s saved settings; on a stored idea it sets status to dismissed. |
 | FS-R09 | save_idea skips a title that already exists, ignoring case, and otherwise stores the idea as saved. |
 
 ## Acceptance criteria
@@ -107,12 +107,12 @@ server/ideas.js holds the handlers for GET/POST /api/ideas and PATCH/DELETE /api
 | AC4 | `api/ideas/index.js:23` | `return send(res, { status: 405, json: { error: "method not allowed" } });` |
 | AC5 | `public/js/features/ideas/ideas.js:51` | `Starter ideas <span>${gen.busy ? "Muse is personalizing these…" : "from simple rules"}</span>` |
 | AC6 | `public/js/features/ideas/ideas.js:93` | `status: "new", by: "muse" }));` |
-|  | `public/js/features/ideas/ideas.js:50` | `'New from Muse <span>updated` |
+|  | `.agentforge/feature-map.json:1049` | `'New from Muse <span>updated` |
 | AC7 | `public/js/features/ideas/ideas.js:131` | `replaceIdea(i = await updateIdea(i.id, { status: "saved" }))` |
 | AC8 | `public/js/features/ideas/ideas.js:137` | `replaceIdea(await updateIdea(i.id, { status: "dismissed" }))` |
 |  | `public/js/features/ideas/ideas.js:47` | `filter(i => ideaStatus(i) !== "dismissed")` |
 | AC9 | `public/js/features/ideas/ideas.js:120` | `updateIdea(i.id, { status: "done" })` |
-| AC10 | `public/js/features/ideas/ideas.js:158` | `return "Already on the Ideas page.";` |
+| AC10 | `server/agent/tools/ideas.js:13` | `return "Already on the Ideas page.";` |
 
 ## Not confirmed from the code
 

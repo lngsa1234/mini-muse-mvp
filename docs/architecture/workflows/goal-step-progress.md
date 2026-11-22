@@ -8,7 +8,7 @@ owner: Alex (Technical Lead)
 
 Mapped: 2026-11-22 · Mapped by Alex from the code
 
-Muse creates a goal with a plan and moves a step to doing or done only when a tool did that step's work in the same turn. Application statuses are checked against proof in the same way.
+A goal is planned as steps, and a step only moves forward when a tool did real work in the same turn. The agent runtime enforces this on the server.
 
 **Starts when:** The user types a goal on the Goals page, or asks Muse to move a goal forward from chat or the Goals page.
 
@@ -16,36 +16,31 @@ Muse creates a goal with a plan and moves a step to doing or done only when a to
 sequenceDiagram
   autonumber
   actor user as User
-  participant client as Browser app
-  participant agent as Agent
+  participant agent as Model
   participant data as Neon Postgres
-  participant server as Goals API
-  user->>client: Submits a goal or a nudge
-  agent-->>client: Plans the goal
-  client->>server: POST /api/goals
-  server-->>data: Rejects a missing goal or steps
-  client->>client: Library check for résumé steps
-  agent-->>client: docs_search
-  client->>client: Checks the evidence
-  client->>server: PATCH /api/goals/
-  server-->>data: Validates the status
-  agent-->>client: Records job applications
+  participant server as Agent runtime
+  user->>server: Ask for a goal
+  agent->>server: Plan the goal
+  server-->>data: Save the goal
+  server->>server: Library check
+  agent->>server: Ask to mark the step
+  server->>server: Checks the evidence
+  server-->>data: Save the status
+  agent->>server: Track applications
 ```
 
 ## Steps
 
 | # | From → To | What happens | Code |
 |---|---|---|---|
-| 1 | User → Browser app | Submits a goal or a nudge, which is sent as a normal chat message · `say(…) or say(…)` | [goals/goals.js](../../../public/js/features/goals/goals.js) |
-| 2 | Agent → Browser app | Plans the goal with 3 to 6 steps and an optional measurable target and deadline · `create_goal(…)` | [goals/goals.js](../../../public/js/features/goals/goals.js) |
-| 3 | Browser app → Goals API | Saves the goal through the goals API · `POST /api/goals` | [api.js](../../../public/js/core/api.js), [goals/index.js](../../../api/goals/index.js) |
-| 4 | Goals API → Neon Postgres | Rejects a missing goal or steps and invalid target or deadline with 400. Otherwise stores the goal and returns 201 · `createGoal(…)` | [server/goals.js](../../../server/goals.js), [db.js](../../../server/db.js) |
-| 5 | Browser app | For a résumé step the user wants moved forward, the pre-model shortcut searches the Library and marks the step done only if a document matches | [run.js](../../../public/js/agent/run.js) |
-| 6 | Agent → Browser app | Runs a real tool for the step, then asks to mark it, naming the tool as evidence · `docs_search, jobs_search or a browser tool, then update_step(…)` | [goals/goals.js](../../../public/js/features/goals/goals.js) |
-| 7 | Browser app | Refuses doing or done unless a non-bookkeeping tool ran this turn and matches the cited evidence. Résumé steps need a docs_search that found a document | [goals/goals.js](../../../public/js/features/goals/goals.js) |
-| 8 | Browser app → Goals API | Saves the accepted step status. The user can also click a step to mark it done or undo it · `PATCH /api/goals/:id { step, status }` | [api.js](../../../public/js/core/api.js), [goals/[id].js](../../../api/goals/[id].js) |
-| 9 | Goals API → Neon Postgres | Validates the status and step number and stores the updated steps · `updateGoal(userId, id, steps)` | [server/goals.js](../../../server/goals.js), [db.js](../../../server/db.js) |
-| 10 | Agent → Browser app | Records job applications. The client accepts drafted only after docs_add, and applied only after an approved Submit click or a Gmail confirmation email. Interview, offer and rejected need an employer email found in Gmail · `track_application(…)` | [goals/goals.js](../../../public/js/features/goals/goals.js) |
+| 1 | User → Agent runtime | Submits a goal or a nudge, which is sent as a normal chat message · `POST /api/agent/turn` | [goals/goals.js](../../../public/js/features/goals/goals.js) |
+| 2 | Model → Agent runtime | Plans the goal with 3 to 6 steps and an optional target and deadline · `create_goal` | [tools/goals.js:27](../../../server/agent/tools/goals.js#L27) |
+| 3 | Agent runtime → Neon Postgres | Saves the goal through the goals handler · `createGoal` | [repo.js:25](../../../server/agent/repo.js#L25), [server/goals.js](../../../server/goals.js) |
+| 4 | Agent runtime | For a résumé step the user wants moved forward, checks the Library first and marks the step done only if a document matches | [runtime.js:272-282](../../../server/agent/runtime.js#L272-L282) |
+| 5 | Model → Agent runtime | Runs a real tool for the step, then asks to mark it, naming the tool as evidence · `update_step` | [tools/goals.js:46](../../../server/agent/tools/goals.js#L46) |
+| 6 | Agent runtime | Refuses doing or done unless a non-bookkeeping tool ran this turn and matches the evidence | [tools/goals.js:57](../../../server/agent/tools/goals.js#L57) |
+| 7 | Agent runtime → Neon Postgres | Saves the accepted status; the user can also click a step on the Goals page · `updateGoal` | [repo.js:27](../../../server/agent/repo.js#L27), [server/goals.js](../../../server/goals.js) |
+| 8 | Model → Agent runtime | Records job applications; applied needs an approved Submit click or a confirmation email this turn · `track_application` | [tools/goals.js:87](../../../server/agent/tools/goals.js#L87), [tools/goals.js:104](../../../server/agent/tools/goals.js#L104) |
 
 ## When it goes wrong
 

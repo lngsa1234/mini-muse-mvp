@@ -3,7 +3,8 @@
 import { $ } from "../../core/dom.js";
 import { state, rt, blank, replaceState } from "../../core/state.js";
 import { defineFeature, renderAll } from "../../core/registry.js";
-import { save, flush } from "../../core/storage.js";
+import { save, resetAll } from "../../core/storage.js";
+import { stopTurn } from "../../agent/run.js";
 import { go } from "../../core/nav.js";
 import { noteText } from "../chat/chat.js";
 
@@ -34,7 +35,12 @@ export function initSettings() {
   $("resetWrap").addEventListener("click", e => {
     const id = e.target.id;
     if (id === "resetBtn") $("resetWrap").innerHTML = `<span class="confirm">Are you sure? <button class="btn" id="resetYes" style="border-color:var(--bad);color:var(--bad)">Yes, erase it all</button><button class="btn" id="resetNo">Cancel</button></span>`;
-    else if (id === "resetYes") { if (rt.busy) rt.ctl?.abort(); const prefs = state.prefs; replaceState(blank()); state.prefs = prefs; renderAll(); go("settings"); flush(); restoreReset(); }
+    else if (id === "resetYes") {
+      if (rt.busy) stopTurn();
+      const prefs = state.prefs;
+      replaceState(blank()); state.prefs = prefs; renderAll(); go("settings"); restoreReset();
+      resetAll({ prefs }); // the chat, memory and settings on the server, for every device
+    }
     else if (id === "resetNo") restoreReset();
   });
 }

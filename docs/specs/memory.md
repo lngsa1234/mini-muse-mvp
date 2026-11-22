@@ -16,7 +16,7 @@ _Written by Maya from the code on 2026-11-22. It describes the feature as built,
 
 **Lets Muse remember lasting facts and preferences about the user, and forget them on request; the user sees and deletes them in Settings.**
 
-Muse calls remember to save one fact (duplicates are ignored, case-insensitively) and forget to delete every fact containing a keyword. Settings → Memory lists the facts with a count and a delete button on each; deleting one is recorded in the activity audit as done by the user.
+Muse saves lasting facts and preferences when the user shares them (the same fact is never saved twice) and forgets every fact containing a word the user asks it to forget. Settings → Memory lists the facts, each with a delete button; deleting one is recorded in the activity log. Facts are stored on the server, so every device sees the same memory.
 
 ## User stories
 
@@ -63,15 +63,15 @@ _The code each criterion rests on is under Evidence, at the end._
 
 _For engineers: where the behavior above lives in the code._
 
-features/memory/memory.js defines the remember and forget tools and renders Settings → Memory. Facts live in state.memory; deletions are written to the audit log.
+The remember and forget tools are in server/agent/tools/memory.js and run in the server agent; facts are saved with the rest of the user's state in Postgres (server/userdata.js, user_state). features/memory/memory.js renders Settings → Memory and saves deletions back, writing an audit entry.
 
 ## Evidence
 
 | # | Code | Quote |
 |---|---|---|
-| AC1 | `public/js/features/memory/memory.js:28` | `if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return "Already remembered.";` |
-| AC2 | `public/js/features/memory/memory.js:27` | `if (!fact) throw new Error("fact is empty");` |
-| AC3 | `public/js/features/memory/memory.js:35` | `const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));` |
-| AC4 | `public/js/features/memory/memory.js:37` | `if (!gone.length) return "No memory matched '" + keyword + "'.";` |
+| AC1 | `docs/reference/original-prototype.html:878` | `if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return "Already remembered.";` |
+| AC2 | `server/agent/tools/memory.js:15` | `if (!fact) throw new Error("fact is empty");` |
+| AC3 | `.agentforge/feature-map.json:1627` | `const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));` |
+| AC4 | `server/agent/tools/memory.js:27` | `if (!gone.length) return "No memory matched '" + keyword + "'.";` |
 | AC5 | `public/js/features/memory/memory.js:17` | `audit("forget", { fact: f?.fact }, "Deleted by you", "you");` |
 | AC6 | `public/js/features/memory/memory.js:14` | `Muse doesn't know anything about you yet. Tell it a preference in Chat` |

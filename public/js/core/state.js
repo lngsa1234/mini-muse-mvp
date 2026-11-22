@@ -1,5 +1,5 @@
 /*
- * App state: one plain object, saved as JSON.
+ * App state: one plain object, saved on the server (core/storage.js, ADR-0008).
  * ---------------------------------------------------------------------------
  * `state` is a single shared object. Mutate it in place (state.ideas.push(...))
  * and call save() afterwards. To swap it wholesale (load, reset) use
@@ -37,8 +37,9 @@ export function replaceState(next) {
 export const rt = {
   mode: "quick",   // "quick" | "default": model tier sent to the server
   busy: false,     // a chat turn is running
-  ctl: null,       // AbortController for the running turn
-  sample: null     // the agent client, once connected (agent/client.js)
+  ctl: null,       // AbortController for this tab's /api/agent/turn request
+  turnId: null,    // id of the assistant message the server is writing (for Stop)
+  sample: null     // set once the assistant is available (agent/client.js)
 };
 
 export const isOn = k => !!state.connectors[k]?.on;

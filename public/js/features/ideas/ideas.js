@@ -1,11 +1,11 @@
-// Ideas page: starter ideas from rules, personal ideas from Muse, and the save_idea tool.
+// Ideas page: starter ideas from rules and personal ideas from Muse.
+// The save_idea tool runs in the server agent (server/agent/tools/ideas.js).
 import { $, esc } from "../../core/dom.js";
 import { clock, fmtDay } from "../../core/format.js";
 import { state, rt } from "../../core/state.js";
 import { defineFeature, onClick, renderMine } from "../../core/registry.js";
 import { save } from "../../core/storage.js";
 import { audit } from "../../core/activity.js";
-import { S } from "../../core/schema.js";
 import { say } from "../../agent/run.js";
 import { ERR } from "../../agent/errors.js";
 import { createIdea, updateIdea } from "../../core/api.js";
@@ -148,17 +148,5 @@ defineFeature({
   id: "ideas",
   nav: { el: "navIdeas", badge: () => { const fresh = state.ideas.filter(i => ideaStatus(i) === "new").length; return fresh ? `${fresh} new` : ""; } },
   render: renderIdeas,
-  onShow: maybeUpdateIdeas,
-  guidance: `Ideas: the Ideas page holds suggestions you make for the user. When the user shares a loose idea, says "idea:", or asks you for ideas, call save_idea (one call per idea) and keep them specific to what you know about them. Ideas are not commitments; don't plan them unless asked.`,
-  tools: [
-    { name: "save_idea", description: "Save an idea to the user's Ideas page, either one the user shares or one you suggest. title is a short action; why is one sentence. Returns the idea_id.",
-      inputSchema: { type: "object", properties: { title: S, why: S }, required: ["title"] },
-      run: async ({ title, why, idea }, _ctx, h) => {
-        const text = String(title || idea || "").trim(); if (!text) throw new Error("title is empty");
-        if (state.ideas.some(i => ideaTitle(i).toLowerCase() === text.toLowerCase())) return "Already on the Ideas page.";
-        const created = await createIdea({ title: text, why: why ? String(why) : "", kind: "Get ahead", basedOn: ["chat"], action: text, status: "saved", by: "muse" });
-        state.ideas.push(created);
-        h.act(text); return { idea_id: created.id };
-      } }
-  ]
+  onShow: maybeUpdateIdeas
 });

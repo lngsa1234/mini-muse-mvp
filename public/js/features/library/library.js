@@ -1,13 +1,11 @@
-// Library page: documents Muse can search and cite, and the docs_* tools.
+// Library page: documents Muse can search and cite.
 // Documents live in the backend (Neon Postgres); see core/api.js. They are
-// loaded into state.docs at boot (main.js) and kept in sync here, so the
-// client-side search in search.js keeps working unchanged.
+// loaded into state.docs at boot (main.js). The docs_* tools run in the server
+// agent (server/agent/tools/library.js).
 import { $, esc } from "../../core/dom.js";
 import { state } from "../../core/state.js";
 import { defineFeature, onClick, onSubmit, renderMine } from "../../core/registry.js";
 import { audit } from "../../core/activity.js";
-import { S } from "../../core/schema.js";
-import { searchDocs } from "./search.js";
 import * as api from "../../core/api.js";
 
 function renderLibrary() {
@@ -47,39 +45,5 @@ onClick("delDoc", async id => {
 defineFeature({
   id: "library",
   nav: { el: "navLibrary", badge: () => state.docs.length ? `${state.docs.length}` : "" },
-  render: renderLibrary,
-  guidance: "Library: the Library holds the user's documents and notes and is always available. Use docs_search to find relevant passages and docs_read to read a whole document before answering questions about their notes, and say which document an answer came from. Use docs_add to save notes, text or a summary to the Library, and docs_remove to delete a document.",
-  tools: [
-    { name: "docs_search", description: "Search the user's Library of documents and notes by keywords. Returns the best matching passages with doc_id, title and a relevance score. Use it before answering questions about their notes.",
-      inputSchema: { type: "object", properties: { query: S }, required: ["query"] },
-      run: ({ query }, _ctx, h) => {
-        const r = searchDocs(String(query || ""));
-        h.act(`“${query}” → ${r.length ? r.map(x => x.title + " (" + x.score + ")").join(", ") : "no matches"}`, { query: String(query || ""), matches: r.length });
-        return r.length ? r : "No passages matched. Try other keywords.";
-      } },
-    { name: "docs_read", description: "Read a whole document from the Library by doc_id (first 6000 characters).",
-      inputSchema: { type: "object", properties: { doc_id: S }, required: ["doc_id"] },
-      run: ({ doc_id }, _ctx, h) => {
-        const key = String(doc_id);
-        // Models sometimes pass the human-readable title returned by docs_search
-        // instead of its opaque doc_id. Accept an exact title as a safe fallback.
-        const d = state.docs.find(x => x.id === key) || state.docs.find(x => x.title === key);
-        if (!d) throw new Error("no document " + doc_id);
-        h.act(d.title); return { title: d.title, text: d.text.slice(0, 6000) };
-      } },
-    { name: "docs_add", description: "Add a document or note to the user's Library so it can be searched and cited later. title is a short label; text is the full content. Returns the doc_id.",
-      inputSchema: { type: "object", properties: { title: S, text: S }, required: ["title", "text"] },
-      run: async ({ title, text }, _ctx, h) => {
-        const t = String(title || "").trim(), body = String(text || "").trim();
-        if (!t) throw new Error("title is empty"); if (!body) throw new Error("text is empty");
-        const doc = await api.createTextDoc(t, body); state.docs.unshift(doc);
-        h.act(`${t} (${body.length} characters)`); return { doc_id: doc.id };
-      } },
-    { name: "docs_remove", description: "Remove a document from the Library by doc_id. Returns what was removed.",
-      inputSchema: { type: "object", properties: { doc_id: S }, required: ["doc_id"] },
-      run: async ({ doc_id }, _ctx, h) => {
-        const d = state.docs.find(x => x.id === String(doc_id)); if (!d) throw new Error("no document " + doc_id);
-        await api.removeDoc(d.id); state.docs = state.docs.filter(x => x !== d); h.act(d.title); return { removed: d.title };
-      } }
-  ]
+  render: renderLibrary
 });

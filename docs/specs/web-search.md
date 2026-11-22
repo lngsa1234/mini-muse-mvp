@@ -63,15 +63,15 @@ _The code each criterion rests on is under Evidence, at the end._
 
 _For engineers: where the behavior above lives in the code._
 
-features/web/web.js defines web_search and web_open, which call /api/web. server/web.js forwards to Tavily's search and extract APIs with TAVILY_API_KEY, keeps five results and caps page text at TEXT_CAP = 20000.
+server/agent/tools/web.js defines web_search and web_open for the server agent and calls the handlers in server/web.js directly, which forward to Tavily's search and extract APIs with TAVILY_API_KEY, keep five results and cap page text at TEXT_CAP = 20000.
 
 ## Evidence
 
 | # | Code | Quote |
 |---|---|---|
-| AC1 | `public/js/features/web/web.js:15` | `if (!q) throw new Error("need a search query");` |
+| AC1 | `server/agent/tools/web.js:17` | `if (!q) throw new Error("need a search query");` |
 | AC2 | `server/web.js:43` | `max_results: 5, search_depth: "basic"` |
-| AC3 | `public/js/features/web/web.js:25` | `if (!/^https?:\/\//i.test(u)) throw new Error("need a valid http(s) url");` |
+| AC3 | `server/agent/tools/web.js:27` | `if (!/^https?:\/\//i.test(u)) throw new Error("need a valid http(s) url");` |
 | AC4 | `server/web.js:16` | `const TEXT_CAP = 20000;` |
 | AC5 | `server/web.js:21` | `const noKey = () => err(503, "no_api_key", "TAVILY_API_KEY is not set on the server.");` |
 | AC6 | `server/web.js:89` | `return err(422, "open_failed", reason ? String(reason) : "The page could not be read.");` |

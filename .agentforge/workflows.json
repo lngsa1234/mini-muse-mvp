@@ -4,8 +4,8 @@
       {
         "id": "chat-turn",
         "name": "How a chat turn runs",
-        "summary": "A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.",
-        "trigger": "The user presses Send in chat, or another page sends a message such as New goal, Do it or Ask Muse to move this forward.",
+        "summary": "A message goes to the agent runtime on the server, which saves it, builds the prompt from the user’s saved data, calls the model and runs the tools it asks for, and streams progress back to the page. The turn keeps going if the tab closes.",
+        "trigger": "The user presses Send in chat, or another page sends a message such as New goal, Do it or Ask Muse to move this forward",
         "features": [
           "agent-chat",
           "observability"
@@ -14,124 +14,132 @@
           {
             "actor": "user",
             "to": "client",
-            "action": "Submits a message from the composer or from a feature button.",
-            "call": "run(userMsg)",
+            "action": "Submits a message from the composer or a feature button",
+            "call": "",
             "paths": [],
             "toName": "Browser app",
             "label": "Sends a message"
           },
           {
             "actor": "client",
-            "to": "",
-            "action": "Pushes the user message and a live assistant placeholder, disables the composer, shows Stop, and starts a trace for the turn.",
-            "call": "",
+            "to": "server",
+            "action": "Shows the message, disables the composer and posts it with the response tier and time zone",
+            "call": "POST /api/agent/turn",
             "paths": [
               "public/js/agent/run.js"
             ],
-            "actorName": "Browser app"
+            "toName": "Agent runtime",
+            "label": "Post the turn"
           },
           {
-            "actor": "client",
+            "actor": "server",
+            "to": "data",
+            "action": "Refuses if another turn for this user is still live, then saves the user message and a live reply",
+            "call": "chat_messages",
+            "paths": [
+              "server/agent/runtime.js:158-171",
+              "server/userdata.js"
+            ],
+            "toName": "Neon Postgres",
+            "actorName": "Agent runtime",
+            "label": "Save the messages"
+          },
+          {
+            "actor": "server",
             "to": "",
-            "action": "Builds the tool list from features and connected connectors, then applies pre-model shortcuts: Library check for résumé steps, a job-research nudge, and opening an application link in Chrome.",
+            "action": "Builds the tools and runs the shortcuts: Library check for résumé steps, a job-research nudge, opening an application link",
             "call": "",
             "paths": [
-              "public/js/agent/run.js",
-              "public/js/agent/tools.js"
+              "server/agent/runtime.js:268-282",
+              "server/agent/tools/index.js"
             ],
-            "actorName": "Browser app"
+            "actorName": "Agent runtime",
+            "label": "Tools and shortcuts"
           },
           {
-            "actor": "client",
-            "to": "server",
-            "action": "Sends the conversation and tool definitions with a trace header. It sends a tier and never a model name.",
-            "call": "POST /api/llm (tier, messages, tools, stream)",
+            "actor": "server",
+            "to": "",
+            "action": "Builds the system prompt from saved memory, ideas, goals and settings, plus the last 18 messages",
+            "call": "",
             "paths": [
-              "public/js/agent/loop.js",
-              "public/js/agent/transport.js"
+              "server/agent/prompt.js"
             ],
-            "actorName": "Browser app",
-            "toName": "LLM proxy"
+            "actorName": "Agent runtime",
+            "label": "Build the prompt"
           },
           {
             "actor": "server",
             "to": "external",
-            "action": "Drops any client model, maps the tier to a model, adds the API key and forwards the request to OpenAI.",
-            "call": "POST chat completions (pinned model, server-held key)",
+            "action": "Streams a model turn with the server-held key and a model picked from the tier",
+            "call": "POST chat completions",
             "paths": [
-              "server/proxy.js",
-              "server/routing.js",
-              "api/llm.js"
+              "server/agent/llm.js",
+              "server/routing.js"
             ],
-            "actorName": "LLM proxy",
-            "toName": "OpenAI"
-          },
-          {
-            "actor": "external",
-            "to": "client",
-            "action": "Streams the reply back through the proxy.",
-            "call": "SSE text and tool_call deltas",
-            "paths": [],
-            "actorName": "OpenAI",
-            "toName": "Browser app"
-          },
-          {
-            "actor": "client",
-            "to": "",
-            "action": "Parses the stream and updates the message text live.",
-            "call": "",
-            "paths": [
-              "public/js/agent/transport.js",
-              "public/js/features/chat/chat.js"
-            ],
-            "actorName": "Browser app"
+            "toName": "OpenAI",
+            "actorName": "Agent runtime",
+            "label": "Ask the model"
           },
           {
             "actor": "agent",
             "to": "",
-            "action": "Asks for tools. The loop runs each one locally and feeds the result back as a tool message. It repeats up to 12 steps until the model stops asking for tools.",
+            "action": "Asks for tools; the runtime runs each one, logs it and feeds the result back",
             "call": "",
             "paths": [
-              "public/js/agent/loop.js",
-              "public/js/agent/tools.js"
+              "server/agent/loop.js:17",
+              "server/agent/tools/index.js"
             ],
-            "actorName": "Agent loop"
+            "actorName": "Model",
+            "label": "Run the tools"
           },
           {
-            "actor": "client",
-            "to": "data",
-            "action": "Ends the turn: expires unanswered approvals, marks the message not live, shows a truncation notice if the reply hit the token limit, and saves state in browser storage.",
-            "call": "save() chat state",
+            "actor": "server",
+            "to": "client",
+            "action": "Streams events to the page and saves the reply every few seconds",
+            "call": "SSE text, audit, done",
             "paths": [
-              "public/js/agent/run.js",
-              "public/js/core/storage.js"
+              "server/agent/http.js"
             ],
-            "actorName": "Browser app",
-            "toName": "Browser storage"
+            "toName": "Browser app",
+            "actorName": "Agent runtime",
+            "label": "Stream progress"
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Ends the turn: expires unanswered approvals, marks the reply finished and saves it",
+            "call": "chat_messages",
+            "paths": [
+              "server/agent/runtime.js"
+            ],
+            "toName": "Neon Postgres",
+            "actorName": "Agent runtime",
+            "label": "Finish the turn"
           }
         ],
         "errorPaths": [
-          "If the server has no API key it returns 503 no_api_key. The client maps this to sampling_disabled, shows the assistant-unavailable message and disables the composer.",
-          "HTTP 401, 403 and 429 map to session_expired, not_granted and rate_limited messages. A 400 maps to prompt_too_large or refused.",
-          "If the server cannot be reached the turn fails with a generic 'send your message again' message. If OpenAI is unreachable the proxy has an upstream_unreachable 502 response.",
-          "A tool that throws, or an unknown tool, goes back to the model as an 'Error: …' tool result instead of ending the turn.",
-          "If the user presses Stop the turn is cancelled and no error is shown. If the reply ends at max tokens, 'The reply was cut short' is shown.",
-          "If opening or reading the application page fails, or job tools are off, the shortcut replies without calling the model."
+          "No API key: the turn ends with sampling_disabled; the page shows the assistant-unavailable message and disables the composer.",
+          "Model errors 401, 403, 429 and 400 map to session_expired, not_granted, rate_limited, prompt_too_large or refused.",
+          "A tool that throws, or an unknown tool, goes back to the model as an error result instead of ending the turn.",
+          "Stop, from any device, cancels the turn through /api/agent/cancel; no error is shown.",
+          "If the page’s stream drops, the turn keeps running; the page polls /api/state until the reply is finished.",
+          "If another turn is live, the server answers busy and the page puts the text back in the composer.",
+          "The serverless call is capped at 300 seconds, so a very long turn can be cut off."
         ],
         "blocks": [
           {
             "kind": "loop",
             "label": "up to 12 steps",
-            "fromStep": 4,
-            "toStep": 8
+            "fromStep": 6,
+            "toStep": 7
           }
         ]
       },
       {
         "id": "tool-approval",
         "name": "How sensitive actions get approval",
-        "summary": "A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.",
-        "trigger": "The model calls a tool that asks for approval, such as mail_send, a write on Calendar or Contacts with Ask me first, revise_plan, or marking an interview or offer.",
+        "summary": "Before a tool changes or sends something, the agent runtime saves an approval card and waits. The user answers on any device; the change runs only if they approved.",
+        "trigger": "The model calls a tool that writes, such as sending an email, adding a calendar event or revising a goal",
         "features": [
           "tool-approvals",
           "connectors",
@@ -140,96 +148,116 @@
         "steps": [
           {
             "actor": "agent",
-            "to": "client",
-            "action": "Requests a write tool during the loop. The tool is wrapped to log activity, trace it and show progress.",
-            "call": "tool.execute(input)",
+            "to": "server",
+            "action": "Calls a write tool",
+            "call": "",
             "paths": [
-              "public/js/agent/loop.js",
-              "public/js/agent/tools.js"
+              "server/agent/tools/connectors.js",
+              "server/agent/tools/goals.js"
             ],
-            "toName": "Browser app",
+            "toName": "Agent runtime",
+            "actorName": "Model",
             "label": "Calls a write tool"
           },
           {
-            "actor": "client",
+            "actor": "server",
             "to": "",
-            "action": "Checks whether the connector needs approval. Gmail is always locked to ask, and others follow the user's Ask or Allow setting.",
+            "action": "Checks whether it needs approval: Gmail always asks; Calendar and Contacts follow the user’s Ask or Allow setting",
             "call": "",
             "paths": [
-              "public/js/agent/tools.js"
+              "server/agent/tools/connectors.js"
             ],
-            "actorName": "Browser app",
+            "actorName": "Agent runtime",
             "label": "Ask or allow?"
+          },
+          {
+            "actor": "server",
+            "to": "data",
+            "action": "Adds a pending card to the reply, saves it and creates a wait record",
+            "call": "agent_waits",
+            "paths": [
+              "server/agent/runtime.js"
+            ],
+            "toName": "Neon Postgres",
+            "actorName": "Agent runtime",
+            "label": "Save the card"
           },
           {
             "actor": "client",
             "to": "user",
-            "action": "Switches to chat, shows a pending approval card, and waits.",
-            "call": "approval card (heading, rows, Allow / Don't allow)",
+            "action": "Shows the card; another device shows it too after loading the chat",
+            "call": "approval card",
             "paths": [
-              "public/js/workflow/approvals.js"
+              "public/js/features/chat/chat.js"
             ],
-            "actorName": "Browser app"
+            "actorName": "Browser app",
+            "label": "Show the card"
           },
           {
             "actor": "user",
             "to": "client",
-            "action": "Allows or declines the action.",
-            "call": "approve or decline click",
-            "paths": [],
-            "toName": "Browser app",
-            "approval": true
-          },
-          {
-            "actor": "client",
-            "to": "",
-            "action": "Records the answer as approved, declined or expired, and writes an audit entry.",
-            "call": "",
+            "action": "Allows or declines the action",
+            "call": "approve or decline",
             "paths": [
-              "public/js/workflow/approvals.js"
+              "public/js/workflow/approvals.js:24-25"
             ],
-            "actorName": "Browser app"
+            "approval": true,
+            "label": "Answer the card"
           },
           {
             "actor": "client",
             "to": "server",
-            "action": "Performs the change only if the answer was approved.",
-            "call": "the approved write, such as the mail send route or goals API",
+            "action": "Posts the answer; only a pending wait can be answered, so a second answer gets 409",
+            "call": "POST /api/agent/answer",
             "paths": [
-              "public/js/features/goals/goals.js",
-              "server/google-route.js"
+              "public/js/workflow/approvals.js",
+              "server/agent/http.js"
             ],
-            "actorName": "Browser app",
-            "toName": "API server"
+            "toName": "Agent runtime",
+            "label": "Post the answer"
           },
           {
-            "actor": "client",
+            "actor": "server",
+            "to": "external",
+            "action": "Wakes the waiting turn, records the answer and an audit entry, and runs the change only if approved",
+            "call": "the approved write, such as mail send",
+            "paths": [
+              "server/agent/runtime.js:48-53"
+            ],
+            "toName": "Google",
+            "actorName": "Agent runtime",
+            "label": "Run if approved"
+          },
+          {
+            "actor": "server",
             "to": "agent",
-            "action": "Returns the result to the model, or 'Nothing was changed' if declined or unanswered.",
+            "action": "Returns the result to the model, or Nothing was changed if declined or unanswered",
             "call": "tool result",
             "paths": [
-              "public/js/agent/tools.js"
+              "server/agent/runtime.js"
             ],
-            "actorName": "Browser app"
+            "toName": "Model",
+            "actorName": "Agent runtime",
+            "label": "Return the result"
           }
         ],
         "errorPaths": [
-          "A decline returns 'The user declined. Nothing was changed.' to the model.",
-          "If the user does not answer before the turn ends, or presses Stop, the approval resolves as no answer and returns 'The user did not answer. Nothing was changed.'"
+          "A decline returns “The user declined. Nothing was changed.” to the model.",
+          "No answer within 4 minutes (AGENT_APPROVAL_TIMEOUT_MS), or Stop, expires the card and returns “The user did not answer. Nothing was changed.”"
         ],
         "blocks": [
           {
             "kind": "opt",
             "label": "only when allowed",
-            "fromStep": 6,
-            "toStep": 6
+            "fromStep": 7,
+            "toStep": 7
           }
         ]
       },
       {
         "id": "goal-step-progress",
         "name": "How a goal step advances",
-        "summary": "Muse creates a goal with a plan and moves a step to doing or done only when a tool did that step's work in the same turn. Application statuses are checked against proof in the same way.",
+        "summary": "A goal is planned as steps, and a step only moves forward when a tool did real work in the same turn. The agent runtime enforces this on the server.",
         "trigger": "The user types a goal on the Goals page, or asks Muse to move a goal forward from chat or the Goals page.",
         "features": [
           "goals",
@@ -238,113 +266,99 @@
         "steps": [
           {
             "actor": "user",
-            "to": "client",
-            "action": "Submits a goal or a nudge, which is sent as a normal chat message.",
-            "call": "say(\"New goal: …\") or say(\"Move my goal … forward\")",
+            "to": "server",
+            "action": "Submits a goal or a nudge, which is sent as a normal chat message",
+            "call": "POST /api/agent/turn",
             "paths": [
               "public/js/features/goals/goals.js"
             ],
-            "toName": "Browser app"
+            "toName": "Agent runtime",
+            "label": "Ask for a goal"
           },
           {
             "actor": "agent",
-            "to": "client",
-            "action": "Plans the goal with 3 to 6 steps and an optional measurable target and deadline.",
-            "call": "create_goal(goal, steps, target_metric, target_count, days)",
-            "paths": [
-              "public/js/features/goals/goals.js"
-            ],
-            "toName": "Browser app"
-          },
-          {
-            "actor": "client",
             "to": "server",
-            "action": "Saves the goal through the goals API.",
-            "call": "POST /api/goals",
+            "action": "Plans the goal with 3 to 6 steps and an optional target and deadline",
+            "call": "create_goal",
             "paths": [
-              "public/js/core/api.js",
-              "api/goals/index.js"
+              "server/agent/tools/goals.js:27"
             ],
-            "actorName": "Browser app",
-            "toName": "Goals API"
+            "toName": "Agent runtime",
+            "actorName": "Model",
+            "label": "Plan the goal"
           },
           {
             "actor": "server",
             "to": "data",
-            "action": "Rejects a missing goal or steps and invalid target or deadline with 400. Otherwise stores the goal and returns 201.",
-            "call": "createGoal(userId, goal, steps ≤ 8, target, deadline)",
+            "action": "Saves the goal through the goals handler",
+            "call": "createGoal",
             "paths": [
-              "server/goals.js",
-              "server/db.js"
+              "server/agent/repo.js:25",
+              "server/goals.js"
             ],
-            "actorName": "Goals API",
-            "toName": "Neon Postgres"
+            "toName": "Neon Postgres",
+            "actorName": "Agent runtime",
+            "label": "Save the goal"
           },
           {
-            "actor": "client",
+            "actor": "server",
             "to": "",
-            "action": "For a résumé step the user wants moved forward, the pre-model shortcut searches the Library and marks the step done only if a document matches.",
+            "action": "For a résumé step the user wants moved forward, checks the Library first and marks the step done only if a document matches",
             "call": "",
             "paths": [
-              "public/js/agent/run.js"
+              "server/agent/runtime.js:272-282"
             ],
-            "actorName": "Browser app",
-            "label": "Library check for résumé steps"
+            "actorName": "Agent runtime",
+            "label": "Library check"
           },
           {
             "actor": "agent",
-            "to": "client",
-            "action": "Runs a real tool for the step, then asks to mark it, naming the tool as evidence.",
-            "call": "docs_search, jobs_search or a browser tool, then update_step(goal_id, step, status, evidence)",
+            "to": "server",
+            "action": "Runs a real tool for the step, then asks to mark it, naming the tool as evidence",
+            "call": "update_step",
             "paths": [
-              "public/js/features/goals/goals.js"
+              "server/agent/tools/goals.js:46"
             ],
-            "toName": "Browser app"
+            "toName": "Agent runtime",
+            "actorName": "Model",
+            "label": "Ask to mark the step"
           },
           {
-            "actor": "client",
+            "actor": "server",
             "to": "",
-            "action": "Refuses doing or done unless a non-bookkeeping tool ran this turn and matches the cited evidence. Résumé steps need a docs_search that found a document.",
+            "action": "Refuses doing or done unless a non-bookkeeping tool ran this turn and matches the evidence",
             "call": "",
             "paths": [
-              "public/js/features/goals/goals.js"
+              "server/agent/tools/goals.js:57"
             ],
-            "actorName": "Browser app",
+            "actorName": "Agent runtime",
             "label": "Checks the evidence"
           },
           {
-            "actor": "client",
-            "to": "server",
-            "action": "Saves the accepted step status. The user can also click a step to mark it done or undo it.",
-            "call": "PATCH /api/goals/:id { step, status }",
-            "paths": [
-              "public/js/core/api.js",
-              "api/goals/[id].js"
-            ],
-            "actorName": "Browser app",
-            "toName": "Goals API"
-          },
-          {
             "actor": "server",
             "to": "data",
-            "action": "Validates the status and step number and stores the updated steps.",
-            "call": "updateGoal(userId, id, steps)",
+            "action": "Saves the accepted status; the user can also click a step on the Goals page",
+            "call": "updateGoal",
             "paths": [
-              "server/goals.js",
-              "server/db.js"
+              "server/agent/repo.js:27",
+              "server/goals.js"
             ],
-            "actorName": "Goals API",
-            "toName": "Neon Postgres"
+            "toName": "Neon Postgres",
+            "actorName": "Agent runtime",
+            "label": "Save the status"
           },
           {
             "actor": "agent",
-            "to": "client",
-            "action": "Records job applications. The client accepts drafted only after docs_add, and applied only after an approved Submit click or a Gmail confirmation email. Interview, offer and rejected need an employer email found in Gmail.",
-            "call": "track_application(goal_id, company, role, status)",
+            "to": "server",
+            "action": "Records job applications; applied needs an approved Submit click or a confirmation email this turn",
+            "call": "track_application",
             "paths": [
-              "public/js/features/goals/goals.js"
+              "server/agent/tools/goals.js:87",
+              "server/agent/tools/goals.js:104"
             ],
-            "toName": "Browser app"
+            "toName": "Agent runtime",
+            "actorName": "Model",
+            "label": "Track applications"
           }
         ],
         "errorPaths": [
@@ -430,17 +444,16 @@
             "toName": "API server"
           },
           {
-            "actor": "client",
-            "to": "server",
-            "action": "When connected, the mail and calendar tools join the agent's tool list. Each tool calls its Google route, and writes go through approval.",
+            "actor": "server",
+            "to": "external",
+            "action": "When connected, the mail and calendar tools join the agent’s tools on the server and call Google with the tokens from the cookie; writes go through approval",
             "call": "/api/google/mail/* and /api/google/calendar/*",
             "paths": [
-              "public/js/agent/tools.js",
-              "public/js/features/connectors/mail.js",
+              "server/agent/tools/connectors.js",
               "server/google-route.js"
             ],
-            "actorName": "Browser app",
-            "toName": "API server"
+            "actorName": "Agent runtime",
+            "toName": "Google"
           },
           {
             "actor": "client",
@@ -526,11 +539,11 @@
           {
             "actor": "client",
             "to": "",
-            "action": "Adds the document to the in-memory list so the page and the docs_search and docs_read tools can use it.",
+            "action": "Adds the document to the list on the page; the docs_search and docs_read tools on the server read it from Postgres",
             "call": "",
             "paths": [
               "public/js/features/library/library.js",
-              "public/js/features/library/search.js"
+              "server/agent/tools/library.js"
             ],
             "actorName": "Browser app",
             "label": "Adds it to the list"
@@ -551,7 +564,7 @@
           "goals",
           "connectors"
         ],
-        "summary": "Once a day, or when the user clicks the button, Muse works on the user’s goals without being asked and leaves a short progress brief in chat. It only runs while the app is open.",
+        "summary": "Once a day, or when the user clicks the button, the open app starts a turn in which Muse works on the user’s goals without being asked and leaves a short progress brief. The turn runs on the server, but only an open app can start it.",
         "trigger": "The app is open after 9am with Every day on and no check-in yet today, or the user clicks the check-in button",
         "steps": [
           {
@@ -567,33 +580,37 @@
           },
           {
             "actor": "client",
-            "to": "agent",
-            "action": "Records today as the last check-in and starts a turn with a check-in message instead of a user message",
-            "call": "run(role: checkin)",
+            "to": "server",
+            "action": "Records today as the last check-in and starts a check-in turn on the server",
+            "call": "POST /api/agent/turn (checkin)",
             "paths": [
-              "public/js/workflow/checkin.js:21-24"
+              "public/js/workflow/checkin.js:19-22",
+              "public/js/agent/run.js"
             ],
             "label": "Start the check-in turn",
-            "actorName": "Browser app"
+            "actorName": "Browser app",
+            "toName": "Agent runtime"
           },
           {
-            "actor": "agent",
+            "actor": "server",
             "to": "",
-            "action": "Gets the fixed check-in instruction: the user is away, do what can be done alone, do not send emails, never submit an application",
+            "action": "Uses the fixed check-in instruction: the user is away, do what can be done alone, do not send emails, never submit an application",
             "call": "",
             "paths": [
-              "public/js/agent/prompt.js:54",
-              "public/js/workflow/checkin.js:14-16"
+              "server/agent/prompt.js:9",
+              "public/js/workflow/checkin-prompt.js"
             ],
-            "label": "Read the check-in instruction"
+            "label": "Use the check-in instruction",
+            "actorName": "Agent runtime"
           },
           {
             "actor": "agent",
             "to": "external",
             "action": "Searches Gmail for application confirmations and employer replies",
-            "call": "mail_search via /api/google/mail",
+            "call": "mail_search",
             "paths": [
-              "public/js/workflow/checkin.js:15"
+              "public/js/workflow/checkin-prompt.js",
+              "server/agent/tools/connectors.js"
             ],
             "label": "Check Gmail",
             "toName": "Gmail"
@@ -604,7 +621,7 @@
             "action": "Updates tracked applications and works out pace against the target and deadline",
             "call": "track_application",
             "paths": [
-              "public/js/features/goals/goals.js"
+              "server/agent/tools/goals.js:87"
             ],
             "label": "Update applications",
             "toName": "Neon Postgres"
@@ -615,21 +632,21 @@
             "action": "When behind pace, searches the watched companies’ hiring pages and scores new postings against the résumé",
             "call": "jobs_search, score_fit",
             "paths": [
-              "public/js/features/jobs/jobs.js"
+              "server/agent/tools/jobs.js"
             ],
             "label": "Find and score postings",
             "toName": "API server"
           },
           {
-            "actor": "agent",
+            "actor": "server",
             "to": "",
-            "action": "Writes a three-line progress brief and what needs the user’s decision into chat",
+            "action": "Saves the three-line progress brief and what needs the user’s decision; it shows in chat on every device",
             "call": "",
             "paths": [
-              "public/js/workflow/checkin.js:16",
-              "public/js/agent/run.js"
+              "server/agent/runtime.js"
             ],
-            "label": "Leave the brief"
+            "label": "Leave the brief",
+            "actorName": "Agent runtime"
           }
         ],
         "blocks": [
@@ -641,7 +658,7 @@
           }
         ],
         "errorPaths": [
-          "If the app is closed, nothing runs: there is no server-side scheduler, so the check-in waits until the app is next open after 9am.",
+          "If the app is closed, nothing starts: there is no server-side scheduler. Once started, the turn finishes even if the tab closes.",
           "If Muse is busy, the assistant is unavailable or there are no goals, the check-in is skipped and tried again five minutes later.",
           "\"Do not send emails\" is an instruction to the model, not a tool restriction: mail_send is still offered, and its approval card is what stops an email being sent while the user is away."
         ]
@@ -654,27 +671,41 @@
           "library",
           "tool-approvals"
         ],
-        "summary": "Muse fills in a job application in the user’s own Chrome tab through the optional extension, and only submits it after the user has reviewed it and approved.",
+        "summary": "Muse fills in a job application in the user’s own Chrome tab: the agent runtime on the server asks the Mini Muse tab that started the turn to run each browser tool through the extension, and only submits after the user approves.",
         "trigger": "The user asks Muse to fill in a specific application they chose",
         "steps": [
           {
             "actor": "agent",
-            "to": "client",
-            "action": "Asks the page to open the application URL in a new Chrome tab",
-            "call": "browser_open(url)",
+            "to": "server",
+            "action": "Asks to open the application, read its fields and fill them from the Library résumé",
+            "call": "browser_open, browser_fields, browser_fill",
             "paths": [
-              "public/js/features/browser/browser.js:22"
+              "server/agent/tools/browser.js:14-23"
             ],
-            "label": "Open the application",
-            "toName": "Mini Muse page"
+            "toName": "Agent runtime",
+            "actorName": "Model",
+            "label": "Ask for browser tools"
+          },
+          {
+            "actor": "server",
+            "to": "client",
+            "action": "Creates a wait record and sends the tool to the tab that started the turn",
+            "call": "SSE client_tool",
+            "paths": [
+              "server/agent/runtime.js:198-200"
+            ],
+            "toName": "Mini Muse page",
+            "actorName": "Agent runtime",
+            "label": "Relay to the tab"
           },
           {
             "actor": "client",
             "to": "external",
-            "action": "Posts the request to the extension through a window message, checking the reply comes from the same origin",
-            "call": "postMessage(source: mini-muse)",
+            "action": "Passes the request to the extension by window message, checking the reply comes from the same origin",
+            "call": "postMessage",
             "paths": [
-              "public/js/features/browser/browser.js:6-16"
+              "public/js/agent/run.js:79",
+              "public/js/features/browser/browser.js:28"
             ],
             "actorName": "Mini Muse page",
             "toName": "Chrome extension",
@@ -683,41 +714,19 @@
           {
             "actor": "external",
             "to": "",
-            "action": "Relays the request to the extension’s background script, which only accepts messages from the Mini Muse origins",
+            "action": "Accepts only messages from the Mini Muse origins, picks the last non–Mini Muse tab, checks site permission and injects the form script",
             "call": "",
             "paths": [
-              "chrome-extension/muse-bridge.js",
-              "chrome-extension/background.js:9-14"
-            ],
-            "actorName": "Chrome extension",
-            "label": "Check the sender"
-          },
-          {
-            "actor": "external",
-            "to": "",
-            "action": "Picks the last non–Mini Muse tab, checks the user allowed control of that site, and injects the form script",
-            "call": "",
-            "paths": [
+              "chrome-extension/background.js:9-14",
               "chrome-extension/background.js:16-28"
             ],
             "actorName": "Chrome extension",
             "label": "Target the tab"
           },
           {
-            "actor": "agent",
-            "to": "external",
-            "action": "Reads the form fields, then fills the ones the Library résumé supports",
-            "call": "browser_fields, browser_fill(fields)",
-            "paths": [
-              "public/js/features/browser/browser.js:24-32"
-            ],
-            "toName": "Chrome extension",
-            "label": "Read and fill fields"
-          },
-          {
             "actor": "external",
             "to": "",
-            "action": "Fills the fields in the tab and skips passwords, SSNs and card or account numbers",
+            "action": "Reads or fills the fields in the tab, skipping passwords, SSNs and card or account numbers",
             "call": "",
             "paths": [
               "chrome-extension/target.js:8",
@@ -727,30 +736,44 @@
             "label": "Fill, skip sensitive"
           },
           {
+            "actor": "client",
+            "to": "server",
+            "action": "Posts the tool’s result back so the waiting turn continues",
+            "call": "POST /api/agent/answer",
+            "paths": [
+              "public/js/agent/run.js"
+            ],
+            "actorName": "Mini Muse page",
+            "toName": "Agent runtime",
+            "label": "Return the result"
+          },
+          {
             "actor": "user",
-            "to": "agent",
+            "to": "server",
             "action": "Reviews the filled form in Chrome and approves the Submit click on the approval card",
             "call": "Submit it",
             "paths": [],
-            "label": "Review and approve",
-            "approval": true
+            "toName": "Agent runtime",
+            "approval": true,
+            "label": "Review and approve"
           },
           {
-            "actor": "agent",
+            "actor": "server",
             "to": "external",
-            "action": "Clicks Submit in the tab",
-            "call": "browser_click(selector)",
+            "action": "Relays the Submit click to the tab the same way",
+            "call": "browser_click",
             "paths": [
-              "public/js/features/browser/browser.js:33-40"
+              "server/agent/tools/browser.js:30-36"
             ],
             "toName": "Chrome extension",
+            "actorName": "Agent runtime",
             "label": "Submit"
           }
         ],
         "errorPaths": [
-          "Without the extension, a request times out after 12 seconds and Muse is told to use web_open or ask the user to install it.",
-          "If the user hasn’t allowed control of the site, the extension refuses and asks them to allow it in the extension popup.",
-          "If the extension was reloaded, the page is asked to reload to reconnect.",
+          "If the tab that started the turn doesn’t answer within 45 seconds (it may be closed), the tool fails and Muse is told not to retry browser tools this turn.",
+          "Without the extension, the page’s request times out after 12 seconds with a message to use web_open or install it.",
+          "If the user hasn’t allowed control of the site, the extension refuses and asks them to allow it in its popup.",
           "If the user doesn’t approve the click, nothing is clicked and the refusal goes back to Muse."
         ]
       },
@@ -761,69 +784,67 @@
           "observability",
           "agent-chat"
         ],
-        "summary": "Each chat turn and model call is recorded as a trace, with prompts, replies and tool inputs and outputs, so the builder can replay it on the Observability page.",
+        "summary": "Each chat turn is recorded as a trace on the server, with the model calls and each tool as spans, so the builder can replay it on the Observability page. The browser still sends its own spans for page activity.",
         "trigger": "Any chat turn, model call or API request while tracing is on",
         "steps": [
           {
             "actor": "client",
             "to": "server",
-            "action": "Loads the tracing settings at startup: whether tracing is on, whether to keep prompt and reply text, and the sample rate",
+            "action": "Loads the tracing settings at startup and starts spans for page activity",
             "call": "GET /api/trace?view=config",
             "paths": [
-              "public/js/core/trace.js:176-185"
+              "public/js/core/trace.js:176-185",
+              "public/js/core/trace.js:128-139"
             ],
-            "label": "Load tracing settings",
-            "actorName": "Browser app",
-            "toName": "API server"
-          },
-          {
-            "actor": "client",
-            "to": "",
-            "action": "Starts a trace for the turn and records spans for the model call and each tool, keeping text up to the cap or only its length",
-            "call": "",
-            "paths": [
-              "public/js/core/trace.js:128-139",
-              "public/js/core/trace.js:40-43"
-            ],
-            "label": "Record spans",
-            "actorName": "Browser app"
+            "toName": "API server",
+            "label": "Load tracing settings"
           },
           {
             "actor": "client",
             "to": "server",
-            "action": "Sends a traceparent header with model and API calls so the server’s spans join the same trace",
+            "action": "Sends a traceparent header with the turn request so the server’s spans join the page’s trace",
             "call": "traceparent header",
             "paths": [
-              "public/js/agent/transport.js:11-16",
-              "public/js/core/api.js:7-12"
+              "public/js/agent/run.js:94-95"
             ],
-            "label": "Link server spans",
-            "actorName": "Browser app",
-            "toName": "API server"
+            "toName": "Agent runtime",
+            "label": "Link the turn"
+          },
+          {
+            "actor": "server",
+            "to": "",
+            "action": "Opens a span for the whole turn",
+            "call": "",
+            "paths": [
+              "server/agent/http.js:64",
+              "server/trace-node.js:71-74"
+            ],
+            "actorName": "Agent runtime",
+            "label": "Trace the turn"
           },
           {
             "actor": "server",
             "to": "data",
-            "action": "Opens a server span for the request and records it under the same trace",
+            "action": "Records a span for each model call and tool, keeping text up to the cap or only its length",
             "call": "spans",
             "paths": [
-              "server/trace-node.js:71-74"
+              "server/agent/runtime.js:248",
+              "server/trace-core.js"
             ],
-            "label": "Record server spans",
-            "actorName": "API server",
-            "toName": "Neon Postgres"
+            "toName": "Neon Postgres",
+            "actorName": "Agent runtime",
+            "label": "Record spans"
           },
           {
             "actor": "client",
             "to": "server",
-            "action": "Sends buffered spans and logs every three seconds, and when the page is hidden or closed",
+            "action": "Sends buffered page spans and logs every three seconds, and when the page is hidden or closed",
             "call": "POST /api/trace",
             "paths": [
               "public/js/core/trace.js:154-165"
             ],
-            "label": "Ship the batch",
-            "actorName": "Browser app",
-            "toName": "API server"
+            "toName": "API server",
+            "label": "Ship page spans"
           },
           {
             "actor": "server",
@@ -834,9 +855,9 @@
               "server/trace.js:60-77",
               "server/trace-store.js:74-79"
             ],
-            "label": "Store the batch",
+            "toName": "Neon Postgres",
             "actorName": "API server",
-            "toName": "Neon Postgres"
+            "label": "Store the batch"
           },
           {
             "actor": "user",
@@ -846,8 +867,8 @@
             "paths": [
               "public/js/features/observability/observability.js"
             ],
-            "label": "Replay a trace",
-            "toName": "API server"
+            "toName": "API server",
+            "label": "Replay a trace"
           }
         ],
         "errorPaths": [
@@ -877,5 +898,5 @@
       "How Muse works"
     ]
   },
-  "checkedAt": "2026-11-22T00:17:29.909Z"
+  "checkedAt": "2026-11-22T00:45:06.138Z"
 }

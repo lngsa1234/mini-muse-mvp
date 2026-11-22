@@ -66,7 +66,7 @@ features/hood/hood.js listens for phase and audit events from core/activity.js, 
 | # | Code | Quote |
 |---|---|---|
 | AC1 | `public/js/features/hood/hood.js:9` | `function setPhase(p) { document.querySelectorAll("#loop li").forEach(li => li.classList.toggle("on", li.dataset.p === p)` |
-| AC2 | `public/js/features/hood/hood.js:21` | `const list = [...coreToolNames().map(n => [n, ""]), ...Object.keys(CONNECTORS).filter(isOn).flatMap(k => CONNECTORS[k].t` |
+| AC2 | `public/js/features/hood/hood.js:27` | `const list = [...core.map(t => [t.name, ""]), ...Object.keys(CONNECTORS).filter(isOn).flatMap(k => CONNECTORS[k].tools.m` |
 | AC3 | `public/js/features/hood/hood.js:16` | `$("audit").innerHTML = a.length ? a.slice(0, 150).map(auditItem).join("") : empty;` |
 | AC4 | `public/js/features/hood/hood.js:11` | `${x.by === "you" ? "you · " : isConnTool(x.tool) ? "connector · " : ""}` |
 | AC5 | `public/js/features/hood/hood.js:17` | `const mine = a.filter(x => x.by !== "you").slice(0, 6);` |

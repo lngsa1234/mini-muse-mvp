@@ -18,6 +18,7 @@ sequenceDiagram
   actor user as User
   participant client as Browser app
   participant server as API server
+  participant server1 as Agent runtime
   participant external as Google
   user->>user: Clicks Connect
   client->>server: GET /api/google/authorize
@@ -25,7 +26,7 @@ sequenceDiagram
   external-->>server: redirect to /api/google/callback
   server-->>client: Set-Cookie
   client->>server: GET /api/google/status
-  client->>server: /api/google/mail/*
+  server1->>external: /api/google/mail/*
   client->>server: disconnect endpoint
 ```
 
@@ -39,7 +40,7 @@ sequenceDiagram
 | 4 | Google → API server | Google asks for consent and redirects back · `redirect to /api/google/callback (code)` |  |
 | 5 | API server → Browser app | The callback handler exchanges the code and sets the tokens in a cookie · `Set-Cookie (…) and redirect` | [google-route.js](../../../server/google-route.js), [google.js](../../../server/google.js) |
 | 6 | Browser app → API server | At boot and after the redirect, initConnectors asks whether Google is connected and turns Gmail and Calendar on or off together · `GET /api/google/status` | [connectors/index.js](../../../public/js/features/connectors/index.js), [api.js](../../../public/js/core/api.js) |
-| 7 | Browser app → API server | When connected, the mail and calendar tools join the agent's tool list. Each tool calls its Google route, and writes go through approval · `/api/google/mail/* and /api/google/calendar/*` | [tools.js](../../../public/js/agent/tools.js), [mail.js](../../../public/js/features/connectors/mail.js), [google-route.js](../../../server/google-route.js) |
+| 7 | Agent runtime → Google | When connected, the mail and calendar tools join the agent’s tools on the server and call Google with the tokens from the cookie; writes go through approval · `/api/google/mail/* and /api/google/calendar/*` | [connectors.js](../../../server/agent/tools/connectors.js), [google-route.js](../../../server/google-route.js) |
 | 8 | Browser app → API server | On Disconnect Google, calls the endpoint, turns both connectors off and records an audit entry · `disconnect endpoint` | [connectors/index.js](../../../public/js/features/connectors/index.js) |
 
 ## When it goes wrong
