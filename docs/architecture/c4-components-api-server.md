@@ -101,3 +101,74 @@ flowchart TB
 - Agent runtime → User data and records: Saves messages and waits (function call)
 - User data and records → Neon Postgres: Reads and writes (SQL)
 
+## How each feature works with the agent
+
+### Agent chat
+
+- **Feature → agent:** Submitting the composer, example chips or a feature button posts the message to /api/agent/turn.
+- **The agent:** The agent runtime saves the message, runs the tool loop on the server, waits for approvals and browser tools, and saves the reply as it streams.
+- **Agent → feature:** The page shows streamed text, tool chips and approval cards; if the stream drops it polls /api/state until the reply is finished, on any device.
+
+| Tool | Effect | Needs approval |
+|---|---|---|
+| `browser_fill` | Fills form fields in the Chrome tab | no |
+| `browser_click` | Clicks a button, including Submit | yes |
+
+Code: `public/js/agent/run.js`, `public/js/features/chat/chat.js`, `server/agent/runtime.js`, `server/agent/http.js`
+
+### Library
+
+- **Feature → agent:** Questions about notes, or goal steps that need a résumé, call the docs tools; the page adds and deletes documents through the API.
+- **The agent:** Searches and reads documents and saves or removes notes, citing the source.
+- **Agent → feature:** The Library list reloads after the turn changes it.
+
+| Tool | Effect | Needs approval |
+|---|---|---|
+| `docs_search` | Searches documents | no |
+| `docs_read` | Reads a document | no |
+| `docs_add` | Saves a document | no |
+| `docs_remove` | Deletes a document | no |
+
+Code: `server/agent/tools/library.js`, `public/js/features/library/library.js`, `server/docs.js`
+
+### Ideas
+
+- **Feature → agent:** Do it sends the idea to chat; Make it a goal sends a plan request.
+- **The agent:** Saves ideas shared in chat and acts on or plans an idea.
+- **Agent → feature:** The Ideas page reloads its cards after the turn.
+
+| Tool | Effect | Needs approval |
+|---|---|---|
+| `save_idea` | Creates an idea | no |
+
+Code: `server/agent/tools/ideas.js`, `public/js/features/ideas/ideas.js`, `server/ideas.js`
+
+### Goals
+
+- **Feature → agent:** The goal form and Ask Muse to move this forward send chat messages; the open app starts the daily check-in.
+- **The agent:** Creates plans, moves steps only with tool evidence from the same turn (enforced on the server), revises plans with approval, and tracks applications with proof.
+- **Agent → feature:** Goal cards reload with step status, progress, target and applications.
+
+| Tool | Effect | Needs approval |
+|---|---|---|
+| `create_goal` | Creates a goal with steps, target and deadline | no |
+| `update_step` | Sets a step’s status, with tool evidence | no |
+| `revise_plan` | Rewords, adds or removes steps | yes |
+| `track_application` | Adds or updates a job application | no |
+
+Code: `server/agent/tools/goals.js`, `server/agent/tools/jobs.js`, `public/js/features/goals/goals.js`, `public/js/workflow/checkin.js`
+
+### Connectors
+
+- **Feature → agent:** The user asks about email, calendar or contacts; connected services add their tools to the turn.
+- **The agent:** Searches and reads Gmail, sends mail, manages Calendar events and looks up contacts; writes ask first.
+- **Agent → feature:** Chat shows tool chips and approval cards; the Connectors page shows connection and permissions.
+
+| Tool | Effect | Needs approval |
+|---|---|---|
+| `mail_search` | Searches Gmail | no |
+| `mail_send` | Sends an email | yes |
+| `calendar_add` | Adds an event | yes |
+
+Code: `server/agent/tools/connectors.js`, `public/js/features/connectors/index.js`, `server/google.js`
+
