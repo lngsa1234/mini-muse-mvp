@@ -87,5 +87,5 @@ flowchart TB
 ## Not confirmed
 
 - Mapped by hand from the server-runtime change (ADR-0008, ADR-0009), not by a full Alex run; every cited path is checked against the repository.
-- Tracing components (server/trace-node.js, server/trace-store.js) are left out of the component view.
+- Tracing components (server/trace-node.js, server/trace-store.js) are left out of the component view. Job-board search (server/jobs.js) is inside the API server, so the boards are not drawn.
 

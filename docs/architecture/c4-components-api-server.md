@@ -25,23 +25,25 @@ flowchart LR
     end
     subgraph k_tools["Tool plumbing"]
       tool_set["<b>Tool set</b><br/>Component: JS"]
-      browser_relay["<b>Browser tool relay</b><br/>Component: SSE, wait records"]
+    end
+    subgraph k_feature["Feature tools"]
+      goal_tools["<b>Goal and job tools</b><br/>Component: JS"]
+      library_tools["<b>Library tools</b><br/>Component: JS"]
+      ideas_tools["<b>Ideas tools</b><br/>Component: JS"]
+      connector_tools["<b>Connector tools</b><br/>Component: JS"]
+      memory_tools["<b>Memory tools</b><br/>Component: JS"]
+      web_tools["<b>Web search tools</b><br/>Component: JS"]
+      browser_relay["<b>Browser bridge tools</b><br/>Component: SSE, wait records"]
     end
     subgraph k_state["Data access"]
       user_data["<b>User data and records</b><br/>Component: Neon driver"]
     end
-    subgraph k_feature["Feature tools"]
-      goal_tools["<b>Goal and job tools</b><br/>Component: JS"]
-      library_tools["<b>Library and ideas tools</b><br/>Component: JS"]
-      connector_tools["<b>Connector tools</b><br/>Component: JS"]
-      memory_web_tools["<b>Memory and web tools</b><br/>Component: JS"]
-    end
   end
   subgraph services["Services and data"]
-    openai["<b>OpenAI API</b><br/>Software system"]
-    google_apis["<b>Google Gmail and Calendar</b><br/>Software system"]
     neon_postgres[("<b>Neon Postgres</b><br/>Container: Postgres")]
+    openai["<b>OpenAI API</b><br/>Software system"]
     tavily["<b>Tavily web search</b><br/>Software system"]
+    google_apis["<b>Google Gmail and Calendar</b><br/>Software system"]
   end
   browser_app -->|"Posts turns and answers"| agent_http
   agent_http -->|"Starts a turn"| agent_runtime
@@ -49,10 +51,14 @@ flowchart LR
   prompt_model -->|"Streams completions"| openai
   agent_runtime -->|"Runs requested tools"| tool_set
   tool_set -->|"Includes"| k_feature
-  tool_set -->|"Includes"| browser_relay
   browser_relay -.->|"Asks the tab to run it"| browser_app
+  goal_tools -->|"Saves goals and applications"| user_data
+  library_tools -->|"Saves documents"| user_data
+  ideas_tools -->|"Saves ideas"| user_data
+  memory_tools -->|"Saves facts"| user_data
   connector_tools -->|"Reads and writes"| google_apis
-  memory_web_tools -->|"Searches pages"| tavily
+  web_tools -->|"Searches and opens pages"| tavily
+  goal_tools -->|"Opens job postings"| tavily
   agent_runtime -->|"Saves messages and waits"| user_data
   user_data -->|"Reads and writes"| neon_postgres
   classDef person fill:#08427b,stroke:#052e56,color:#ffffff
@@ -61,10 +67,10 @@ flowchart LR
   classDef agent fill:#c2185b,stroke:#880e4f,color:#ffffff
   classDef external fill:#8a8a8a,stroke:#6b6b6b,color:#ffffff
   classDef boundary fill:none,stroke:#888888,stroke-dasharray:6 4,color:#555555
-  class agent_http,tool_set,goal_tools,library_tools,connector_tools,memory_web_tools,browser_relay,user_data component
+  class agent_http,tool_set,goal_tools,library_tools,ideas_tools,connector_tools,memory_tools,web_tools,browser_relay,user_data component
   class agent_runtime,prompt_model agent
-  class browser_app,openai,google_apis,neon_postgres,tavily container
-  class app,k_shell,k_agent,k_tools,k_state,k_feature,clients,services boundary
+  class browser_app,neon_postgres,openai,tavily,google_apis container
+  class app,k_shell,k_agent,k_tools,k_feature,k_state,clients,services boundary
 ```
 
 ## Components
@@ -74,12 +80,14 @@ flowchart LR
 | Agent endpoints | Endpoints | Turn, answer, cancel and state endpoints; streams turn events to the page. | `server/agent/http.js`, `api/agent.js`, `server/state.js` |
 | Agent runtime | Agent | Runs one turn at a time per user: shortcuts, the tool loop up to 12 steps, approvals and browser-tool waits, and Stop. | `server/agent/runtime.js`, `server/agent/loop.js` |
 | Prompt and model client | Agent | Builds the prompt from saved data and calls the model with the server-held key and a model picked by tier. | `server/agent/prompt.js`, `server/agent/llm.js`, `server/routing.js` |
-| Tool set | Tool plumbing | Collects each feature’s tools and the connected services’ tools for a turn. | `server/agent/tools/index.js`, `server/agent/tools/schema.js` |
+| Tool set | Tool plumbing | Collects the tools of each feature and of the connected services for a turn. | `server/agent/tools/index.js`, `server/agent/tools/schema.js` |
 | Goal and job tools | Feature tools | create_goal, update_step, revise_plan, track_application, jobs_search and score_fit, with the evidence rules. | `server/agent/tools/goals.js`, `server/agent/tools/jobs.js` |
-| Library and ideas tools | Feature tools | docs_search, docs_read, docs_add, docs_remove and save_idea. | `server/agent/tools/library.js`, `server/agent/tools/ideas.js` |
+| Library tools | Feature tools | docs_search, docs_read, docs_add and docs_remove. | `server/agent/tools/library.js` |
+| Ideas tools | Feature tools | save_idea. | `server/agent/tools/ideas.js` |
 | Connector tools | Feature tools | Gmail, Calendar and Contacts tools; writes ask for approval. | `server/agent/tools/connectors.js` |
-| Memory and web tools | Feature tools | remember, forget, web_search and web_open. | `server/agent/tools/memory.js`, `server/agent/tools/web.js` |
-| Browser tool relay | Tool plumbing | Sends browser_* tools to the tab that started the turn and waits for the result. | `server/agent/tools/browser.js` |
+| Memory tools | Feature tools | remember and forget, saved with the user’s state. | `server/agent/tools/memory.js` |
+| Web search tools | Feature tools | web_search and web_open, through Tavily. | `server/agent/tools/web.js` |
+| Browser bridge tools | Feature tools | browser_open, browser_snapshot, browser_fields, browser_fill and browser_click (asks first); each runs in the tab that started the turn, which waits for the result. | `server/agent/tools/browser.js` |
 | User data and records | Data access | Chat, state, waits and the activity log, plus the goals, docs and ideas handlers. | `server/userdata.js`, `server/agent/repo.js`, `server/goals.js`, `server/docs.js`, `server/ideas.js` |
 
 ## How they talk
@@ -90,13 +98,20 @@ flowchart LR
 - Prompt and model client → OpenAI API: Streams completions (HTTPS/SSE)
 - Agent runtime → Tool set: Runs requested tools (function call)
 - Tool set → Goal and job tools: Includes
-- Tool set → Library and ideas tools: Includes
+- Tool set → Library tools: Includes
+- Tool set → Ideas tools: Includes
 - Tool set → Connector tools: Includes
-- Tool set → Memory and web tools: Includes
-- Tool set → Browser tool relay: Includes
-- Browser tool relay → Browser app: Asks the tab to run it (SSE)
+- Tool set → Memory tools: Includes
+- Tool set → Web search tools: Includes
+- Tool set → Browser bridge tools: Includes
+- Browser bridge tools → Browser app: Asks the tab to run it (SSE)
+- Goal and job tools → User data and records: Saves goals and applications (function call)
+- Library tools → User data and records: Saves documents (function call)
+- Ideas tools → User data and records: Saves ideas (function call)
+- Memory tools → User data and records: Saves facts (function call)
 - Connector tools → Google Gmail and Calendar: Reads and writes (OAuth 2.0/HTTPS)
-- Memory and web tools → Tavily web search: Searches pages (HTTPS)
+- Web search tools → Tavily web search: Searches and opens pages (HTTPS)
+- Goal and job tools → Tavily web search: Opens job postings (HTTPS)
 - Agent runtime → User data and records: Saves messages and waits (function call)
 - User data and records → Neon Postgres: Reads and writes (SQL)
 
