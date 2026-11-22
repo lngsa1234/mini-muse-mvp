@@ -20,31 +20,31 @@ workflows and decisions).
 ## How it works
 
 ```
-Browser (public/js: features register tools + pages; agent/ runs the loop)
-   │  agent/loop.js
-   │     • runs the tool-use agent loop in the browser
-   │     • tools execute locally and mutate app state / show approvals
+Browser (public/js: pages; agent/run.js shows a turn as it runs)
+   │  POST /api/agent/turn  ──►  Server-Sent Events back (text, tool chips, approval cards)
    ▼
-POST /api/llm       (server/index.js locally, api/llm.js on Vercel)
-   │  • injects OPENAI_API_KEY               (server/proxy.js)
-   │  • maps tier ("quick"/"default") → model (server/routing.js)
-   │  • pipes the streaming response straight back
+Server agent (server/agent/: runtime, prompt, tools, loop)
+   │  • builds the prompt from the user's saved memory, ideas, goals, settings
+   │  • runs the tool loop; approvals and evidence rules are enforced here
+   │  • maps tier ("quick"/"default") → model, injects OPENAI_API_KEY
    ▼
 https://api.openai.com/v1/chat/completions
 ```
 
-- **Agent loop** lives in the browser (`public/js/agent/`): it sends the
-  conversation + tool definitions to OpenAI, streams the reply, executes any
-  requested tools client-side, feeds results back, and repeats until the model
-  answers.
-- **Features** (`public/js/features/`) each register their own page, tools and
-  prompt guidance, so adding a tool or connector touches one folder.
-- **Persistence** is split: the **Library** stores documents in **Neon
-  (Postgres)** (`/api/docs`). Uploaded files have their text extracted and
-  stored for search; the original file is not retained. Everything else (chat,
-  ideas, goals, memory, prefs) still uses `localStorage`. The document schema
-  has a `user_id` column so it's multi-user ready, but ships with one hardcoded
-  dev user (see `server/auth.js`) until auth is added.
+- **The agent loop runs on the server** (`server/agent/`, ADR-0009). It saves
+  the chat as it goes, so a turn keeps going if the tab closes and every device
+  sees the result. Approval cards wait on the server and can be answered from
+  any device. Chrome Browser Bridge tools are the exception: the server asks the
+  tab that started the turn to run them.
+- **Tools** live in `server/agent/tools/`, one module per feature with its
+  prompt guidance. Pages in `public/js/features/` register their UI.
+- **Everything is stored in Neon (Postgres)**, scoped by `user_id`: documents,
+  ideas, goals and traces, plus chat, memory, preferences, contacts, connector
+  permissions and the activity log (ADR-0008). Nothing is kept only in the
+  browser, so a laptop and a desktop show the same chat and memory. Uploaded
+  files have their text extracted for search; the original file is not
+  retained. The app ships with one hardcoded dev user (see `server/auth.js`)
+  until auth is added.
 - **Gmail and Google Calendar connectors** use a Google OAuth grant. Tokens
   are encrypted server-side into an HttpOnly cookie and never enter browser
   storage or the model prompt. Both connectors require the Google environment
@@ -152,7 +152,7 @@ public/
   js/
     main.js           entry point: loads features, boots the app
     core/             registry, state, storage, api (docs client), navigation, activity log
-    agent/            agent core: loop, transport, prompt, tools, run
+    agent/            run.js (talks to /api/agent/turn), transport (one-shot JSON), shared intent/policy
     workflow/         approvals, background check-in
     features/         chat, ideas, goals, library, memory, connectors, settings, hood
 server/
@@ -163,12 +163,18 @@ server/
   db.js               Neon Postgres access for documents
   extract.js          pulls searchable text out of PDF/DOCX/TXT uploads
   docs.js             document request handlers (shared with api/docs/)
+  agent/              the agent: runtime.js (one turn), loop.js, prompt.js, llm.js, tools/, http.js
+  userdata.js         chat, user state and agent waits in Postgres
+  state.js            /api/state handlers (shared with api/agent.js)
 api/
   llm.js              Vercel Edge Function: LLM proxy, used when deployed
   healthz.js          Vercel Edge Function: key-configured check
   docs/               Vercel Node functions: list/create (index.js) + delete ([id].js)
+  agent.js            Vercel Node function: /api/agent/* (turn stream, answer, cancel, tools)
+                      and /api/state/* (state, chat, activity log) — one function, since
+                      the Hobby plan allows at most 12 serverless functions
 db/
-  schema.sql          Postgres tables (users, documents)
+  schema.sql          Postgres tables (documents, ideas, goals, traces, user_state, chat_messages, agent_waits)
 scripts/
   db-init.mjs         npm run db:init — creates tables + seeds the example doc
 test/                 npm test

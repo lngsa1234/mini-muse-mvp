@@ -8,7 +8,7 @@ owner: Alex (Technical Lead)
 
 How the product works at runtime, flow by flow. Mapped by Alex from the code on 2026-11-22; every step's code is checked against the repository.
 
-- [How a chat turn runs](chat-turn.md) — A user message goes to the browser agent loop. The loop streams model replies through the server proxy, runs the tools the model asks for locally, and repeats until the model gives a final answer.
+- [How a chat turn runs](chat-turn.md) — A user message goes to the server agent. It builds the prompt from the user's saved data, runs the tool loop against OpenAI, saves the reply as it goes, and streams progress to the page.
 - [How sensitive actions get approval](tool-approval.md) — A tool that changes something pauses the turn and shows an approval card in chat. It continues only after the user answers.
 - [How a goal step advances](goal-step-progress.md) — Muse creates a goal with a plan and moves a step to doing or done only when a tool did that step's work in the same turn. Application statuses are checked against proof in the same way.
 - [How Google connectors sign in](google-connect.md) — Gmail and Calendar share one Google sign-in. The server keeps the tokens in an HttpOnly cookie, and the browser only learns whether Google is connected.

@@ -6,6 +6,8 @@ owner: Alex (Technical Lead)
 
 # Inside Browser app — Mini Muse
 
+> **Out of date since 2026-11-20.** [ADR-0008](../adr/0008-keep-chat-memory-and-settings-on-the-server-not-in-localstorage.md) moved chat, memory and settings from localStorage to Postgres, and [ADR-0009](../adr/0009-run-the-agent-loop-on-the-server.md) moved the agent loop, prompt and tools to the server (`server/agent/`). This map still shows the browser loop and is due to be mapped again.
+
 Repository: https://github.com/lngsa1234/mini-muse-mvp · Mapped: 2026-11-18 · Mapped by Alex from the code (C4 model)
 
 C4 level 3: the components inside Browser app, with the agent kept apart from each feature’s UI, and how every feature works with the agent. The surrounding containers are in [Containers](c4-containers.md).

@@ -23,7 +23,8 @@ async function main() {
   // (a pg-style client) to execute the raw DDL statements and the dev-user seed.
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   try {
-    const statements = schema.split(";").map(x => x.trim()).filter(Boolean);
+    // Drop "--" comments first: a ";" inside a comment would split a statement.
+    const statements = schema.replace(/--.*$/gm, "").split(";").map(x => x.trim()).filter(Boolean);
     for (const stmt of statements) await pool.query(stmt);
     console.log(`Applied ${statements.length} schema statement(s).`);
 

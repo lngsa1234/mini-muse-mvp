@@ -5,6 +5,23 @@
     {
       "source": "/api/google/:action*",
       "destination": "/api/google?action=:action*"
+    },
+    {
+      "source": "/api/agent/:action*",
+      "destination": "/api/agent?action=:action*"
+    },
+    {
+      "source": "/api/state",
+      "destination": "/api/agent?scope=state"
+    },
+    {
+      "source": "/api/state/:action*",
+      "destination": "/api/agent?scope=state&action=:action*"
     }
-  ]
+  ],
+  "functions": {
+    "api/agent.js": {
+      "maxDuration": 300
+    }
+  }
 }

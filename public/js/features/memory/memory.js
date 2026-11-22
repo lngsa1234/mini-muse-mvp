@@ -1,10 +1,10 @@
-// Memory: lasting facts about the user (Settings → Memory) and the remember / forget tools.
-import { $, esc, rid } from "../../core/dom.js";
+// Memory: lasting facts about the user (Settings → Memory). They are saved on the
+// server; the remember / forget tools run in the server agent (server/agent/tools/memory.js).
+import { $, esc } from "../../core/dom.js";
 import { state } from "../../core/state.js";
 import { defineFeature, onClick, renderMine } from "../../core/registry.js";
 import { save } from "../../core/storage.js";
 import { audit } from "../../core/activity.js";
-import { S } from "../../core/schema.js";
 
 function renderMemory() {
   const m = state.memory;
@@ -18,24 +18,5 @@ onClick("delMem", id => { const f = state.memory.find(x => x.id === id); state.m
 
 defineFeature({
   id: "memory",
-  render: renderMemory,
-  guidance: "Memory: when the user shares a lasting fact or preference, call remember. When they ask you to forget something, call forget.",
-  tools: [
-    { name: "remember", description: "Save one lasting fact or preference about the user. Returns a confirmation.",
-      inputSchema: { type: "object", properties: { fact: S }, required: ["fact"] },
-      run: ({ fact }, _ctx, h) => {
-        fact = String(fact || "").trim(); if (!fact) throw new Error("fact is empty");
-        if (state.memory.some(f => f.fact.toLowerCase() === fact.toLowerCase())) return "Already remembered.";
-        state.memory.push({ id: rid(), fact, t: Date.now() }); h.act(fact); return "Saved to memory.";
-      } },
-    { name: "forget", description: "Delete every memory containing the keyword. Returns what was removed.",
-      inputSchema: { type: "object", properties: { keyword: S }, required: ["keyword"] },
-      run: ({ keyword }, _ctx, h) => {
-        const k = String(keyword || "").toLowerCase().trim(); if (!k) throw new Error("keyword is empty");
-        const gone = state.memory.filter(f => f.fact.toLowerCase().includes(k));
-        state.memory = state.memory.filter(f => !gone.includes(f));
-        if (!gone.length) return "No memory matched '" + keyword + "'.";
-        h.act("Forgot: " + gone.map(g => g.fact).join("; ")); return { removed: gone.map(g => g.fact) };
-      } }
-  ]
+  render: renderMemory
 });

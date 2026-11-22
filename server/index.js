@@ -1,8 +1,8 @@
 /*
  * Mini Muse backend (local development)
  * -------------------------------------------------------------------------
- * Serves the static front-end and proxies the OpenAI API so the
- * API key stays on the server. The browser sends a `tier` ("quick" | "default")
+ * Serves the static front-end, runs the agent (server/agent/, ADR-0009) and
+ * proxies the OpenAI API so the API key stays on the server. The browser sends a `tier` ("quick" | "default")
  * and server/routing.js maps it to a configured model; the raw response
  * (including the SSE stream) is piped straight back to the client.
  *
@@ -23,6 +23,9 @@ import * as web from "./web.js";
 import * as jobs from "./jobs.js";
 import * as google from "./google.js";
 import * as trace from "./trace.js";
+import { dispatchState } from "./state.js";
+import { dbStore } from "./userdata.js";
+import { handleAgent } from "./agent/http.js";
 import { withTrace } from "./trace-node.js";
 import { makeCollector, startSpan, parseTraceparent, SPAN_KIND, STATUS } from "./trace-core.js";
 import { writeBatch } from "./trace-store.js";
@@ -91,6 +94,19 @@ app.post("/api/google/mail/send", googleRoute(req => google.googleMailSend(req, 
 app.post("/api/google/calendar/list", googleRoute(req => google.googleCalendarList(req, req.body, process.env)));
 app.post("/api/google/calendar/add", googleRoute(req => google.googleCalendarAdd(req, req.body, process.env)));
 app.post("/api/google/calendar/remove", googleRoute(req => google.googleCalendarRemove(req, req.body, process.env)));
+
+/* ---------- User state + chat history (Neon, ADR-0008) ---------- */
+app.get("/api/state", route("GET /api/state", req => dispatchState(dbStore(), { method: "GET", userId: currentUserId(req) })));
+app.patch("/api/state", route("PATCH /api/state", req => dispatchState(dbStore(), { method: "PATCH", userId: currentUserId(req), body: req.body })));
+app.post("/api/state/:action", route("POST /api/state/:action", req => dispatchState(dbStore(), { method: "POST", action: req.params.action, userId: currentUserId(req), body: req.body })));
+app.delete("/api/state/:action", route("DELETE /api/state/:action", req => dispatchState(dbStore(), { method: "DELETE", action: req.params.action, userId: currentUserId(req) })));
+
+/* ---------- Server-side agent (ADR-0009) ---------- */
+// /api/agent/turn streams Server-Sent Events; the rest are small JSON calls.
+app.all("/api/agent/:action", async (req, res) => {
+  try { await handleAgent(req.params.action, req, res, req.body || {}); }
+  catch (e) { if (!res.headersSent) res.status(500).json({ error: e.message }); else res.end(); }
+});
 
 /* ---------- Observability (ingest + viewer) ---------- */
 // Query-based dispatch shared with api/trace.js. These routes are NOT wrapped

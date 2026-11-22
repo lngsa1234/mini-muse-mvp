@@ -7,7 +7,7 @@ paths:
 # ADR-0001: Run the agent loop in the browser, not on the server
 
 **Date**: 2026-11-18
-**Status**: accepted
+**Status**: superseded by [ADR-0009](0009-run-the-agent-loop-on-the-server.md)
 **Deciders**: Recorded by Alex (Technical Lead) from the code
 **Shipped**: Implemented
 

@@ -131,3 +131,49 @@ create index if not exists logs_trace
 
 create index if not exists logs_created
   on logs (created_at);
+
+-- ---------------------------------------------------------------------------
+-- Per-user app state, chat history and agent waits (see ADR-0008).
+-- These used to live in each browser's localStorage, so every device had its
+-- own chat and memory. Now one copy lives here, keyed by user_id.
+
+-- Everything that isn't a document, idea, goal or chat message: memory facts,
+-- contacts, prefs, connector permissions, the activity log, seeded flags...
+-- One JSONB object. Clients PATCH top-level keys (data || patch).
+create table if not exists user_state (
+  user_id    text primary key,
+  data       jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+-- Chat messages. data holds the whole message ({ role, text, acts, error, ... }),
+-- and t (ms since epoch) orders them. The server agent writes assistant messages
+-- while a turn runs, so other devices see the turn as it happens.
+create table if not exists chat_messages (
+  id         text primary key,
+  user_id    text not null,
+  t          bigint not null,
+  data       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists chat_messages_user_t
+  on chat_messages (user_id, t);
+
+-- A running server-side turn waiting on the browser: an approval card
+-- (kind = approval) or a browser-only tool such as the Chrome bridge
+-- (kind = client_tool). The browser answers through /api/agent/answer.
+create table if not exists agent_waits (
+  id          text primary key,
+  user_id     text not null,
+  message_id  text not null,
+  kind        text not null,
+  request     jsonb not null default '{}'::jsonb,
+  response    jsonb,
+  status      text not null default 'pending',   -- pending | answered | expired
+  created_at  timestamptz not null default now(),
+  answered_at timestamptz
+);
+
+create index if not exists agent_waits_message
+  on agent_waits (message_id);
