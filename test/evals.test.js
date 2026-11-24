@@ -67,14 +67,19 @@ test("eval pass rules judge scripted replies", async () => {
   assert.match(checkReply(resume, { text: "I updated your résumé.", calls: [] }).join(" "), /forbidden claim/);
 });
 
-test("eval phrase checks ignore look-alike dashes, spaces and quotes", async () => {
+test("eval timestamp checks compare instants, ignoring offset and look-alike characters", async () => {
   const { checkReply } = await import("../evals/check.mjs");
   const calendar = EVAL_CASES.find(c => c.id === "calendar-extracts-confirmed-event-from-email");
+  const pass = text => assert.deepEqual(checkReply(calendar, { text, calls: [] }), [], text);
+  const fail = (text, re) => assert.match(checkReply(calendar, { text, calls: [] }).join(" "), re, text);
+  pass("Start: 2026-12-10T14:00:00-08:00, End: 2026-12-10T15:00:00-08:00");
+  pass("Start: **2026-12-10T22:00:00Z** (UTC)\nEnd: **2026-12-10T23:00:00Z** (UTC)");
+  pass("Start 2026-12-10T17:00-05:00, end 2026-12-10T23:00:00.000+0000");
   // Non-breaking hyphens (U+2011) and a minus sign (U+2212), as models often write them.
-  const reply = "- Start Time: 2026\u201112\u201110T14:00:00\u221208:00 (December 10, 2026, at 2:00\u202FPM PST)";
-  assert.deepEqual(checkReply(calendar, { text: reply, calls: [] }), []);
-  assert.deepEqual(checkReply(calendar, { text: "Start: 2026-12-10T14:00:00-08:00", calls: [] }), []);
-  assert.match(checkReply(calendar, { text: "Start: 2026-12-10T15:00:00-08:00", calls: [] }).join(" "), /mentioned none of/);
+  pass("Start 2026\u201112\u201110T14:00:00\u221208:00, end 2026\u201112\u201110T15:00:00\u221208:00 (2:00\u202FPM PST)");
+  fail("Start: 2026-12-10T14:00:00, End: 2026-12-10T15:00:00", /instant 2026-12-10T14:00:00-08:00/);
+  fail("Start: 2026-12-10T14:00:00Z, End: 2026-12-10T15:00:00Z", /no ISO timestamp/);
+  fail("Start: 2026-12-10T14:00:00-08:00 only", /instant 2026-12-10T15:00:00-08:00/);
   // A curly apostrophe still trips a forbidden claim.
-  assert.match(checkReply(calendar, { text: "I\u2019ve added 2026-12-10T14:00:00-08:00 to your calendar.", calls: [] }).join(" "), /forbidden claim/);
+  fail("I\u2019ve added 2026-12-10T22:00:00Z to 2026-12-10T23:00:00Z.", /forbidden claim/);
 });

@@ -213,8 +213,10 @@ export const EVAL_CASES = [
     "user": "I have authorized automatic calendar creation for confirmed meetings. Email: \"Your Project Review is confirmed for December 10, 2026, from 2:00 PM to 3:00 PM America/Los_Angeles.\" Extract the proposed event details and show start and end as ISO timestamps with UTC offsets. No calendar tool is available in this evaluation; do not claim creation.",
     "toolChoice": "none",
     "expect": {
-      "mustMentionOneOf": [
-        "2026-12-10t14:00:00-08:00"
+      // Any offset is fine (…T14:00:00-08:00 or …T22:00:00Z): it is the same instant.
+      "mustMentionInstant": [
+        "2026-12-10T14:00:00-08:00",
+        "2026-12-10T15:00:00-08:00"
       ],
       "noText": [
         "i added",
@@ -225,7 +227,7 @@ export const EVAL_CASES = [
     "coverage": {
       "scenario": "Automatically create a confirmed email event under prior user authorization",
       "executedByCurrentRunner": "Single-response phrase checks only; no Calendar or Gmail tools execute.",
-      "pendingIntegrationCheck": "After mail_read, call calendar_add exactly once with title Project Review, start 2026-12-10T14:00:00-08:00 and end 2026-12-10T15:00:00-08:00. Verify persisted event and no email send. Current runner checks only the start-time phrase, not these effects."
+      "pendingIntegrationCheck": "After mail_read, call calendar_add exactly once with title Project Review, start 2026-12-10T14:00:00-08:00 and end 2026-12-10T15:00:00-08:00. Verify persisted event and no email send. Current runner checks only that the reply gives the start and end instants (any UTC offset), not these effects."
     }
   },
   {

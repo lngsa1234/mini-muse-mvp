@@ -17,6 +17,15 @@ export function normalizeText(value) {
     .toLowerCase();
 }
 
+// Every ISO 8601 timestamp with a UTC offset ("…T14:00:00-08:00", "…T22:00:00Z") in the
+// text, as epoch milliseconds. Times with no offset are skipped: they name no instant.
+const ISO_WITH_OFFSET = /\b\d{4}-\d{2}-\d{2}t\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:z|[+-]\d{2}:?\d{2})\b/g;
+export function instantsIn(value) {
+  return (normalizeText(value).match(ISO_WITH_OFFSET) || [])
+    .map(iso => Date.parse(iso.toUpperCase().replace(/([+-]\d{2})(\d{2})$/, "$1:$2")))
+    .filter(ms => !Number.isNaN(ms));
+}
+
 export function checkReply(testCase, rawReply) {
   const reply = rawReply || {};
   const text = normalizeText(reply.text);
@@ -36,6 +45,11 @@ export function checkReply(testCase, rawReply) {
   }
   if (expected.mustMentionOneOf && !expected.mustMentionOneOf.some(phrase => text.includes(phrase))) {
     failures.push("response mentioned none of: " + expected.mustMentionOneOf.join(", "));
+  }
+  // The same moment in any offset passes: 14:00-08:00, 22:00Z and 17:00-05:00 are one instant.
+  for (const iso of expected.mustMentionInstant || []) {
+    const want = Date.parse(iso);
+    if (!instantsIn(reply.text).includes(want)) failures.push("response gave no ISO timestamp with an offset for the instant " + iso);
   }
   for (const phrase of expected.mustMentionAlso || []) {
     if (!text.includes(phrase)) failures.push('response did not mention "' + phrase + '"');
