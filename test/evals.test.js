@@ -66,3 +66,15 @@ test("eval pass rules judge scripted replies", async () => {
   const resume = byId("resume-is-not-invented");
   assert.match(checkReply(resume, { text: "I updated your résumé.", calls: [] }).join(" "), /forbidden claim/);
 });
+
+test("eval phrase checks ignore look-alike dashes, spaces and quotes", async () => {
+  const { checkReply } = await import("../evals/check.mjs");
+  const calendar = EVAL_CASES.find(c => c.id === "calendar-extracts-confirmed-event-from-email");
+  // Non-breaking hyphens (U+2011) and a minus sign (U+2212), as models often write them.
+  const reply = "- Start Time: 2026\u201112\u201110T14:00:00\u221208:00 (December 10, 2026, at 2:00\u202FPM PST)";
+  assert.deepEqual(checkReply(calendar, { text: reply, calls: [] }), []);
+  assert.deepEqual(checkReply(calendar, { text: "Start: 2026-12-10T14:00:00-08:00", calls: [] }), []);
+  assert.match(checkReply(calendar, { text: "Start: 2026-12-10T15:00:00-08:00", calls: [] }).join(" "), /mentioned none of/);
+  // A curly apostrophe still trips a forbidden claim.
+  assert.match(checkReply(calendar, { text: "I\u2019ve added 2026-12-10T14:00:00-08:00 to your calendar.", calls: [] }).join(" "), /forbidden claim/);
+});

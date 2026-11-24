@@ -39,6 +39,11 @@ for (const testCase of selected) {
   results.push(result);
   console.log((result.pass ? "PASS" : "FAIL") + "  " + result.id);
   for (const failure of result.failures) console.log("      " + failure);
+  // Show the reply, with non-ASCII characters escaped so look-alikes (U+2011 etc.) are visible.
+  if (!result.pass && result.text) {
+    const shown = result.text.slice(0, 600).replace(/[^\x20-\x7E\n]/g, ch => "\\u" + ch.charCodeAt(0).toString(16).padStart(4, "0").toUpperCase());
+    console.log("      reply: " + shown.split("\n").join("\n             "));
+  }
 }
 
 const failed = results.filter(result => !result.pass);

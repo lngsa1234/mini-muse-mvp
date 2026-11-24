@@ -2,11 +2,34 @@
  * An eval case's pass rule, applied to Muse's reply ({ text, calls: [{ name, input }] }).
  * Kept apart from the runner so tests can check the rules with scripted replies.
  */
-export function checkReply(testCase, reply) {
-  const text = String(reply.text || "").toLowerCase();
+// Models often write look-alike characters: a non-breaking hyphen (U+2011) or minus
+// sign (U+2212) in "2026-12-10T14:00:00-08:00", a narrow no-break space in "2:00 PM",
+// curly apostrophes in "I've". They read the same but fail a plain includes(), so
+// the reply and every phrase are folded to plain ASCII forms before comparing.
+export function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[‐-―−﹘﹣－]/g, "-")
+    .replace(/[‘’‛′]/g, "'")
+    .replace(/[“”‟″]/g, '"')
+    .replace(/[​-‍⁠﻿­]/g, "")
+    .replace(/[\s  ]+/g, " ")
+    .toLowerCase();
+}
+
+export function checkReply(testCase, rawReply) {
+  const reply = rawReply || {};
+  const text = normalizeText(reply.text);
+  const fold = phrases => (phrases || []).map(normalizeText);
+  const expected = {
+    ...testCase.expect,
+    noText: fold(testCase.expect.noText),
+    mustMentionAlso: fold(testCase.expect.mustMentionAlso),
+    createGoalStepsAvoid: fold(testCase.expect.createGoalStepsAvoid),
+    ...(testCase.expect.mustMentionOneOf ? { mustMentionOneOf: fold(testCase.expect.mustMentionOneOf) } : {})
+  };
   const calls = (reply.calls || []).map(call => ({ function: { name: call.name, arguments: JSON.stringify(call.input || {}) } }));
   const failures = [];
-  const expected = testCase.expect;
 
   for (const phrase of expected.noText || []) {
     if (text.includes(phrase)) failures.push('response included forbidden claim: "' + phrase + '"');
@@ -34,7 +57,7 @@ export function checkReply(testCase, reply) {
   for (const call of calls.filter(call => call.function?.name === "create_goal")) {
     let args = {};
     try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
-    const steps = (args.steps || []).join(" | ").toLowerCase();
+    const steps = normalizeText((args.steps || []).join(" | "));
     for (const phrase of expected.createGoalStepsAvoid || []) if (steps.includes(phrase)) failures.push('plan step mentions "' + phrase + '": ' + steps);
   }
 
