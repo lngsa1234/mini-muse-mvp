@@ -78,7 +78,10 @@ export const EVAL_CASES = [
         "no reply",
         "no response",
         "does not need",
-        "doesn't need"
+        "doesn't need",
+        "do not need",
+        "don't need",
+        "no need"
       ],
       "noText": [
         "i sent",
@@ -301,7 +304,10 @@ export const EVAL_CASES = [
         "could not",
         "couldn't",
         "unable to",
-        "was not set"
+        "was not set",
+        "has not been",
+        "is not set",
+        "isn't set"
       ],
       "mustMentionAlso": [
         "reminder"

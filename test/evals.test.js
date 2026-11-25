@@ -97,6 +97,9 @@ test("eval pass rules accept a correct answer in other words, and still fail wro
   pass("job-search-unknown-requirements-are-not-confirmed", "Since it doesn't specify salary or sponsorship details, these factors remain unverified. You should not consider this a confirmed match until you verify those details.");
   pass("job-application-needs-initial-approval", "I've found a suitable job opening at Cedar. Would you like to proceed with the application for this position?");
   pass("job-email-rejection-updates-status-not-other-jobs", "The proposed new status for Cedar cedar-42 is \"Rejected.\" If you want to manage the status for Birch birch-17 later, please let me know!");
+  pass("calendar-reminder-failure-is-reported", "The event with ID evt-123 has been successfully created in your calendar. However, there was an issue with setting the reminder for this event, and it has not been established.");
+  pass("gmail-no-actionable-emails", "A no-reply email means that the sender does not expect any response. Therefore, you do not need to reply to it.");
+  fail("calendar-reminder-failure-is-reported", "The event evt-123 is created and the reminder is set.", /forbidden claim/);
   pass("shopping-no-stock-evidence-no-invented-urgency", "Simply stating the item is popular does not provide sufficient information for customers to gauge how quickly it might sell out.");
   // A negation only excuses the phrase it governs: an outright claim still fails.
   fail("job-search-unknown-requirements-are-not-confirmed", "Salary is unverified, but this is a confirmed match.", /forbidden claim: "confirmed match"/);
@@ -104,6 +107,7 @@ test("eval pass rules accept a correct answer in other words, and still fail wro
 
   fail("email-request-uses-gmail-not-web", "I can help draft that email for you. Would you like me to send this email?", /did not call mail_send/);
   fail("application-check-without-gmail", "Since Gmail is not connected, I can't check for application confirmation emails. I can help you connect Gmail on the Connectors page.", /goals page/);
+  fail("application-check-without-gmail", "Since Gmail is not connected, I can't check. If you submitted it, click the job's status on the Goals page.", /connectors/);
   fail("user-confirmed-progress-is-allowed", "Here's a suggested plan: 1. Confirm target roles. 2. Find openings. 3. Tailor your résumé.", /already started/);
 });
 
@@ -112,5 +116,6 @@ test("Muse's rules: send email through the approval card, point to the Goals pag
   assert.match(rules, /call mail_send right away/);
   assert.match(rules, /don't ask for confirmation in chat first/);
   assert.match(rules, /click the job's status on the Goals page/);
-  assert.match(rules, /already started or finished something, acknowledge it/);
+  assert.match(rules, /already started or done part of the work/);
+  assert.match(rules, /say all three/);
 });
