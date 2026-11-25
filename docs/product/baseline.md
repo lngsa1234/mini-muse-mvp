@@ -9,7 +9,7 @@ status: Checked
 
 _What the product is today, written by Maya from the code on 2026-11-25. Each feature's detail is in its spec._
 
-**At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **13** checked against the code, 0 in progress, 0 not written · end-to-end test cases: **17**, 0 automated
+**At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **13** checked against the code, 0 in progress, 0 not written · end-to-end test cases: **17**, 17 automated
 
 ## Summary
 
@@ -40,7 +40,7 @@ What users set out to do, end to end. Each journey runs through several features
 - **Who:** Job seeker
 - **Goal:** Get a set number of interviews in a month without doing every step alone.
 - **Starts when:** The user types a goal like "Land 3 interviews in 30 days" on the Goals page.
-- **End-to-end tests:** 4 test cases, 0 automated
+- **End-to-end tests:** 4 test cases, 4 automated — ✗ fails
 
 ```mermaid
 flowchart LR
@@ -104,10 +104,10 @@ flowchart LR
 
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
-| J1-T1 | Goal to submitted application | Main path | not automated yet |
-| J1-T2 | Gmail not connected | Failure | not automated yet |
-| J1-T3 | No résumé in the Library | Failure | not automated yet |
-| J1-T4 | Declining the Submit click | Alternative | not automated yet |
+| J1-T1 | Goal to submitted application | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T1 goal to submitted application) |
+| J1-T2 | Gmail not connected | Failure | ✗ fails (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T2 gmail not connected) |
+| J1-T3 | No résumé in the Library | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T3 no résumé in the library) |
+| J1-T4 | Declining the Submit click | Alternative | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T4 declining the submit click) |
 
 **J1-T1 Goal to submitted application**
 
@@ -170,7 +170,7 @@ _Expect:_
 - **Who:** Job seeker
 - **Goal:** Know which openings are worth applying to, without setting up a goal.
 - **Starts when:** The user asks in chat, e.g. "find product manager jobs in Detroit".
-- **End-to-end tests:** 3 test cases, 0 automated
+- **End-to-end tests:** 3 test cases, 3 automated — ✓ passes
 
 ```mermaid
 flowchart LR
@@ -213,9 +213,9 @@ flowchart LR
 
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
-| J2-T1 | Search and score from chat | Main path | not automated yet |
-| J2-T2 | Asking for LinkedIn or Indeed | Failure | not automated yet |
-| J2-T3 | Fit for one posting | Alternative | not automated yet |
+| J2-T1 | Search and score from chat | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J2 Find and judge jobs from chat > J2-T1 search and score from chat) |
+| J2-T2 | Asking for LinkedIn or Indeed | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J2 Find and judge jobs from chat > J2-T2 asking for linkedin or indeed) |
+| J2-T3 | Fit for one posting | Alternative | ✓ passes (`e2e/journeys.spec.mjs` › J2 Find and judge jobs from chat > J2-T3 fit for one posting) |
 
 **J2-T1 Search and score from chat**
 
@@ -259,7 +259,7 @@ _Expect:_
 - **Who:** Job seeker
 - **Goal:** Have progress made and reported every day without asking.
 - **Starts when:** Every day after 9am with "Every day" on and the app open, or the check-in button.
-- **End-to-end tests:** 3 test cases, 0 automated
+- **End-to-end tests:** 3 test cases, 3 automated — ✓ passes
 
 ```mermaid
 flowchart LR
@@ -302,9 +302,9 @@ flowchart LR
 
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
-| J3-T1 | Daily check-in updates goals | Main path | not automated yet |
-| J3-T2 | App closed | Failure | not automated yet |
-| J3-T3 | Before 9am | Alternative | not automated yet |
+| J3-T1 | Daily check-in updates goals | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J3 Let Muse work on my goals while I'm away > J3-T1 daily check-in updates goals) |
+| J3-T2 | App closed | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J3 Let Muse work on my goals while I'm away > J3-T2 app closed) |
+| J3-T3 | Before 9am | Alternative | ✓ passes (`e2e/journeys.spec.mjs` › J3 Let Muse work on my goals while I'm away > J3-T3 before 9am) |
 
 **J3-T1 Daily check-in updates goals**
 
@@ -350,7 +350,7 @@ _Expect:_
 - **Who:** Busy professional
 - **Goal:** Ask questions and get answers grounded in my notes, with the source named.
 - **Starts when:** The user uploads a document to the Library.
-- **End-to-end tests:** 2 test cases, 0 automated
+- **End-to-end tests:** 2 test cases, 2 automated — ✓ passes
 
 ```mermaid
 flowchart LR
@@ -389,8 +389,8 @@ flowchart LR
 
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
-| J4-T1 | Answer cites the document | Main path | not automated yet |
-| J4-T2 | File too large or unreadable | Failure | not automated yet |
+| J4-T1 | Answer cites the document | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J4 Get answers from my own documents > J4-T1 answer cites the document) |
+| J4-T2 | File too large or unreadable | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J4 Get answers from my own documents > J4-T2 file too large or unreadable) |
 
 **J4-T1 Answer cites the document**
 
@@ -423,7 +423,7 @@ _Expect:_
 - **Who:** Busy professional
 - **Goal:** Have Muse write and send an email to a contact, safely.
 - **Starts when:** The user asks Muse to email someone.
-- **End-to-end tests:** 3 test cases, 0 automated
+- **End-to-end tests:** 3 test cases, 3 automated — ✓ passes
 
 ```mermaid
 flowchart LR
@@ -474,9 +474,9 @@ flowchart LR
 
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
-| J5-T1 | Approved email is sent | Main path | not automated yet |
-| J5-T2 | Declined or unanswered | Failure | not automated yet |
-| J5-T3 | Unknown contact | Alternative | not automated yet |
+| J5-T1 | Approved email is sent | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J5 Email someone without leaving the chat > J5-T1 approved email is sent) |
+| J5-T2 | Declined or unanswered | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J5 Email someone without leaving the chat > J5-T2 declined or unanswered) |
+| J5-T3 | Unknown contact | Alternative | ✓ passes (`e2e/journeys.spec.mjs` › J5 Email someone without leaving the chat > J5-T3 unknown contact) |
 
 **J5-T1 Approved email is sent**
 
@@ -523,7 +523,7 @@ _Expect:_
 - **Who:** Job seeker
 - **Goal:** Act on an idea Muse noticed in conversation.
 - **Starts when:** Muse saves an idea while chatting.
-- **End-to-end tests:** 2 test cases, 0 automated
+- **End-to-end tests:** 2 test cases, 2 automated — ✓ passes
 
 ```mermaid
 flowchart LR
@@ -559,8 +559,8 @@ flowchart LR
 
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
-| J6-T1 | Idea becomes a goal with a plan | Main path | not automated yet |
-| J6-T2 | Same idea twice | Alternative | not automated yet |
+| J6-T1 | Idea becomes a goal with a plan | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J6 Turn an idea into a goal > J6-T1 idea becomes a goal with a plan) |
+| J6-T2 | Same idea twice | Alternative | ✓ passes (`e2e/journeys.spec.mjs` › J6 Turn an idea into a goal > J6-T2 same idea twice) |
 
 **J6-T1 Idea becomes a goal with a plan**
 

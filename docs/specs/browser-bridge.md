@@ -2,11 +2,14 @@
 title: Browser bridge
 type: Feature spec
 featureId: browser-bridge
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Browser bridge
+
+**Feature:** Built · **Spec:** Complete · **QA:** 5 of 5 criteria pass
 
 **5 of 5** acceptance criteria checked against the code · 1 risk
 

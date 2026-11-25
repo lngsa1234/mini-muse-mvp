@@ -105,7 +105,14 @@
               "A tailored résumé or cover letter for the job is saved in the Library",
               "Nothing is submitted before the approval; the card asks whether every field was reviewed",
               "After approval the job shows as applied and the goal's application count goes up by one"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J1 Land interviews within a deadline > J1-T1 goal to submitted application"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Gmail not connected",
@@ -118,7 +125,14 @@
             "expected": [
               "Muse asks the user to click the job's status or connect Gmail",
               "The job is not marked applied"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J1 Land interviews within a deadline > J1-T2 gmail not connected"
+              }
+            ],
+            "qa": "fail"
           },
           {
             "title": "No résumé in the Library",
@@ -132,7 +146,14 @@
               "Muse asks the user to add a résumé",
               "No job is shown with a fit score",
               "The scoring step is not marked done"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J1 Land interviews within a deadline > J1-T3 no résumé in the library"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Declining the Submit click",
@@ -146,9 +167,17 @@
               "The form is not submitted",
               "The job is not marked applied",
               "The decline appears in the activity audit"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J1 Land interviews within a deadline > J1-T4 declining the submit click"
+              }
+            ],
+            "qa": "pass"
           }
-        ]
+        ],
+        "qa": "fail"
       },
       {
         "title": "Find and judge jobs from chat",
@@ -203,7 +232,14 @@
               "The reply lists jobs from employers' hiring sites with a link for each",
               "Each listed fit shows a score, a verdict and missing keywords",
               "No goal is created on the Goals page"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J2 Find and judge jobs from chat > J2-T1 search and score from chat"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Asking for LinkedIn or Indeed",
@@ -216,7 +252,14 @@
             "expected": [
               "Muse says it can't search LinkedIn or Indeed",
               "The jobs it lists come from employers' hiring sites"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J2 Find and judge jobs from chat > J2-T2 asking for linkedin or indeed"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Fit for one posting",
@@ -228,9 +271,17 @@
             ],
             "expected": [
               "The reply gives an overall score, a verdict, any dealbreakers and the missing keywords for that posting"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J2 Find and judge jobs from chat > J2-T3 fit for one posting"
+              }
+            ],
+            "qa": "pass"
           }
-        ]
+        ],
+        "qa": "pass"
       },
       {
         "title": "Let Muse work on my goals while I'm away",
@@ -286,7 +337,14 @@
               "The job with the confirmation email shows as applied",
               "No email is sent during the check-in",
               "Opening the page again the same day does not start a second check-in"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J3 Let Muse work on my goals while I'm away > J3-T1 daily check-in updates goals"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "App closed",
@@ -299,7 +357,14 @@
             "expected": [
               "No check-in ran while the app was closed",
               "No new progress brief from that day is in the chat"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J3 Let Muse work on my goals while I'm away > J3-T2 app closed"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Before 9am",
@@ -312,9 +377,17 @@
             "expected": [
               "No check-in runs before 9am",
               "Exactly one check-in runs after 9am"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J3 Let Muse work on my goals while I'm away > J3-T3 before 9am"
+              }
+            ],
+            "qa": "pass"
           }
-        ]
+        ],
+        "qa": "pass"
       },
       {
         "title": "Get answers from my own documents",
@@ -365,7 +438,14 @@
             "expected": [
               "The Library lists the document, titled after the file if no title was given",
               "Muse's answer gives the launch date from the notes and names the document"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J4 Get answers from my own documents > J4-T1 answer cites the document"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "File too large or unreadable",
@@ -379,9 +459,17 @@
               "The first upload is refused with \"file is too large (max 3MB)\"",
               "The second is refused with \"no readable text could be extracted from this file\"",
               "Neither file appears in the Library"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J4 Get answers from my own documents > J4-T2 file too large or unreadable"
+              }
+            ],
+            "qa": "pass"
           }
-        ]
+        ],
+        "qa": "pass"
       },
       {
         "title": "Email someone without leaving the chat",
@@ -437,7 +525,14 @@
               "The card shows the recipient, subject and body",
               "Nothing is sent before Allow is clicked",
               "After Allow the email is sent and the send appears in the activity audit"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J5 Email someone without leaving the chat > J5-T1 approved email is sent"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Declined or unanswered",
@@ -451,7 +546,14 @@
               "No email is sent",
               "Muse says it didn't send it",
               "The decline or no answer appears in the activity audit"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J5 Email someone without leaving the chat > J5-T2 declined or unanswered"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Unknown contact",
@@ -464,9 +566,17 @@
             "expected": [
               "Muse says it found no contact",
               "No email is sent"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J5 Email someone without leaving the chat > J5-T3 unknown contact"
+              }
+            ],
+            "qa": "pass"
           }
-        ]
+        ],
+        "qa": "pass"
       },
       {
         "title": "Turn an idea into a goal",
@@ -512,7 +622,14 @@
               "The idea appears on the Ideas page",
               "A goal with 3 to 6 steps appears on the Goals page, linked to the idea",
               "The idea shows under Acted on"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J6 Turn an idea into a goal > J6-T1 idea becomes a goal with a plan"
+              }
+            ],
+            "qa": "pass"
           },
           {
             "title": "Same idea twice",
@@ -524,9 +641,17 @@
             ],
             "expected": [
               "The idea appears only once"
-            ]
+            ],
+            "tests": [
+              {
+                "path": "e2e/journeys.spec.mjs",
+                "name": "J6 Turn an idea into a goal > J6-T2 same idea twice"
+              }
+            ],
+            "qa": "pass"
           }
-        ]
+        ],
+        "qa": "pass"
       }
     ],
     "openQuestions": [
@@ -548,9 +673,9 @@
     "prdRequirements": 0,
     "prdBuilt": 0,
     "testCases": 17,
-    "automated": 0,
+    "automated": 17,
     "failuresUncovered": [],
     "notInPrd": []
   },
-  "checkedAt": "2026-11-25T15:51:27.025Z"
+  "checkedAt": "2026-11-25T16:22:06.255Z"
 }

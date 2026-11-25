@@ -2,11 +2,14 @@
 title: Goals
 type: Feature spec
 featureId: goals
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Goals
+
+**Feature:** Built · **Spec:** Complete · **QA:** 12 of 12 criteria pass
 
 **12 of 12** acceptance criteria checked against the code · 1 risk
 

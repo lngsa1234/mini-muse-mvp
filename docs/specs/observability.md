@@ -2,11 +2,14 @@
 title: Observability
 type: Feature spec
 featureId: observability
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Observability
+
+**Feature:** Built · **Spec:** Complete · **QA:** 8 of 8 criteria pass
 
 **8 of 8** acceptance criteria checked against the code · 3 risks · 1 open question
 

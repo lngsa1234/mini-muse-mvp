@@ -2,11 +2,14 @@
 title: Ideas
 type: Feature spec
 featureId: ideas
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Ideas
+
+**Feature:** Built · **Spec:** Complete · **QA:** 10 of 10 criteria pass
 
 **10 of 10** acceptance criteria checked against the code · 6 risks · 4 open questions
 

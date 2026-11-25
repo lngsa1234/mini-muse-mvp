@@ -22,7 +22,8 @@ export async function handleList(userId) {
   return { status: 200, json: { docs: await listDocs(userId) } };
 }
 
-export async function handleCreate(userId, body) {
+// db is injectable so the browser-test server can store into its in-memory repo.
+export async function handleCreate(userId, body, db = { createDoc }) {
   body = body || {};
   const title = String(body.title || "").trim();
 
@@ -31,7 +32,7 @@ export async function handleCreate(userId, body) {
     const text = String(body.text || "").trim();
     if (!title) return err(400, "title is required");
     if (!text) return err(400, "text is required");
-    const doc = await createDoc(userId, { title, text: text.slice(0, TEXT_CAP) });
+    const doc = await db.createDoc(userId, { title, text: text.slice(0, TEXT_CAP) });
     return { status: 201, json: { doc } };
   }
 
@@ -50,7 +51,7 @@ export async function handleCreate(userId, body) {
   const text = await extractText(buffer, contentType, filename);
   if (!text.trim()) return err(422, "no readable text could be extracted from this file");
 
-  const doc = await createDoc(userId, {
+  const doc = await db.createDoc(userId, {
     title: fileTitle,
     text,
     contentType,

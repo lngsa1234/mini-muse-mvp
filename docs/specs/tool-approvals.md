@@ -2,11 +2,14 @@
 title: Approvals
 type: Feature spec
 featureId: tool-approvals
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Approvals
+
+**Feature:** Built · **Spec:** Complete · **QA:** 7 of 7 criteria pass
 
 **7 of 7** acceptance criteria checked against the code
 
