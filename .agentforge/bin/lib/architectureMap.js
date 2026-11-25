@@ -1,4 +1,4 @@
-// Alex's architecture map (docs/guides/connected-repo-architecture-map.md): the components of the connected
+// Alex's architecture map: the components of the connected
 // repository and how they connect, drawn on his page. The model proposes it; code keeps
 // only what holds up — every path is checked against the repository tree, ids are made
 // unique, and connections must join two known components.

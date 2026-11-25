@@ -30,7 +30,7 @@ import { needsAsk } from "./tools/connectors.js";
 import { startChildSpan } from "../trace-node.js";
 import { capContent } from "../trace-core.js";
 import { ERR } from "../../public/js/agent/errors.js";
-import { isEmailRequest, isAffirmation, offersToApply, applicationLink } from "../../public/js/agent/intent.js";
+import { isEmailRequest, isAffirmation, offersToApply, applicationLink, asksApplicationStatus } from "../../public/js/agent/intent.js";
 
 // An approval card waits this long for an answer (from any device). Keep it under
 // the platform's function time limit (vercel.json gives api/agent.js 300s).
@@ -111,7 +111,8 @@ export function makeIntents(chatBefore) {
   // The newest assistant message with text (the one a short "yes" answers).
   const lastAssistantText = [...chatBefore].reverse().find(m => m.role === "assistant" && m.text)?.text || "";
   // The user asked to apply, or said yes right after Muse offered to apply.
-  const wantsToApply = message => !isEmailRequest(message) && (APPLICATION_REQUEST.test(message) || (isAffirmation(message) && offersToApply(lastAssistantText)));
+  // A question about an application already sent is not a request to apply.
+  const wantsToApply = message => !isEmailRequest(message) && !asksApplicationStatus(message) && (APPLICATION_REQUEST.test(message) || (isAffirmation(message) && offersToApply(lastAssistantText)));
 
   function documentVerificationStep(text, goals) {
     const message = String(text || "");

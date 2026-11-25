@@ -1,4 +1,4 @@
-// Pull-request checks (docs/features/pr-checks-feature-spec.md). On every pull request
+// Pull-request checks. On every pull request
 // AgentForge posts two GitHub check runs, worked out from the PR's changed files with no
 // model call:
 //   Spec drift    — Maya's side: which features in the feature map the PR changes, whether
@@ -10,7 +10,7 @@
 // inform the reviewer without blocking a merge. Everything here is pure.
 //
 // This module imports only featureEvidence.js and analysis.js, so the Claude Code plugin
-// can bundle it unchanged (plugins/agentforge/scripts/lib, kept identical by a test).
+// can bundle it unchanged (plugins/lynncraft/scripts/lib, kept identical by a test).
 import { codeAnchorPaths, coveredAnchorPaths } from './featureEvidence.js'
 import { verifyEvidence } from './analysis.js'
 
@@ -101,14 +101,22 @@ export async function recheckCriteria({ files, features, getText }) {
 export function specDriftReport({ files, features, broken = new Map() }) {
   const paths = changedPaths(files)
   const list = Array.isArray(features) ? features : []
-  const report = { featureMapEmpty: list.length === 0, broken: [], specUpdated: [], drift: [], noSpec: [], unmapped: [] }
+  const report = { featureMapEmpty: list.length === 0, broken: [], specUpdated: [], drift: [], noSpec: [], unmapped: [], deprecated: [] }
   if (report.featureMapEmpty) return report
   for (const feature of list) {
     const covered = coveredAnchorPaths(feature.anchors, paths)
     if (!covered.length) continue
+    // A deprecated feature (out of use, code still there) isn't held to its spec: the
+    // useful prompt is that its code could be deleted. A removed feature's anchors still
+    // own their paths, so leftover code isn't reported as unmapped.
+    if (feature.status === 'deprecated') { report.deprecated.push({ name: clean(feature.name), paths: covered }); continue }
+    if (feature.status === 'removed') continue
     const entry = { name: clean(feature.name), paths: covered, specPath: specPath(feature), criteria: Array.isArray(feature.spec?.acceptanceCriteria) ? feature.spec.acceptanceCriteria.length : 0 }
     const docs = featureDocPaths(feature)
-    if (paths.some(path => docs.includes(path))) report.specUpdated.push(entry)
+    // A hand-written doc changing is not a spec: a feature with no complete spec stays in
+    // noSpec even when a doc:* anchor of its moves, unless its own spec file is written.
+    const specMoved = paths.includes(specPath(feature)) || (feature.spec?.status === 'complete' && paths.some(path => docs.includes(path)))
+    if (specMoved) report.specUpdated.push(entry)
     else if (broken.get(feature.id)?.length) report.broken.push({ ...entry, criteria: broken.get(feature.id) })
     else if (feature.spec?.status === 'complete') report.drift.push(entry)
     else report.noSpec.push(entry)
@@ -178,15 +186,20 @@ export function specDriftCheck(report) {
     return { name: CHECK_NAMES.spec, conclusion: 'neutral', title: 'No feature map yet', summary: 'This repository has no feature map, so the PR could not be compared with feature specs. Build one on AgentForge’s Product page, or with the Claude Code plugin’s feature-map skill.', text: '' }
   }
   const brokenCount = report.broken.reduce((sum, item) => sum + item.criteria.length, 0)
-  const attention = report.broken.length + report.drift.length + report.noSpec.length + report.unmapped.length
+  const deprecated = report.deprecated || []
+  const attention = report.broken.length + report.drift.length + report.noSpec.length + report.unmapped.length + deprecated.length
   const parts = [
     brokenCount && `breaks ${brokenCount} acceptance ${brokenCount === 1 ? 'criterion' : 'criteria'} in ${plural(report.broken.length, 'feature')}`,
     report.drift.length && `${plural(report.drift.length, 'feature')} may drift from ${report.drift.length === 1 ? 'its spec' : 'their specs'}`,
     report.noSpec.length && `${plural(report.noSpec.length, 'feature')} without a complete spec`,
     report.unmapped.length && `${plural(report.unmapped.length, 'new file')} in no feature`,
+    deprecated.length && `changes ${plural(deprecated.length, 'deprecated feature')}`,
   ].filter(Boolean)
   const title = attention ? parts.join(', ') : report.specUpdated.length ? 'Specs updated with the code' : 'No mapped feature changes'
-  const summary = brokenCount
+  const onlyDeprecated = deprecated.length > 0 && attention === deprecated.length
+  const summary = onlyDeprecated
+    ? 'Advisory: this PR changes code of a feature that is deprecated (no longer used). Consider deleting that code instead, then mark the feature removed in the feature map.'
+    : brokenCount
     ? 'Advisory: this PR changes the code that acceptance criteria rest on, so they no longer hold as written. Fix the code, or update the spec in this PR if the behavior changed on purpose. Verified status for these features goes stale until QA runs again.'
     : attention
     ? 'Advisory: this PR changes code that its feature specs describe, and the specs do not change with it. Check that each spec still matches, or update it in this PR. Verified status for these features goes stale until QA runs again.'
@@ -196,6 +209,7 @@ export function specDriftCheck(report) {
     ...(report.drift.length ? ['### Spec may no longer match', ...bullets(report.drift, item => `**${item.name}** — changes ${code(item.paths)}; spec \`${item.specPath}\`${item.criteria ? ` (${item.criteria} acceptance ${item.criteria === 1 ? 'criterion' : 'criteria'})` : ''}`), ''] : []),
     ...(report.noSpec.length ? ['### No complete spec', ...bullets(report.noSpec, item => `**${item.name}** — changes ${code(item.paths)}. Ask Maya to write its spec.`), ''] : []),
     ...(report.unmapped.length ? ['### New code in no feature', ...bullets(report.unmapped, path => `\`${path}\``), 'Run Maya\'s feature map again after merging so this code gets an owner.', ''] : []),
+    ...(deprecated.length ? ['### Deprecated features', ...bullets(deprecated, item => `**${item.name}** — changes ${code(item.paths)}. This feature is no longer used: consider deleting its code, then set its status to \`removed\`.`), ''] : []),
     ...(report.specUpdated.length ? ['### Spec updated in this PR', ...bullets(report.specUpdated, item => `**${item.name}**`), ''] : []),
   ].join('\n').trim()
   return { name: CHECK_NAMES.spec, conclusion: attention ? 'neutral' : 'success', title, summary, text }

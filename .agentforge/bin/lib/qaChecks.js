@@ -72,10 +72,13 @@ export function testOutcome(results, name) {
 
 // A criterion's QA from its linked tests' outcomes: any failure fails it; a linked test
 // that wasn't found (or was skipped) makes it missing; no tests, untested.
+// A browser test check-qa chose not to run (it targets a deployed site) is 'not_run':
+// the criterion reads as untested, never as passing, and never fails CI.
 export function criterionQa(outcomes) {
   if (!outcomes.length) return 'untested'
   if (outcomes.includes('fail')) return 'fail'
   if (outcomes.includes('missing')) return 'missing'
+  if (outcomes.includes('not_run')) return 'untested'
   return 'pass'
 }
 

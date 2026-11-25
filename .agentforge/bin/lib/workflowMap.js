@@ -1,4 +1,4 @@
-// Alex's workflow maps (docs/guides/connected-repo-workflow-maps.md): the connected product's main runtime
+// Alex's workflow maps: the connected product's main runtime
 // flows, step by step. The model proposes them; code keeps what holds up — a step's
 // paths are checked against the repository tree (a step with none of its code found is
 // marked unconfirmed), ids are made unique, and feature links must name a known feature.

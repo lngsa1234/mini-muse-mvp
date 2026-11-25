@@ -14,6 +14,13 @@ export const isAffirmation = text => AFFIRM.test(String(text || ""));
 // Did this assistant message offer to apply or submit an application?
 export const offersToApply = text => /\b(?:apply|application|submit)\b/i.test(String(text || ""));
 
+// A question about an application that already went out ("did my application go
+// through?", "any reply on the Acme application?"), not a request to apply now.
+// An explicit action ("fill in", "apply to", "submit it") still counts as applying.
+const APPLICATION_STATUS = /\b(?:went|go(?:ne)? through|status|check (?:on|whether|if)|did (?:i|it|they|my)|was (?:it|my)|have i|hear(?:d)? back|any (?:reply|replies|response|news|update)|confirm(?:ed|ation)?|received|track(?:ing)?)\b/i;
+const APPLY_ACTION = /\b(?:apply (?:to|for|now)|fill (?:in|out|it)|submit (?:it|the|my|this)|start (?:the|my|an) application)\b/i;
+export const asksApplicationStatus = text => APPLICATION_STATUS.test(String(text || "")) && !APPLY_ACTION.test(String(text || ""));
+
 // Links that are search or listing pages, or general job sites, never count as an application.
 const NOT_A_POSTING = /(?:indeed|linkedin|glassdoor|zippia|jooble|ziprecruiter|monster|builtin\w*|simplyhired|dice)\.com|\/search\b|[?&](?:q|query|keywords?)=/i;
 const JOB_LINK = /apply|application|careers?|posting|greenhouse|lever\.co|myworkdayjobs|smartrecruiters|workable|icims|ashbyhq|\/jobs?\//i;

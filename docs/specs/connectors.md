@@ -2,11 +2,14 @@
 title: Connectors
 type: Feature spec
 featureId: connectors
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Connectors
+
+**Feature:** Built · **Spec:** Complete · **QA:** 8 of 8 criteria pass
 
 **8 of 8** acceptance criteria checked against the code · 6 risks · 4 open questions
 

@@ -1,4 +1,4 @@
-// Writing specs for features that already exist (docs/design/feature-spec-writing.md). The
+// Writing specs for features that already exist. The
 // Product Manager reads a feature's code and writes its spec: what it does today, with
 // acceptance criteria that each cite the lines they rest on. The model only writes; this
 // module decides whether the spec is acceptable. It normalizes the spec, checks every
@@ -202,7 +202,23 @@ export function specLayer({ checked, model, writtenAt = new Date().toISOString()
 const list = (items) => items.map(item => `- ${item}`)
 
 // The spec as Markdown in the team's feature-spec template shape.
-export function featureSpecMarkdown(name, spec, { featureId = '', writtenAt = '' } = {}) {
+// The feature's state at a glance, for the top of its spec page: the feature's own
+// lifecycle (built, partial, deprecated, removed), its spec, and its QA.
+const FEATURE_STATUS_LABEL = { built: 'Built', partial: 'Partly built', deprecated: 'Deprecated', removed: 'Removed' }
+const SPEC_STATUS_LABEL = { complete: 'Complete', in_progress: 'In progress', not_started: 'Not started', not_checked: 'Not checked' }
+export function featureStatusLine({ featureStatus = '', specStatus = '', qa = null } = {}) {
+  const parts = []
+  if (featureStatus) parts.push(`**Feature:** ${FEATURE_STATUS_LABEL[featureStatus] || featureStatus}`)
+  if (specStatus) parts.push(`**Spec:** ${SPEC_STATUS_LABEL[specStatus] || specStatus.replace(/_/g, ' ')}`)
+  const counts = qa?.counts
+  if (counts?.criteria) {
+    const failing = counts.failing ? `, ${counts.failing} failing` : ''
+    parts.push(`**QA:** ${counts.passing} of ${counts.criteria} criteria pass${failing}`)
+  } else if (specStatus) parts.push('**QA:** not run')
+  return parts.join(' · ')
+}
+
+export function featureSpecMarkdown(name, spec, { featureId = '', writtenAt = '', featureStatus = '', specStatus = '', qa = null } = {}) {
   const cell = (value) => String(value || '').replace(/\|/g, '\\|').replace(/\n+/g, ' ')
   // "The user presses Enter." reads as "the user presses Enter" inside a sentence; an
   // acronym (API, UI) keeps its capital.
@@ -213,7 +229,11 @@ export function featureSpecMarkdown(name, spec, { featureId = '', writtenAt = ''
   }
   const criteria = spec.acceptanceCriteria || []
   const verified = criteria.filter(criterion => criterion.verified).length
-  const out = ['---', `title: ${name}`, 'type: Feature spec', featureId ? `featureId: ${featureId}` : null, 'status: Written from code', 'owner: Product Manager (Maya)', '---', '', `# ${name}`, ''].filter(line => line !== null)
+  const out = ['---', `title: ${name}`, 'type: Feature spec', featureId ? `featureId: ${featureId}` : null, featureStatus ? `featureStatus: ${featureStatus}` : null, 'status: Written from code', 'owner: Product Manager (Maya)', '---', '', `# ${name}`, ''].filter(line => line !== null)
+  const statusLine = featureStatusLine({ featureStatus, specStatus, qa })
+  if (statusLine) out.push(statusLine, '')
+  if (featureStatus === 'deprecated') out.push('> **Deprecated.** This feature is no longer used. Its code is still in the repository; this spec is kept as a record of what it did.', '')
+  if (featureStatus === 'removed') out.push('> **Removed.** This feature and its code are gone; this spec is kept as a record of what it did.', '')
   const glance = []
   if (criteria.length) glance.push(`**${verified} of ${criteria.length}** acceptance criteria checked against the code`)
   if (spec.risks.length) glance.push(`${spec.risks.length} risk${spec.risks.length === 1 ? '' : 's'}`)

@@ -2,11 +2,14 @@
 title: Settings
 type: Feature spec
 featureId: settings
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Settings
+
+**Feature:** Built · **Spec:** Complete · **QA:** 6 of 6 criteria pass
 
 **6 of 6** acceptance criteria checked against the code
 

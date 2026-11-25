@@ -2,11 +2,14 @@
 title: How Muse works
 type: Feature spec
 featureId: how-muse-works
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # How Muse works
+
+**Feature:** Built · **Spec:** Complete · **QA:** 6 of 6 criteria pass
 
 **6 of 6** acceptance criteria checked against the code
 

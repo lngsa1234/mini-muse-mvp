@@ -5,7 +5,9 @@
 //   node testkit/browser-server.mjs        (PORT, default 4173)
 //
 // Tests drive it through /__test:
-//   POST /__test/reset  { state?, chat?, ideas?, goals?, docs?, google?, script?, json?, traces?, llmError? }
+//   POST /__test/reset  { state?, chat?, ideas?, goals?, docs?, google?, mail?, jobs?, fit?, page?, script?, json?, traces?, llmError? }
+//     mail: Gmail messages mail_search returns · jobs: postings jobs_search returns ·
+//     fit: the model's JSON reply for score_fit · page: what web_open reads
 //   GET  /__test/seen   -> { turns: [model requests], json: [prompts], google, state }
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +18,7 @@ import { serveTurn, dispatchAgent } from "../server/agent/http.js";
 import { dispatchState } from "../server/state.js";
 import { fakeLlm } from "./agent.js";
 import { currentUserId } from "../server/auth.js";
+import { handleCreate } from "../server/docs.js";
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public");
 const U = currentUserId(); // the same signed-in user the agent turn sees
@@ -26,6 +29,7 @@ function reset(seed = {}) {
   const repo = makeMemoryRepo({ ideas: seed.ideas, goals: seed.goals, docs: seed.docs });
   const turns = [];
   world = { store, repo, seed, turns, json: [], google: !!seed.google, googleCalls: [], llm: fakeLlm(seed.script || [], turns) };
+  if (seed.fit) world.llm.json = async () => JSON.parse(JSON.stringify(seed.fit));
   if (seed.llmError) world.llm.chat = async () => { throw Object.assign(new Error(seed.llmError.message || "llm error"), seed.llmError); };
   return world;
 }
@@ -53,7 +57,8 @@ app.all(["/api/state", "/api/state/:action"], async (req, res) => send(res)(awai
 // Documents, ideas, goals.
 const r = () => world.repo;
 app.get("/api/docs", async (_q, res) => ok(res, { docs: await r().listDocs() }));
-app.post("/api/docs", async (q, res) => ok(res, { doc: await r().createDoc(q.body.title, q.body.text || "") }, 201));
+// Uploads go through the real handler (size limit, text extraction), stored in memory.
+app.post("/api/docs", async (q, res) => send(res)(await handleCreate(U, q.body, { createDoc: (_u, d) => r().createDoc(d.title, d.text) })));
 app.delete("/api/docs/:id", async (q, res) => { try { ok(res, await r().removeDoc(q.params.id)); } catch (e) { ok(res, { error: e.message }, 404); } });
 app.get("/api/ideas", async (_q, res) => ok(res, { ideas: await r().listIdeas() }));
 app.post("/api/ideas", async (q, res) => ok(res, { idea: await r().createIdea(q.body) }, 201));
@@ -68,14 +73,15 @@ app.delete("/api/goals/:id", async (q, res) => { world.repo.data.goals = world.r
 app.get("/api/google/status", (_q, res) => ok(res, { configured: true, connected: world.google }));
 app.get("/api/google/authorize", (_q, res) => { world.googleCalls.push("authorize"); res.status(200).type("html").send("<p>google consent (test)</p>"); });
 app.post("/api/google/disconnect", (_q, res) => { world.googleCalls.push("disconnect"); world.google = false; ok(res, { connected: false }); });
-app.post("/api/google/:kind/:action", (q, res) => { world.googleCalls.push(q.params.kind + "/" + q.params.action); ok(res, { messages: [], events: [], id: "x1" }); });
+const googleReply = action => ({ messages: action === "mail/search" ? world.seed.mail || [] : [], events: [], id: "x1" });
+app.post("/api/google/:kind/:action", (q, res) => { const action = q.params.kind + "/" + q.params.action; world.googleCalls.push(action); ok(res, googleReply(action)); });
 
 // The agent: the real runtime with the scripted model.
 const services = () => ({
-  google: async action => { world.googleCalls.push(action); return { messages: [], events: [], id: "x1" }; },
+  google: async action => { world.googleCalls.push(action); return googleReply(action); },
   webSearch: async () => ({ status: 200, json: { results: [] } }),
-  webOpen: async () => ({ status: 200, json: { title: "", url: "", text: "" } }),
-  jobsSearch: async () => ({ status: 200, json: { jobs: [], total: 0, searched: [] } })
+  webOpen: async () => ({ status: 200, json: world.seed.page || { title: "", url: "", text: "" } }),
+  jobsSearch: async () => { const jobs = world.seed.jobs || []; return { status: 200, json: { mode: "discover", jobs, total: jobs.length, searched: ["greenhouse", "lever", "ashby"] } }; }
 });
 app.post("/api/agent/turn", (req, res) => serveTurn(req, res, req.body || {}, {
   deps: { store: world.store, repo: world.repo, llm: world.llm, env: {}, googleConnected: world.google, services: services(), timeouts: world.seed.timeouts }

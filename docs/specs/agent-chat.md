@@ -2,11 +2,14 @@
 title: Agent chat
 type: Feature spec
 featureId: agent-chat
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Agent chat
+
+**Feature:** Built · **Spec:** Complete · **QA:** 10 of 10 criteria pass
 
 **10 of 10** acceptance criteria checked against the code · 6 risks · 3 open questions
 

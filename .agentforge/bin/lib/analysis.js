@@ -1,4 +1,4 @@
-// Analysis work items (docs/design/analysis-work-items.md). An analysis — an architecture
+// Analysis work items. An analysis — an architecture
 // review, an audit, a gap analysis — is answered by one role reading the repository and
 // writing a report; it never enters the spec → plan → build → QA pipeline. This module
 // is pure: it normalizes the role's report, checks every cited line against the
@@ -222,7 +222,7 @@ export function findingWorkItemRows({ repository, analysisId, report, findingIds
     })
 }
 
-// --- Filing findings automatically (docs/design/analysis-work-items.md) ----------------------
+// --- Filing findings automatically ----------------------
 // Code, not the model, decides which findings become work items: a finding is filed
 // when it proposes work, its evidence was confirmed in the code, and its severity is
 // medium or above. Everything else stays a note in the report. A finding that matches an

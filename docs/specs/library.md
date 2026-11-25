@@ -2,11 +2,14 @@
 title: Library
 type: Feature spec
 featureId: library
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Library
+
+**Feature:** Built · **Spec:** Complete · **QA:** 8 of 8 criteria pass
 
 **8 of 8** acceptance criteria checked against the code · 4 risks · 2 open questions
 

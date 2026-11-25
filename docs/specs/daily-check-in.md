@@ -2,11 +2,14 @@
 title: Daily check-in
 type: Feature spec
 featureId: daily-check-in
+featureStatus: built
 status: Written from code
 owner: Product Manager (Maya)
 ---
 
 # Daily check-in
+
+**Feature:** Built · **Spec:** Complete · **QA:** 6 of 6 criteria pass
 
 **6 of 6** acceptance criteria checked against the code · 1 risk · 1 open question
 
