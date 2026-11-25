@@ -132,7 +132,7 @@
                 "name": "J1 Land interviews within a deadline > J1-T2 gmail not connected"
               }
             ],
-            "qa": "fail"
+            "qa": "pass"
           },
           {
             "title": "No résumé in the Library",
@@ -177,7 +177,7 @@
             "qa": "pass"
           }
         ],
-        "qa": "fail"
+        "qa": "pass"
       },
       {
         "title": "Find and judge jobs from chat",
@@ -677,5 +677,5 @@
     "failuresUncovered": [],
     "notInPrd": []
   },
-  "checkedAt": "2026-11-25T16:22:06.255Z"
+  "checkedAt": "2026-11-25T17:20:55.153Z"
 }

@@ -1,5 +1,5 @@
 {
   "private": true,
   "type": "module",
-  "description": "LynnCraft's checks for CI, copied from the plugin (0.14.0). Run the setup skill again to update them; don't edit by hand."
+  "description": "LynnCraft's checks for CI, copied from the plugin (0.15.0). Run the setup skill again to update them; don't edit by hand."
 }
