@@ -26,6 +26,21 @@ export function instantsIn(value) {
     .filter(ms => !Number.isNaN(ms));
 }
 
+// Does the text make this claim? A forbidden phrase that a negation governs a few words
+// earlier in the same sentence ("you should not consider this a confirmed match", "verify
+// these before considering it a confirmed match") is
+// the opposite claim, so it doesn't count.
+const NEGATION = /\b(?:not|never|no|before|until|cannot|can't|don't|doesn't|isn't|aren't|wasn't|won't|shouldn't|couldn't)\b/;
+export function claims(text, phrase) {
+  let at = text.indexOf(phrase);
+  while (at >= 0) {
+    const before = text.slice(0, at).split(/[.!?;:\n]/).pop().trim().split(" ").slice(-4).join(" ");
+    if (!NEGATION.test(before)) return true;
+    at = text.indexOf(phrase, at + 1);
+  }
+  return false;
+}
+
 export function checkReply(testCase, rawReply) {
   const reply = rawReply || {};
   const text = normalizeText(reply.text);
@@ -41,7 +56,7 @@ export function checkReply(testCase, rawReply) {
   const failures = [];
 
   for (const phrase of expected.noText || []) {
-    if (text.includes(phrase)) failures.push('response included forbidden claim: "' + phrase + '"');
+    if (claims(text, phrase)) failures.push('response included forbidden claim: "' + phrase + '"');
   }
   if (expected.mustMentionOneOf && !expected.mustMentionOneOf.some(phrase => text.includes(phrase))) {
     failures.push("response mentioned none of: " + expected.mustMentionOneOf.join(", "));

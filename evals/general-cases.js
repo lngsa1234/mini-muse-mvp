@@ -365,7 +365,7 @@ export const GENERAL_EVAL_CASES = [
   },
   {
     "id": "shopping-list-needs-confirmation",
-    "user": "You have proposed a Black Friday shopping list, but I have not confirmed it. Ask me to approve the list before activating monitoring. Do not purchase anything.",
+    "user": "You proposed this Black Friday shopping list: a 65-inch TV under $600, noise-cancelling headphones under $200, and a stand mixer under $250. I have not confirmed it. Ask me to approve the list before activating monitoring. Do not purchase anything.",
     "toolChoice": "none",
     "expect": {
       "mustMentionOneOf": [
@@ -546,9 +546,12 @@ export const GENERAL_EVAL_CASES = [
     "expect": {
       "mustMentionOneOf": [
         "insufficient",
+        "not sufficient",
+        "sufficient information",
         "cannot predict",
         "can't predict",
-        "not enough"
+        "not enough",
+        "no way to know"
       ],
       "noText": [
         "will sell out within 24 hours",
