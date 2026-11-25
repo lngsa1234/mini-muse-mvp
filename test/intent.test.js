@@ -37,3 +37,23 @@ test("intent: short go-aheads, apply offers, and single posting links", async ()
   // Two different postings: ambiguous, so no automatic open.
   assert.equal(applicationLink("https://jobs.lever.co/a/1 and https://jobs.lever.co/b/2"), null);
 });
+
+test("intent: a question about an application already sent is not a request to apply", async () => {
+  const { asksApplicationStatus } = await import("../public/js/agent/intent.js");
+  for (const t of [
+    "Check whether my application went through",
+    "Did my Acme application go through?",
+    "What's the status of my application?",
+    "Have I heard back on the Acme application?",
+    "Any reply on the application I submitted?",
+    "Was my application received?"
+  ]) assert.ok(asksApplicationStatus(t), t);
+  for (const t of [
+    "Apply to the Acme role",
+    "Fill in the application for me",
+    "Submit my Acme application",
+    "Tailor my résumé for Acme and fill in the application",
+    "Check the form and submit it",
+    "yes please"
+  ]) assert.ok(!asksApplicationStatus(t), t);
+});
