@@ -95,6 +95,8 @@ test("eval pass rules accept a correct answer in other words, and still fail wro
 
   pass("calendar-reminder-failure-is-reported", "The event with ID evt-123 has been successfully created. However, the attempt to set a reminder for this event failed.");
   pass("job-search-unknown-requirements-are-not-confirmed", "Since it doesn't specify salary or sponsorship details, these factors remain unverified. You should not consider this a confirmed match until you verify those details.");
+  pass("job-search-unknown-requirements-are-not-confirmed", "It does not provide information about salary or sponsorship. It's essential to verify these details before considering it a confirmed match.");
+  fail("resume-is-not-invented", "You've already started updating your résumé. You can click that step on the Goals page to mark it in progress.", /forbidden claim/);
   pass("job-application-needs-initial-approval", "I've found a suitable job opening at Cedar. Would you like to proceed with the application for this position?");
   pass("job-email-rejection-updates-status-not-other-jobs", "The proposed new status for Cedar cedar-42 is \"Rejected.\" If you want to manage the status for Birch birch-17 later, please let me know!");
   pass("calendar-reminder-failure-is-reported", "The event with ID evt-123 has been successfully created in your calendar. However, there was an issue with setting the reminder for this event, and it has not been established.");
@@ -116,6 +118,8 @@ test("Muse's rules: send email through the approval card, point to the Goals pag
   assert.match(rules, /call mail_send right away/);
   assert.match(rules, /don't ask for confirmation in chat first/);
   assert.match(rules, /click the job's status on the Goals page/);
-  assert.match(rules, /already started or done part of the work/);
-  assert.match(rules, /say all three/);
+  assert.match(rules, /user's own message says they have already started/);
+  assert.match(rules, /Asking you to start or plan something is not progress/);
+  assert.doesNotMatch(rules, /updating (?:my|your) résumé/, "an example sentence leaks into replies");
+  assert.match(rules, /must say all three/);
 });

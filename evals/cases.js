@@ -563,7 +563,8 @@ export const EVAL_CASES = [
         "unverified",
         "unknown",
         "not stated",
-        "not confirmed"
+        "not confirmed",
+        "verify"
       ],
       "noText": [
         "confirmed match",

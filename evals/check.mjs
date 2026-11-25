@@ -27,9 +27,10 @@ export function instantsIn(value) {
 }
 
 // Does the text make this claim? A forbidden phrase that a negation governs a few words
-// earlier in the same sentence ("you should not consider this a confirmed match") is
+// earlier in the same sentence ("you should not consider this a confirmed match", "verify
+// these before considering it a confirmed match") is
 // the opposite claim, so it doesn't count.
-const NEGATION = /\b(?:not|never|no|cannot|can't|don't|doesn't|isn't|aren't|wasn't|won't|shouldn't|couldn't)\b/;
+const NEGATION = /\b(?:not|never|no|before|until|cannot|can't|don't|doesn't|isn't|aren't|wasn't|won't|shouldn't|couldn't)\b/;
 export function claims(text, phrase) {
   let at = text.indexOf(phrase);
   while (at >= 0) {
