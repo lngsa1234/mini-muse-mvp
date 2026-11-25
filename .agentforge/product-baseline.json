@@ -87,6 +87,67 @@
         "failures": [
           "Gmail isn't connected: Muse can't confirm an application and asks the user to click the job's status or connect Gmail.",
           "No résumé in the Library: score_fit refuses and Muse asks the user to add one."
+        ],
+        "testCases": [
+          {
+            "title": "Goal to submitted application",
+            "kind": "main",
+            "given": "A signed-in job seeker with a résumé in the Library, Gmail connected, and the Mini Muse Browser Bridge extension installed in Chrome.",
+            "steps": [
+              "On the Goals page, enter \"Land 3 interviews in 30 days for product manager roles in Detroit\"",
+              "Pick one of the jobs Muse scores as a strong or possible fit",
+              "Open the employer's application in Chrome and let Muse fill it",
+              "Approve the Submit card in chat"
+            ],
+            "expected": [
+              "The goal shows 3 to 6 steps, a target of 3 interviews and 30 days left",
+              "Scored jobs show an overall score, a verdict and missing keywords",
+              "A tailored résumé or cover letter for the job is saved in the Library",
+              "Nothing is submitted before the approval; the card asks whether every field was reviewed",
+              "After approval the job shows as applied and the goal's application count goes up by one"
+            ]
+          },
+          {
+            "title": "Gmail not connected",
+            "kind": "failure",
+            "given": "A signed-in job seeker with a résumé in the Library and Gmail not connected, with a job tracked as drafted.",
+            "steps": [
+              "Tell Muse in chat \"Check whether my application went through\"",
+              "Look at the tracked job on the Goals page"
+            ],
+            "expected": [
+              "Muse asks the user to click the job's status or connect Gmail",
+              "The job is not marked applied"
+            ]
+          },
+          {
+            "title": "No résumé in the Library",
+            "kind": "failure",
+            "given": "A signed-in job seeker with an empty Library.",
+            "steps": [
+              "On the Goals page, enter \"Land 3 interviews in 30 days for product manager roles\"",
+              "Let Muse work on the step that scores jobs"
+            ],
+            "expected": [
+              "Muse asks the user to add a résumé",
+              "No job is shown with a fit score",
+              "The scoring step is not marked done"
+            ]
+          },
+          {
+            "title": "Declining the Submit click",
+            "kind": "alternative",
+            "given": "A signed-in job seeker with a filled application in a Chrome tab and a Submit approval card showing.",
+            "steps": [
+              "Click Don't allow on the Submit card",
+              "Look at the tracked job on the Goals page"
+            ],
+            "expected": [
+              "The form is not submitted",
+              "The job is not marked applied",
+              "The decline appears in the activity audit"
+            ]
+          }
         ]
       },
       {
@@ -128,6 +189,47 @@
         "outcome": "A short list of fits with honest scores; the user can turn it into a goal.",
         "failures": [
           "The user asks for LinkedIn or Indeed: Muse explains it can't search them and uses employers' sites instead."
+        ],
+        "testCases": [
+          {
+            "title": "Search and score from chat",
+            "kind": "main",
+            "given": "A signed-in job seeker with a résumé in the Library and no goals.",
+            "steps": [
+              "In chat, type \"Find product manager jobs in Detroit\"",
+              "Read Muse's reply"
+            ],
+            "expected": [
+              "The reply lists jobs from employers' hiring sites with a link for each",
+              "Each listed fit shows a score, a verdict and missing keywords",
+              "No goal is created on the Goals page"
+            ]
+          },
+          {
+            "title": "Asking for LinkedIn or Indeed",
+            "kind": "failure",
+            "given": "A signed-in job seeker with a résumé in the Library.",
+            "steps": [
+              "In chat, type \"Search LinkedIn and Indeed for product manager jobs\"",
+              "Read Muse's reply"
+            ],
+            "expected": [
+              "Muse says it can't search LinkedIn or Indeed",
+              "The jobs it lists come from employers' hiring sites"
+            ]
+          },
+          {
+            "title": "Fit for one posting",
+            "kind": "alternative",
+            "given": "A signed-in job seeker with a résumé in the Library and the link to one job posting.",
+            "steps": [
+              "In chat, paste the posting link and ask \"How well do I fit this?\"",
+              "Read Muse's reply"
+            ],
+            "expected": [
+              "The reply gives an overall score, a verdict, any dealbreakers and the missing keywords for that posting"
+            ]
+          }
         ]
       },
       {
@@ -169,6 +271,49 @@
         "outcome": "Goals are current and the user has a short brief when they return.",
         "failures": [
           "The app is closed: no check-in runs (there is no server-side scheduler yet)."
+        ],
+        "testCases": [
+          {
+            "title": "Daily check-in updates goals",
+            "kind": "main",
+            "given": "A signed-in job seeker with a job-search goal, one job tracked as drafted, Gmail connected with that employer's \"application received\" email, and \"Every day\" on.",
+            "steps": [
+              "Open the Goals page after 9am",
+              "Wait for the check-in to finish, or click the check-in button"
+            ],
+            "expected": [
+              "Muse leaves a three-line progress brief and lists what needs the user's decision",
+              "The job with the confirmation email shows as applied",
+              "No email is sent during the check-in",
+              "Opening the page again the same day does not start a second check-in"
+            ]
+          },
+          {
+            "title": "App closed",
+            "kind": "failure",
+            "given": "A signed-in job seeker with a goal and \"Every day\" on, with the app closed all day.",
+            "steps": [
+              "Keep the app closed past 9am",
+              "Open the Goals page the next morning before 9am"
+            ],
+            "expected": [
+              "No check-in ran while the app was closed",
+              "No new progress brief from that day is in the chat"
+            ]
+          },
+          {
+            "title": "Before 9am",
+            "kind": "alternative",
+            "given": "A signed-in job seeker with a goal and \"Every day\" on, and no check-in yet today.",
+            "steps": [
+              "Open the Goals page before 9am",
+              "Leave it open until after 9am"
+            ],
+            "expected": [
+              "No check-in runs before 9am",
+              "Exactly one check-in runs after 9am"
+            ]
+          }
         ]
       },
       {
@@ -207,7 +352,36 @@
             "short": "Answers with source"
           }
         ],
-        "outcome": "An answer that cites which document it came from."
+        "outcome": "An answer that cites which document it came from.",
+        "testCases": [
+          {
+            "title": "Answer cites the document",
+            "kind": "main",
+            "given": "A signed-in user with an empty Library and a text file of meeting notes that mentions a launch date.",
+            "steps": [
+              "Upload the notes file on the Library page",
+              "In chat, ask \"When is the launch date in my notes?\""
+            ],
+            "expected": [
+              "The Library lists the document, titled after the file if no title was given",
+              "Muse's answer gives the launch date from the notes and names the document"
+            ]
+          },
+          {
+            "title": "File too large or unreadable",
+            "kind": "failure",
+            "given": "A signed-in user with a file over 3MB and a file with no readable text.",
+            "steps": [
+              "Upload the file over 3MB",
+              "Upload the file with no readable text"
+            ],
+            "expected": [
+              "The first upload is refused with \"file is too large (max 3MB)\"",
+              "The second is refused with \"no readable text could be extracted from this file\"",
+              "Neither file appears in the Library"
+            ]
+          }
+        ]
       },
       {
         "title": "Email someone without leaving the chat",
@@ -248,6 +422,50 @@
         "outcome": "The email is sent only with approval, and appears in the activity audit.",
         "failures": [
           "The user declines or doesn't answer: nothing is sent and Muse says so."
+        ],
+        "testCases": [
+          {
+            "title": "Approved email is sent",
+            "kind": "main",
+            "given": "A signed-in user with Gmail connected and a contact in their contacts.",
+            "steps": [
+              "In chat, ask Muse to email that contact about rescheduling Friday's meeting",
+              "Read the approval card",
+              "Click Allow"
+            ],
+            "expected": [
+              "The card shows the recipient, subject and body",
+              "Nothing is sent before Allow is clicked",
+              "After Allow the email is sent and the send appears in the activity audit"
+            ]
+          },
+          {
+            "title": "Declined or unanswered",
+            "kind": "failure",
+            "given": "A signed-in user with Gmail connected and a contact in their contacts.",
+            "steps": [
+              "Ask Muse to email that contact",
+              "Click Don't allow on the card, or leave it for 4 minutes"
+            ],
+            "expected": [
+              "No email is sent",
+              "Muse says it didn't send it",
+              "The decline or no answer appears in the activity audit"
+            ]
+          },
+          {
+            "title": "Unknown contact",
+            "kind": "alternative",
+            "given": "A signed-in user with Gmail connected and no contact by the name they use.",
+            "steps": [
+              "Ask Muse to email someone who isn't in contacts",
+              "Read Muse's reply"
+            ],
+            "expected": [
+              "Muse says it found no contact",
+              "No email is sent"
+            ]
+          }
         ]
       },
       {
@@ -279,7 +497,36 @@
             "short": "Creates the linked goal"
           }
         ],
-        "outcome": "The idea shows as a goal, and the goal has a plan."
+        "outcome": "The idea shows as a goal, and the goal has a plan.",
+        "testCases": [
+          {
+            "title": "Idea becomes a goal with a plan",
+            "kind": "main",
+            "given": "A signed-in job seeker with no ideas and no goals.",
+            "steps": [
+              "In chat, tell Muse \"I should reach out to three former colleagues about PM openings\"",
+              "Open the Ideas page",
+              "Click Make it a goal on that idea"
+            ],
+            "expected": [
+              "The idea appears on the Ideas page",
+              "A goal with 3 to 6 steps appears on the Goals page, linked to the idea",
+              "The idea shows under Acted on"
+            ]
+          },
+          {
+            "title": "Same idea twice",
+            "kind": "alternative",
+            "given": "A signed-in user with that idea already on the Ideas page.",
+            "steps": [
+              "Share the same idea in chat again",
+              "Open the Ideas page"
+            ],
+            "expected": [
+              "The idea appears only once"
+            ]
+          }
+        ]
       }
     ],
     "openQuestions": [
@@ -300,7 +547,10 @@
     ],
     "prdRequirements": 0,
     "prdBuilt": 0,
+    "testCases": 17,
+    "automated": 0,
+    "failuresUncovered": [],
     "notInPrd": []
   },
-  "checkedAt": "2026-11-22T00:45:22.669Z"
+  "checkedAt": "2026-11-25T15:51:27.025Z"
 }

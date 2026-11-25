@@ -7,9 +7,9 @@ status: Checked
 
 # Mini Muse: product baseline
 
-_What the product is today, written by Maya from the code on 2026-11-22. Each feature's detail is in its spec._
+_What the product is today, written by Maya from the code on 2026-11-25. Each feature's detail is in its spec._
 
-**At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **13** checked against the code, 0 in progress, 0 not written
+**At a glance:** **3** users · **6** journeys (3 P1, 2 P2, 1 P3) · **13** features · specs: **13** checked against the code, 0 in progress, 0 not written · end-to-end test cases: **17**, 0 automated
 
 ## Summary
 
@@ -40,6 +40,7 @@ What users set out to do, end to end. Each journey runs through several features
 - **Who:** Job seeker
 - **Goal:** Get a set number of interviews in a month without doing every step alone.
 - **Starts when:** The user types a goal like "Land 3 interviews in 30 days" on the Goals page.
+- **End-to-end tests:** 4 test cases, 0 automated
 
 ```mermaid
 flowchart LR
@@ -99,12 +100,77 @@ flowchart LR
 - Gmail isn't connected: Muse can't confirm an application and asks the user to click the job's status or connect Gmail.
 - No résumé in the Library: score_fit refuses and Muse asks the user to add one.
 
+**End-to-end test cases**
+
+| ID | Test case | Type | Automated test |
+|---|---|---|---|
+| J1-T1 | Goal to submitted application | Main path | not automated yet |
+| J1-T2 | Gmail not connected | Failure | not automated yet |
+| J1-T3 | No résumé in the Library | Failure | not automated yet |
+| J1-T4 | Declining the Submit click | Alternative | not automated yet |
+
+**J1-T1 Goal to submitted application**
+
+_Given_ A signed-in job seeker with a résumé in the Library, Gmail connected, and the Mini Muse Browser Bridge extension installed in Chrome.
+
+1. On the Goals page, enter "Land 3 interviews in 30 days for product manager roles in Detroit"
+2. Pick one of the jobs Muse scores as a strong or possible fit
+3. Open the employer's application in Chrome and let Muse fill it
+4. Approve the Submit card in chat
+
+_Expect:_
+
+- The goal shows 3 to 6 steps, a target of 3 interviews and 30 days left
+- Scored jobs show an overall score, a verdict and missing keywords
+- A tailored résumé or cover letter for the job is saved in the Library
+- Nothing is submitted before the approval; the card asks whether every field was reviewed
+- After approval the job shows as applied and the goal's application count goes up by one
+
+**J1-T2 Gmail not connected**
+
+_Given_ A signed-in job seeker with a résumé in the Library and Gmail not connected, with a job tracked as drafted.
+
+1. Tell Muse in chat "Check whether my application went through"
+2. Look at the tracked job on the Goals page
+
+_Expect:_
+
+- Muse asks the user to click the job's status or connect Gmail
+- The job is not marked applied
+
+**J1-T3 No résumé in the Library**
+
+_Given_ A signed-in job seeker with an empty Library.
+
+1. On the Goals page, enter "Land 3 interviews in 30 days for product manager roles"
+2. Let Muse work on the step that scores jobs
+
+_Expect:_
+
+- Muse asks the user to add a résumé
+- No job is shown with a fit score
+- The scoring step is not marked done
+
+**J1-T4 Declining the Submit click**
+
+_Given_ A signed-in job seeker with a filled application in a Chrome tab and a Submit approval card showing.
+
+1. Click Don't allow on the Submit card
+2. Look at the tracked job on the Goals page
+
+_Expect:_
+
+- The form is not submitted
+- The job is not marked applied
+- The decline appears in the activity audit
+
 ### J2 Find and judge jobs from chat
 
 - **Priority:** P1
 - **Who:** Job seeker
 - **Goal:** Know which openings are worth applying to, without setting up a goal.
 - **Starts when:** The user asks in chat, e.g. "find product manager jobs in Detroit".
+- **End-to-end tests:** 3 test cases, 0 automated
 
 ```mermaid
 flowchart LR
@@ -143,12 +209,57 @@ flowchart LR
 
 - The user asks for LinkedIn or Indeed: Muse explains it can't search them and uses employers' sites instead.
 
+**End-to-end test cases**
+
+| ID | Test case | Type | Automated test |
+|---|---|---|---|
+| J2-T1 | Search and score from chat | Main path | not automated yet |
+| J2-T2 | Asking for LinkedIn or Indeed | Failure | not automated yet |
+| J2-T3 | Fit for one posting | Alternative | not automated yet |
+
+**J2-T1 Search and score from chat**
+
+_Given_ A signed-in job seeker with a résumé in the Library and no goals.
+
+1. In chat, type "Find product manager jobs in Detroit"
+2. Read Muse's reply
+
+_Expect:_
+
+- The reply lists jobs from employers' hiring sites with a link for each
+- Each listed fit shows a score, a verdict and missing keywords
+- No goal is created on the Goals page
+
+**J2-T2 Asking for LinkedIn or Indeed**
+
+_Given_ A signed-in job seeker with a résumé in the Library.
+
+1. In chat, type "Search LinkedIn and Indeed for product manager jobs"
+2. Read Muse's reply
+
+_Expect:_
+
+- Muse says it can't search LinkedIn or Indeed
+- The jobs it lists come from employers' hiring sites
+
+**J2-T3 Fit for one posting**
+
+_Given_ A signed-in job seeker with a résumé in the Library and the link to one job posting.
+
+1. In chat, paste the posting link and ask "How well do I fit this?"
+2. Read Muse's reply
+
+_Expect:_
+
+- The reply gives an overall score, a verdict, any dealbreakers and the missing keywords for that posting
+
 ### J3 Let Muse work on my goals while I'm away
 
 - **Priority:** P1
 - **Who:** Job seeker
 - **Goal:** Have progress made and reported every day without asking.
 - **Starts when:** Every day after 9am with "Every day" on and the app open, or the check-in button.
+- **End-to-end tests:** 3 test cases, 0 automated
 
 ```mermaid
 flowchart LR
@@ -187,12 +298,59 @@ flowchart LR
 
 - The app is closed: no check-in runs (there is no server-side scheduler yet).
 
+**End-to-end test cases**
+
+| ID | Test case | Type | Automated test |
+|---|---|---|---|
+| J3-T1 | Daily check-in updates goals | Main path | not automated yet |
+| J3-T2 | App closed | Failure | not automated yet |
+| J3-T3 | Before 9am | Alternative | not automated yet |
+
+**J3-T1 Daily check-in updates goals**
+
+_Given_ A signed-in job seeker with a job-search goal, one job tracked as drafted, Gmail connected with that employer's "application received" email, and "Every day" on.
+
+1. Open the Goals page after 9am
+2. Wait for the check-in to finish, or click the check-in button
+
+_Expect:_
+
+- Muse leaves a three-line progress brief and lists what needs the user's decision
+- The job with the confirmation email shows as applied
+- No email is sent during the check-in
+- Opening the page again the same day does not start a second check-in
+
+**J3-T2 App closed**
+
+_Given_ A signed-in job seeker with a goal and "Every day" on, with the app closed all day.
+
+1. Keep the app closed past 9am
+2. Open the Goals page the next morning before 9am
+
+_Expect:_
+
+- No check-in ran while the app was closed
+- No new progress brief from that day is in the chat
+
+**J3-T3 Before 9am**
+
+_Given_ A signed-in job seeker with a goal and "Every day" on, and no check-in yet today.
+
+1. Open the Goals page before 9am
+2. Leave it open until after 9am
+
+_Expect:_
+
+- No check-in runs before 9am
+- Exactly one check-in runs after 9am
+
 ### J4 Get answers from my own documents
 
 - **Priority:** P2
 - **Who:** Busy professional
 - **Goal:** Ask questions and get answers grounded in my notes, with the source named.
 - **Starts when:** The user uploads a document to the Library.
+- **End-to-end tests:** 2 test cases, 0 automated
 
 ```mermaid
 flowchart LR
@@ -227,12 +385,45 @@ flowchart LR
 
 **Done when:** An answer that cites which document it came from.
 
+**End-to-end test cases**
+
+| ID | Test case | Type | Automated test |
+|---|---|---|---|
+| J4-T1 | Answer cites the document | Main path | not automated yet |
+| J4-T2 | File too large or unreadable | Failure | not automated yet |
+
+**J4-T1 Answer cites the document**
+
+_Given_ A signed-in user with an empty Library and a text file of meeting notes that mentions a launch date.
+
+1. Upload the notes file on the Library page
+2. In chat, ask "When is the launch date in my notes?"
+
+_Expect:_
+
+- The Library lists the document, titled after the file if no title was given
+- Muse's answer gives the launch date from the notes and names the document
+
+**J4-T2 File too large or unreadable**
+
+_Given_ A signed-in user with a file over 3MB and a file with no readable text.
+
+1. Upload the file over 3MB
+2. Upload the file with no readable text
+
+_Expect:_
+
+- The first upload is refused with "file is too large (max 3MB)"
+- The second is refused with "no readable text could be extracted from this file"
+- Neither file appears in the Library
+
 ### J5 Email someone without leaving the chat
 
 - **Priority:** P2
 - **Who:** Busy professional
 - **Goal:** Have Muse write and send an email to a contact, safely.
 - **Starts when:** The user asks Muse to email someone.
+- **End-to-end tests:** 3 test cases, 0 automated
 
 ```mermaid
 flowchart LR
@@ -279,12 +470,60 @@ flowchart LR
 
 - The user declines or doesn't answer: nothing is sent and Muse says so.
 
+**End-to-end test cases**
+
+| ID | Test case | Type | Automated test |
+|---|---|---|---|
+| J5-T1 | Approved email is sent | Main path | not automated yet |
+| J5-T2 | Declined or unanswered | Failure | not automated yet |
+| J5-T3 | Unknown contact | Alternative | not automated yet |
+
+**J5-T1 Approved email is sent**
+
+_Given_ A signed-in user with Gmail connected and a contact in their contacts.
+
+1. In chat, ask Muse to email that contact about rescheduling Friday's meeting
+2. Read the approval card
+3. Click Allow
+
+_Expect:_
+
+- The card shows the recipient, subject and body
+- Nothing is sent before Allow is clicked
+- After Allow the email is sent and the send appears in the activity audit
+
+**J5-T2 Declined or unanswered**
+
+_Given_ A signed-in user with Gmail connected and a contact in their contacts.
+
+1. Ask Muse to email that contact
+2. Click Don't allow on the card, or leave it for 4 minutes
+
+_Expect:_
+
+- No email is sent
+- Muse says it didn't send it
+- The decline or no answer appears in the activity audit
+
+**J5-T3 Unknown contact**
+
+_Given_ A signed-in user with Gmail connected and no contact by the name they use.
+
+1. Ask Muse to email someone who isn't in contacts
+2. Read Muse's reply
+
+_Expect:_
+
+- Muse says it found no contact
+- No email is sent
+
 ### J6 Turn an idea into a goal
 
 - **Priority:** P3
 - **Who:** Job seeker
 - **Goal:** Act on an idea Muse noticed in conversation.
 - **Starts when:** Muse saves an idea while chatting.
+- **End-to-end tests:** 2 test cases, 0 automated
 
 ```mermaid
 flowchart LR
@@ -315,6 +554,38 @@ flowchart LR
 | 3 | Mini Muse | Creates the goal linked to the idea (create_goal with idea_id) | [Goals](../specs/goals.md) |
 
 **Done when:** The idea shows as a goal, and the goal has a plan.
+
+**End-to-end test cases**
+
+| ID | Test case | Type | Automated test |
+|---|---|---|---|
+| J6-T1 | Idea becomes a goal with a plan | Main path | not automated yet |
+| J6-T2 | Same idea twice | Alternative | not automated yet |
+
+**J6-T1 Idea becomes a goal with a plan**
+
+_Given_ A signed-in job seeker with no ideas and no goals.
+
+1. In chat, tell Muse "I should reach out to three former colleagues about PM openings"
+2. Open the Ideas page
+3. Click Make it a goal on that idea
+
+_Expect:_
+
+- The idea appears on the Ideas page
+- A goal with 3 to 6 steps appears on the Goals page, linked to the idea
+- The idea shows under Acted on
+
+**J6-T2 Same idea twice**
+
+_Given_ A signed-in user with that idea already on the Ideas page.
+
+1. Share the same idea in chat again
+2. Open the Ideas page
+
+_Expect:_
+
+- The idea appears only once
 
 ## Features
 

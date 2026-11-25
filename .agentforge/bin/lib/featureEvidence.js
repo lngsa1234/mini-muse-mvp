@@ -1,4 +1,4 @@
-// Evidence anchors (docs/design/feature-evidence-anchors.md). A feature anchor says where a
+// Evidence anchors. A feature anchor says where a
 // feature lives (route:app/..., module:src/...); an evidence anchor says that it works: the
 // build or QA result, the commit it was produced at, and a fingerprint of the code under
 // the feature's anchors at that commit. "Verified" is then computed on read: the evidence

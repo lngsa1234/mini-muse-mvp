@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs the repository's dependencies for AgentForge's QA jobs, and Playwright's
+# Installs the repository's dependencies for LynnCraft's QA jobs, and Playwright's
 # browser when the repo has browser tests. Copied into .agentforge/bin/ by install-ci.
 set -euo pipefail
 if [ -f package-lock.json ]; then npm ci
