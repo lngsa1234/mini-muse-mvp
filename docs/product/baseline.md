@@ -40,7 +40,7 @@ What users set out to do, end to end. Each journey runs through several features
 - **Who:** Job seeker
 - **Goal:** Get a set number of interviews in a month without doing every step alone.
 - **Starts when:** The user types a goal like "Land 3 interviews in 30 days" on the Goals page.
-- **End-to-end tests:** 4 test cases, 4 automated — ✗ fails
+- **End-to-end tests:** 4 test cases, 4 automated — ✓ passes
 
 ```mermaid
 flowchart LR
@@ -105,7 +105,7 @@ flowchart LR
 | ID | Test case | Type | Automated test |
 |---|---|---|---|
 | J1-T1 | Goal to submitted application | Main path | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T1 goal to submitted application) |
-| J1-T2 | Gmail not connected | Failure | ✗ fails (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T2 gmail not connected) |
+| J1-T2 | Gmail not connected | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T2 gmail not connected) |
 | J1-T3 | No résumé in the Library | Failure | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T3 no résumé in the library) |
 | J1-T4 | Declining the Submit click | Alternative | ✓ passes (`e2e/journeys.spec.mjs` › J1 Land interviews within a deadline > J1-T4 declining the submit click) |
 

@@ -883,10 +883,11 @@ function printVerify(result) {
 }
 
 // ---- hooks --------------------------------------------------------------------------
-// The Claude Code session-start hook (hooks/hooks.json) calls this so Claude knows what
-// LynnCraft can do in the repository. It reads the hook's JSON on stdin and never fails
-// the session: any error means "say nothing". Checks don't run here: GitHub runs them on
-// every pull request, and the verify skill runs them on request.
+// Claude Code hooks (hooks/hooks.json). Session start: one line so Claude knows what
+// LynnCraft can do in the repository. Before a push or a merge: verify must pass, so
+// nothing reaches GitHub (or main) with a Must fix, even in a private repository where
+// GitHub can't make the check required. Hooks read the hook's JSON on stdin and never
+// break the session: any error means "say nothing" and the command goes ahead.
 
 export function readConfig(root) {
   try { return JSON.parse(readText(root, '.agentforge/config.json') || '{}') } catch { return {} }
@@ -912,8 +913,41 @@ export function sessionStartContext(root) {
     lines.push(`LynnCraft: the feature map lists ${live.length} features${open ? `; ${open} ${open === 1 ? "has" : "have"} no complete spec (the lynncraft:feature-spec skill writes them)` : ', all with complete specs'}.`)
     if (!existsSync(join(root, BASELINE_PATH))) lines.push('There is no product baseline yet; the lynncraft:product-baseline skill writes the users, the journeys across features, and how a PRD lines up with the code.')
   }
+  if (map && hookEnabled(root, 'verifyBeforePush')) lines.push('Every git push and pull-request merge here runs lynncraft verify first and is blocked while it reports Must fix.')
   if (!existsSync(join(root, '.github/workflows/agentforge.yml'))) lines.push('LynnCraft is not set up on GitHub here yet: the lynncraft:setup skill adds the verify check to every pull request, so a merge waits until specs, code and tests agree. Offer to set it up once, the first time the user works on code here.')
   return lines.join(' ')
+}
+
+// Commands that send work to GitHub or merge it: git push, gh pr create, gh pr merge, and
+// a merge through the API (gh api … pulls/N/merge).
+const GATED = [
+  /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/,
+  /(^|[\s;&|(])gh\s+pr\s+(create|merge)(\s|$)/,
+  /(^|[\s;&|(])gh\s+api\b[^;&|]*\/pulls\/\d+\/merge\b/,
+]
+export const isGatedCommand = (command) => GATED.some(pattern => pattern.test(String(command || '')))
+
+// Files that can't break a criterion or a test: docs and LynnCraft's own records.
+const DOCS_ONLY = (name) => /^(docs\/|\.agentforge\/)/.test(name) || /\.md$/i.test(name)
+
+// Before a push or merge: run verify on the branch. Returns null to let the command go
+// ahead, or { reason } to block it. A pass is remembered for the commit (in .git, never
+// committed), so push → open PR → merge on the same commit runs verify once.
+export async function prePushGate(root, command, { verifyImpl = verify } = {}) {
+  if (!root || !isGatedCommand(command) || !hookEnabled(root, 'verifyBeforePush')) return null
+  if (!existsSync(join(root, MAP_PATH))) return null                  // not using LynnCraft here yet
+  const head = (() => { try { return git(root, ['rev-parse', 'HEAD']) } catch { return '' } })()
+  const stamp = (() => { try { return resolve(root, git(root, ['rev-parse', '--git-path', 'lynncraft-verified'])) } catch { return '' } })()
+  if (head && stamp && readText(root, stamp)?.trim() === head) return null
+  const result = await verifyImpl(root, { ci: true })
+  const files = result.pr?.files || []
+  if (!result.pr?.error && files.length && files.every(file => DOCS_ONLY(file.filename))) return null
+  const { lines, mustFix } = verifyReport(result)
+  if (!mustFix.length) {
+    if (head && stamp) { try { writeFileSync(stamp, `${head}\n`) } catch {} }
+    return null
+  }
+  return { reason: [`LynnCraft verify found ${mustFix.length} thing${mustFix.length === 1 ? '' : 's'} to fix before this push or merge:`, ...mustFix.map(item => `- ${item}`), '', 'Fix them (or update the spec if the behavior changed on purpose), commit, and try again. Tell the user what was blocked and why. The lynncraft:verify skill explains each item.'].join('\n'), lines }
 }
 
 async function readStdin() {
@@ -929,6 +963,10 @@ async function runHook(name) {
     if (name === 'session-start') {
       const context = sessionStartContext(root)
       if (context) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: context } }))
+    }
+    if (name === 'pre-push') {
+      const blocked = await prePushGate(root, input.tool_input?.command)
+      if (blocked) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: blocked.reason } }))
     }
   } catch {
     // A hook must never break the session.
@@ -953,7 +991,7 @@ async function main() {
   }
   if (options.command === 'install-ci') { const done = installCi(options.root); console.log(`Copied LynnCraft's checks${done.version ? ` (${done.version})` : ''} to ${done.path}/ (${done.files} files). Commit them with the workflow.`); process.exit(0) }
   if (options.command === 'hook') return runHook(process.argv[3])
-  console.log('Usage: agentforge.mjs check-specs [--root DIR] | check-baseline [--root DIR] | check-workflows [--root DIR] | check-architecture [--root DIR] | check-qa [--root DIR] [--runner node|jest|vitest] [--ci] | verify [--base BRANCH] [--root DIR] [--runner node|jest|vitest] [--ci] | pr-check [--base BRANCH] [--root DIR] [--strict] | install-ci [--root DIR] | hook session-start')
+  console.log('Usage: agentforge.mjs check-specs [--root DIR] | check-baseline [--root DIR] | check-workflows [--root DIR] | check-architecture [--root DIR] | check-qa [--root DIR] [--runner node|jest|vitest] [--ci] | verify [--base BRANCH] [--root DIR] [--runner node|jest|vitest] [--ci] | pr-check [--base BRANCH] [--root DIR] [--strict] | install-ci [--root DIR] | hook session-start|pre-push')
   process.exit(2)
 }
 
