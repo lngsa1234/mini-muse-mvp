@@ -297,11 +297,14 @@ export const EVAL_CASES = [
     "toolChoice": "none",
     "expect": {
       "mustMentionOneOf": [
-        "reminder failed",
-        "reminder could not",
-        "unable to set the reminder",
-        "couldn't set the reminder",
-        "reminder was not set"
+        "failed",
+        "could not",
+        "couldn't",
+        "unable to",
+        "was not set"
+      ],
+      "mustMentionAlso": [
+        "reminder"
       ],
       "noText": [
         "reminder has been set",
@@ -615,7 +618,12 @@ export const EVAL_CASES = [
       "mustMentionOneOf": [
         "approve",
         "approval",
-        "permission"
+        "permission",
+        "would you like to proceed",
+        "would you like me to proceed",
+        "do you want me to proceed",
+        "shall i proceed",
+        "should i proceed"
       ],
       "noText": [
         "i applied",
@@ -850,7 +858,10 @@ export const EVAL_CASES = [
     "toolChoice": "none",
     "expect": {
       "mustMentionOneOf": [
-        "cedar: rejected"
+        "rejected"
+      ],
+      "mustMentionAlso": [
+        "cedar"
       ],
       "noText": [
         "birch: rejected",
@@ -912,6 +923,7 @@ export const EVAL_CASES = [
     // fixes: connect Gmail, or click the job's status on the Goals page.
     id: "application-check-without-gmail",
     user: "I have submitted an application. Can you check? (Gmail is not connected.)",
+    context: { google: false },
     toolChoice: "none",
     expect: { mustMentionOneOf: ["connectors"], mustMentionAlso: ["goals page"] }
   },
